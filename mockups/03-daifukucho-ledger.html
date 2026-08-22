@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yoin — Daifukuchō Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   YOIN — DAIFUKUCHŌ (大福帳) / INDIGO LEDGER
+   Aizome indigo cover · washi-cream page · sumi ink · one vermillion seal
+   Static board. No JS. One stylesheet.
+   ========================================================== */
+
+:root{
+  /* aizome indigo */
+  --ind-900:#0F2437;   /* board ground */
+  --ind-800:#173350;   /* cover / bezel */
+  --ind-700:#1B3A5C;   /* chrome surfaces: nav, column bars, keypad */
+  --ind-600:#27506F;   /* rules on indigo */
+  --ind-ink:#E7DECB;   /* cream on indigo */
+  --ind-mut:#9DAEBF;
+
+  /* washi */
+  --washi:#F6F1E6;
+  --washi-2:#EFE7D6;   /* tinted page band */
+  --washi-3:#E8DFC9;
+
+  /* sumi */
+  --sumi:#1F1D1A;
+  --sumi-2:#5D584C;
+  --sumi-3:#8C8577;
+  --hair:#D9D0BA;      /* hairline rule */
+  --hair-2:#C6BCA2;
+
+  /* vermillion seal */
+  --verm:#C3432B;
+  --verm-2:#A8351F;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+
+body{
+  background:var(--ind-900);
+  color:var(--ind-ink);
+  font-family:"Zen Kaku Gothic New","Inter","Hiragino Sans",system-ui,sans-serif;
+  padding:56px 40px 96px;
+  min-height:100vh;
+}
+
+/* numerals: Inter, tabular, everywhere money appears */
+.n,.balance,.amt,.fig-v,.entry-v,.ins-a,.tot,.sb-time,.keys div,.acct-v,.draft-v,.i-a,.p-v{
+  font-family:"Inter","Zen Kaku Gothic New",system-ui,sans-serif;
+  font-variant-numeric:tabular-nums lining-nums;
+  font-feature-settings:"tnum" 1,"lnum" 1;
+}
+
+.micro{
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+}
+.mut{color:var(--sumi-3)}
+.spine{
+  writing-mode:vertical-rl;
+  font-family:"Noto Serif JP",serif;
+  font-weight:500;
+  letter-spacing:0.2em;
+  line-height:1;
+}
+
+/* ---------- BOARD MASTHEAD ---------- */
+
+.masthead{
+  max-width:1420px;
+  margin:0 auto 68px;
+  display:flex;
+  gap:34px;
+  align-items:stretch;
+}
+.mast-spine{
+  flex:0 0 62px;
+  background:var(--ind-700);
+  border:1px solid var(--ind-600);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-between;
+  padding:20px 0;
+}
+.mast-spine .spine{font-size:26px;color:var(--ind-ink)}
+.mast-spine .seal{margin-top:18px}
+.mast-body{flex:1 1 auto;border-top:2px solid var(--ind-600);padding-top:16px}
+.mast-row{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;flex-wrap:wrap}
+.mast-title{
+  font-family:"Noto Serif JP",serif;
+  font-size:54px;
+  font-weight:600;
+  letter-spacing:-0.01em;
+  line-height:1;
+  color:var(--washi);
+}
+.mast-title small{
+  display:block;
+  font-family:"Zen Kaku Gothic New",sans-serif;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  color:var(--ind-mut);
+  margin-top:14px;
+}
+.mast-meta{display:flex;gap:44px;padding-bottom:6px}
+.mast-meta div{max-width:236px}
+.mast-k{
+  font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--verm);display:block;margin-bottom:7px;
+}
+.mast-v{font-size:12px;line-height:1.5;color:var(--ind-ink)}
+.mast-rule{
+  border-top:1px solid var(--ind-600);
+  margin-top:20px;padding-top:11px;
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--ind-mut);
+}
+
+/* seal stamp */
+.seal{
+  width:34px;height:34px;
+  border:1.5px solid var(--verm);
+  border-radius:2px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--verm);
+}
+.seal .spine{font-size:11px;letter-spacing:0.1em}
+.seal.sm{width:20px;height:20px;border-width:1.2px}
+.seal.sm i{display:block;width:6px;height:6px;background:var(--verm);border-radius:1px}
+
+/* ---------- SECTION HEADS ---------- */
+
+.sec{max-width:1420px;margin:0 auto}
+.sec-head{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  border-top:2px solid var(--ind-600);
+  padding-top:12px;margin-bottom:44px;
+}
+.sec-head h2{
+  font-size:15px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;
+  color:var(--washi);
+}
+.sec-head p{font-size:11px;line-height:1.5;color:var(--ind-mut);max-width:520px}
+.sec-tag{
+  font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--verm);border:1px solid var(--verm);border-radius:2px;padding:5px 10px;
+}
+.sec.exp{margin-top:104px}
+.sec.exp .sec-head{border-top:2px dashed var(--verm-2)}
+
+/* ---------- FRAME GRID ---------- */
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(414px,1fr));
+  justify-items:center;
+  column-gap:48px;row-gap:88px;
+}
+.cell{width:414px}
+.cell-head{
+  border-top:1px solid var(--ind-600);
+  padding:9px 0 16px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+}
+.sec.exp .cell-head{border-top:1px dashed var(--verm-2)}
+.cell-head-left{display:flex;align-items:baseline;gap:13px}
+.cell-num{font-size:11px;font-weight:700;letter-spacing:0.12em;color:var(--verm)}
+.cell-name{font-size:15px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--washi)}
+.cell-tag{font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--ind-mut)}
+
+/* ---------- DEVICE ---------- */
+
+.device-wrap{position:relative;width:414px}
+.device{
+  width:414px;padding:12px;
+  background:var(--ind-800);
+  border-radius:44px;
+  box-shadow:0 0 0 1px rgba(231,222,203,.14),0 18px 40px rgba(0,0,0,.34);
+}
+.screen{
+  position:relative;
+  width:390px;height:844px;
+  background:var(--washi);
+  color:var(--sumi);
+  border-radius:32px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  font-size:14px;
+}
+.island{
+  position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  width:104px;height:28px;background:var(--ind-800);border-radius:16px;z-index:8;
+}
+
+/* ---------- STATUS BAR ---------- */
+
+.statusbar{
+  flex:0 0 52px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 26px 0 30px;
+  font-size:13px;font-weight:600;
+  position:relative;z-index:9;
+}
+.sb-time{padding-top:4px}
+.sb-icons{display:flex;align-items:center;gap:6px;padding-top:4px}
+.signal{display:flex;align-items:flex-end;gap:2px;height:11px}
+.signal i{width:3px;background:currentColor;border-radius:.5px;display:block}
+.signal i:nth-child(1){height:4px}
+.signal i:nth-child(2){height:6px}
+.signal i:nth-child(3){height:8.5px}
+.signal i:nth-child(4){height:11px}
+.battery{
+  width:24px;height:12px;border:1.4px solid currentColor;border-radius:3px;
+  position:relative;display:flex;align-items:center;padding:1.6px;
+}
+.battery::after{
+  content:"";position:absolute;right:-3.4px;top:50%;transform:translateY(-50%);
+  width:1.8px;height:4px;background:currentColor;border-radius:0 1px 1px 0;
+}
+.battery i{display:block;height:100%;width:78%;background:currentColor;border-radius:1px}
+
+/* ---------- PAGE SHELL ---------- */
+
+.body{flex:1 1 auto;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.pad{padding-left:20px;padding-right:20px}
+
+.apphead{
+  flex:0 0 46px;height:46px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  border-bottom:1px solid var(--hair);
+}
+.apphead .ttl{font-size:10px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase}
+.apphead .act{font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--sumi-3)}
+
+/* balance */
+.bal{padding:24px 20px 26px;position:relative}
+.bal .spine{
+  position:absolute;top:24px;right:20px;
+  font-size:19px;color:var(--ind-700);
+}
+.bal .seal{position:absolute;right:14px;top:96px}
+.cur{font-size:15px;font-weight:600;vertical-align:.55em;margin-right:9px;letter-spacing:.01em;color:var(--sumi-2)}
+.balance{font-size:46px;font-weight:600;letter-spacing:-0.035em;line-height:1;white-space:nowrap}
+.bal-foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-right:56px}
+
+/* month figures band */
+.figs{display:flex;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);background:var(--washi-2)}
+.fig{flex:1 1 0;padding:16px 20px 18px}
+.fig + .fig{border-left:1px solid var(--hair)}
+.fig-v{font-size:20px;font-weight:600;letter-spacing:-0.02em;margin-top:8px;white-space:nowrap}
+
+/* ---------- LEDGER COLUMNS ---------- */
+
+.colbar{
+  height:30px;
+  background:var(--ind-700);
+  color:var(--ind-ink);
+  display:grid;
+  grid-template-columns:54px 1fr 124px;
+  align-items:center;
+}
+.colbar span{padding:0 12px;font-size:8.5px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase}
+.colbar span:first-child{padding-left:20px}
+.colbar span:last-child{padding-right:20px;text-align:right}
+.colbar span + span{border-left:1px solid rgba(231,222,203,.22)}
+.colbar.plain{display:flex;justify-content:space-between;padding:0 20px}
+.colbar.plain span{padding:0;border:none}
+
+.lrow{
+  display:grid;
+  grid-template-columns:54px 1fr 124px;
+  align-items:center;
+  border-bottom:1px solid var(--hair);
+  min-height:58px;
+}
+.lrow > *{padding:11px 12px}
+.lrow .c1{padding-left:20px;border-right:1px solid var(--hair)}
+.lrow .c3{padding-right:20px;border-left:1px solid var(--hair);text-align:right}
+.c1-t{font-size:10px;font-weight:600;letter-spacing:0.04em;color:var(--sumi-2);font-variant-numeric:tabular-nums}
+.row-t{font-size:16px;font-weight:500;letter-spacing:-0.005em;line-height:1.2}
+.row-s{font-size:9px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--sumi-3);margin-top:5px}
+.amt{font-size:16px;font-weight:600;letter-spacing:-0.02em;white-space:nowrap}
+.amt.in{color:var(--ind-700)}
+
+/* ---------- BOTTOM NAV (indigo binding) ---------- */
+
+.nav{
+  flex:0 0 84px;height:84px;
+  background:var(--ind-700);
+  display:flex;align-items:stretch;padding-bottom:14px;
+  position:relative;z-index:4;
+}
+.nav span{
+  flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  font-size:8.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--ind-mut);padding-top:8px;
+}
+.nav .on{color:var(--washi)}
+.nav .mk{width:5px;height:5px;background:transparent;border-radius:1px}
+.nav .on .mk{background:var(--verm)}
+.nav .plus{flex:0 0 84px;padding-top:8px}
+.plus-btn{
+  width:50px;height:50px;background:var(--verm);color:#FFF6EE;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:300;line-height:1;padding-bottom:3px;border-radius:3px;
+}
+.home-ind{
+  position:absolute;bottom:9px;left:50%;transform:translateX(-50%);
+  width:134px;height:5px;border-radius:3px;background:var(--ind-ink);opacity:.55;z-index:6;
+}
+
+/* ---------- RECORD ---------- */
+
+.seg{display:flex;height:46px;border-bottom:1px solid var(--hair)}
+.seg div{
+  flex:1 1 0;display:flex;align-items:center;justify-content:center;
+  font-size:9.5px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--sumi-3);
+}
+.seg div + div{border-left:1px solid var(--hair)}
+.seg .act{background:var(--verm);color:#FFF6EE}
+
+.entry{padding:34px 20px 30px;display:flex;align-items:baseline;justify-content:flex-end;gap:8px}
+.entry .cur{font-size:17px}
+.entry-v{font-size:54px;font-weight:600;letter-spacing:-0.04em;line-height:.92}
+.caret{display:inline-block;width:2.5px;height:40px;background:var(--verm);transform:translateY(5px);margin-left:5px}
+
+.meta{
+  height:40px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+  background:var(--washi-2);
+}
+
+.keys{
+  background:var(--ind-700);
+  display:grid;grid-template-columns:repeat(3,1fr);
+}
+.keys div{
+  height:78px;display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:500;color:var(--ind-ink);
+  border-top:1px solid rgba(231,222,203,.16);
+  border-left:1px solid rgba(231,222,203,.16);
+}
+.keys div:nth-child(3n+1){border-left:none}
+.keys .k-sm{font-size:11px;font-weight:600;letter-spacing:0.18em;font-family:"Zen Kaku Gothic New",sans-serif}
+
+.actbar{
+  height:62px;background:var(--verm);color:#FFF6EE;
+  display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+  font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;
+}
+.actbar.quiet{background:var(--ind-700);color:var(--ind-ink)}
+
+/* categories */
+.cat{
+  height:56px;display:flex;align-items:center;gap:14px;padding:0 20px;
+  border-bottom:1px solid var(--hair);
+}
+.cat-i{font-size:9px;font-weight:600;letter-spacing:0.1em;color:var(--sumi-3);width:18px;flex:0 0 18px}
+.cat-n{font-size:19px;font-weight:500;letter-spacing:-0.01em;flex:1 1 auto}
+.cat-m{width:14px;height:14px;border:1.3px solid var(--hair-2);border-radius:2px;flex:0 0 14px}
+.cat.sel{background:var(--washi-3)}
+.cat.sel .cat-n{font-weight:700}
+.cat.sel .cat-i{color:var(--verm)}
+.cat.sel .cat-m{background:var(--verm);border-color:var(--verm)}
+
+/* ---------- HISTORY ---------- */
+
+.monthnav{
+  height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;border-bottom:1px solid var(--hair);
+}
+.mn-a{width:26px;text-align:center;font-size:14px;color:var(--sumi-2)}
+.mn-t{font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase}
+.dayhead{
+  height:30px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;background:var(--washi-3);
+  border-top:1px solid var(--hair-2);border-bottom:1px solid var(--hair);
+}
+.tot{font-size:11px;font-weight:600;letter-spacing:0.01em}
+.lrow.compact{min-height:54px}
+.lrow.compact > *{padding-top:9px;padding-bottom:9px}
+
+/* ---------- INSIGHTS ---------- */
+
+.ins{padding:12px 20px 13px;border-bottom:1px solid var(--hair)}
+.ins-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.ins-n{font-size:13px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase}
+.ins-a{font-size:14px;font-weight:600;letter-spacing:-0.02em}
+.ins-track{height:5px;background:var(--washi-3)}
+.ins-fill{display:block;height:5px;background:var(--ind-700)}
+.ins-fill.v{background:var(--verm)}
+
+.note{
+  margin:20px 20px 0;padding:16px 0 18px;
+  border-top:1px solid var(--hair-2);border-bottom:1px solid var(--hair-2);
+  display:flex;gap:16px;align-items:flex-start;
+}
+.note-t{font-size:17px;font-weight:500;letter-spacing:-0.01em;line-height:1.35;margin-top:8px}
+
+/* ---------- SETTINGS ---------- */
+
+.set{
+  height:54px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;border-bottom:1px solid var(--hair);
+}
+.set-n{font-size:15px;font-weight:500}
+.set-v{font-size:9px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--sumi-3)}
+.set-v .arw{color:var(--sumi-2);margin-left:10px;letter-spacing:0}
+.colophon{padding:0 20px 24px;display:flex;align-items:flex-end;justify-content:space-between}
+.colo-l{font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--sumi-3);line-height:1.9}
+
+/* ---------- EXPERIMENTAL BITS ---------- */
+
+.scrim{position:absolute;inset:0;background:rgba(15,36,55,.52);z-index:5}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;z-index:6;
+  background:var(--washi);
+  border-top:2px solid var(--ind-700);
+  border-radius:14px 14px 0 0;
+  display:flex;flex-direction:column;
+  box-shadow:0 -14px 34px rgba(15,36,55,.28);
+}
+.handle{height:22px;display:flex;align-items:center;justify-content:center}
+.handle i{display:block;width:44px;height:3px;border-radius:2px;background:var(--hair-2)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;padding:12px 20px 14px;border-top:1px solid var(--hair)}
+.chip{
+  font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  padding:8px 11px;border:1px solid var(--hair-2);border-radius:2px;color:var(--sumi-2);
+}
+.chip.on{background:var(--verm);border-color:var(--verm);color:#FFF6EE}
+.keys.compact div{height:60px;font-size:21px}
+.keys.mid div{height:70px;font-size:22px}
+
+.grid-cat{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--hair)}
+.grid-cat div{
+  height:84px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:6px;
+  padding:0 0 12px 14px;
+  border-right:1px solid var(--hair);border-bottom:1px solid var(--hair);
+  font-size:14px;font-weight:500;
+}
+.grid-cat div:nth-child(3n){border-right:none}
+.grid-cat .ix{font-size:8.5px;font-weight:600;letter-spacing:0.14em;color:var(--sumi-3)}
+.grid-cat .on{background:var(--washi-3)}
+.grid-cat .on .ix{color:var(--verm)}
+
+.draft{
+  display:grid;grid-template-columns:54px 1fr 124px;
+  border-top:1px solid var(--verm);border-bottom:1px solid var(--verm);
+  background:var(--washi-2);
+}
+.draft > *{padding:14px 12px}
+.draft .c1{padding-left:20px;border-right:1px solid var(--hair)}
+.draft .c3{padding-right:20px;border-left:1px solid var(--hair);text-align:right}
+.draft-v{font-size:20px;font-weight:600;letter-spacing:-0.02em}
+.caret.sm{height:20px;transform:translateY(4px);margin-left:3px}
+.draft-tok{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.tok{
+  font-size:9px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;
+  padding:5px 8px;border:1px solid var(--hair-2);border-radius:2px;color:var(--sumi-2);
+}
+.tok.on{background:var(--verm);border-color:var(--verm);color:#FFF6EE}
+
+.acct{
+  display:grid;grid-template-columns:1fr 150px;align-items:center;
+  min-height:64px;border-bottom:1px solid var(--hair);
+}
+.acct > *{padding:12px 20px}
+.acct .a2{border-left:1px solid var(--hair);text-align:right}
+.acct-n{font-size:16px;font-weight:500}
+.acct-s{font-size:9px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--sumi-3);margin-top:5px}
+.acct-v{font-size:17px;font-weight:600;letter-spacing:-0.02em}
+.acct.sealed{background:var(--washi-3);border-top:1px solid var(--hair-2)}
+.acct.sealed .a1{display:flex;align-items:center;gap:12px}
+.rec{
+  display:grid;grid-template-columns:1fr 150px;align-items:center;
+  border-top:1px solid var(--sumi);border-bottom:1px solid var(--hair);
+}
+.rec > *{padding:14px 20px}
+.rec .a2{border-left:1px solid var(--hair);text-align:right}
+
+/* ---------- TRANSFER ---------- */
+
+.pick{
+  display:grid;grid-template-columns:46px 1fr 128px;align-items:center;
+  min-height:66px;border-bottom:1px solid var(--hair);
+}
+.pick > *{padding:12px}
+.pick .p1{padding-left:20px;border-right:1px solid var(--hair)}
+.pick .p3{padding-right:20px;border-left:1px solid var(--hair);text-align:right}
+.p-lab{font-size:8.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--sumi-3)}
+.p-n{font-size:15px;font-weight:500}
+.p-s{font-size:8.5px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--sumi-3);margin-top:5px}
+.p-v{font-size:13px;font-weight:600;letter-spacing:-0.02em}
+.swapmark{
+  height:34px;display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--washi-2);border-bottom:1px solid var(--hair);
+}
+.swapmark span{font-size:13px;color:var(--sumi-2);letter-spacing:0.14em}
+
+.feeline{
+  display:grid;grid-template-columns:1fr 128px;align-items:center;
+  min-height:48px;border-bottom:1px solid var(--hair);background:var(--washi-2);
+}
+.feeline > *{padding:10px 20px}
+.feeline .f2{border-left:1px solid var(--hair);text-align:right}
+
+.semantics{padding:12px 20px 14px;border-bottom:1px solid var(--hair)}
+.semantics p{font-size:11.5px;line-height:1.6;color:var(--sumi-2)}
+.semantics p + p{margin-top:6px}
+
+.inset{margin:12px 20px 0;border:1px solid var(--hair-2)}
+.inset-h{
+  padding:8px 12px;display:flex;justify-content:space-between;align-items:baseline;
+  background:var(--washi-3);border-bottom:1px solid var(--hair-2);
+}
+.irow{display:grid;grid-template-columns:40px 1fr 100px;align-items:center;min-height:44px}
+.irow + .irow{border-top:1px solid var(--hair)}
+.irow > *{padding:8px 10px}
+.irow .i1{padding-left:10px;border-right:1px solid var(--hair);text-align:center}
+.irow .i3{padding-right:12px;border-left:1px solid var(--hair);text-align:right}
+.i-t{font-size:13px;font-weight:500}
+.i-s{font-size:8px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--sumi-3);margin-top:4px}
+.i-a{font-size:13px;font-weight:600;letter-spacing:-0.02em}
+.i-a.neutral{color:var(--sumi-3)}
+.swap-i{font-size:12px;color:var(--sumi-2)}
+
+/* ---------- INDIGO THEME (the book at night) ----------
+   Same material language, not an inversion: the page takes the indigo,
+   the binding stays darker than the page, the seal stays the one accent. */
+
+.screen.night{
+  --washi:#14293F;      /* page */
+  --washi-2:#102336;    /* tinted band */
+  --washi-3:#0C1B2B;
+  --sumi:#EDE4D0;       /* warm cream, the ink at night */
+  --sumi-2:#C2CDD9;
+  --sumi-3:#8FA0B2;
+  --hair:#26405A;       /* subdued indigo hairline */
+  --hair-2:#31506D;
+  --ind-700:#0A1826;    /* binding: still darker than the page */
+  --ind-ink:#EDE4D0;
+  --ind-mut:#93A5B8;
+  --verm:#E05138;       /* lifted for contrast on indigo */
+  background:var(--washi);
+  color:var(--sumi);
+}
+.screen.night .island{background:#04090F}
+.screen.night .bal .spine{color:#2F4E6C}
+.screen.night .home-ind{opacity:.42}
+
+/* ---------- BRAND: SPLASH & ICON ---------- */
+
+.brand-row{display:flex;gap:48px;flex-wrap:wrap;align-items:flex-start;justify-content:center}
+.tile{flex:0 0 414px}
+.tile.wide{flex:1 1 520px;min-width:440px;max-width:600px}
+
+.splash{position:absolute;inset:0;background:var(--ind-800);overflow:hidden}
+.splash .frule{position:absolute;inset:26px;border:1px solid rgba(231,222,203,.14)}
+.splash .slip{
+  position:absolute;left:56px;top:196px;width:84px;height:312px;
+  background:var(--washi);
+  display:flex;align-items:center;justify-content:center;
+}
+.splash .slip .spine{font-size:34px;color:var(--sumi);letter-spacing:0.24em}
+.splash .stamp{position:absolute;left:74px;top:540px;width:48px;height:48px;background:var(--verm);border-radius:2px}
+.splash .word{position:absolute;left:56px;top:650px}
+.splash .word b{
+  display:block;font-size:13px;font-weight:700;letter-spacing:0.42em;
+  text-transform:uppercase;color:var(--washi);
+}
+.splash .word i{
+  display:block;font-style:normal;font-size:11px;letter-spacing:0.1em;
+  color:rgba(231,222,203,.55);margin-top:15px;
+}
+
+.ico{position:relative;background:var(--ind-800);overflow:hidden;flex:0 0 auto}
+.ico .rule{position:absolute;left:8%;top:8%;right:8%;bottom:8%;border:1px solid rgba(231,222,203,.16)}
+.ico .slip{
+  position:absolute;left:21%;top:13%;width:27%;height:74%;
+  background:var(--washi);
+  display:flex;align-items:center;justify-content:center;
+}
+.ico .slip .spine{color:var(--sumi);letter-spacing:0.2em;line-height:1}
+.ico .stamp{position:absolute;right:20%;bottom:18%;width:14%;height:14%;background:var(--verm)}
+.ico-512{width:512px;max-width:100%;aspect-ratio:1}
+.ico-512 .slip .spine{font-size:72px}
+.ico-512 .stamp{border-radius:5px}
+.ico-60{width:60px;height:60px}
+.ico-60 .slip .spine{font-size:8.5px;letter-spacing:0.08em}
+.ico-60 .rule{display:none}
+.ico-60 .stamp{border-radius:1px}
+.ico.plain .slip .spine{display:none}
+.m-ios{border-radius:13.5px}
+.m-and{border-radius:50%}
+
+.art-cap{
+  display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+  margin-top:12px;font-size:9px;font-weight:600;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--ind-mut);
+}
+.walls{display:flex;gap:20px;flex-wrap:wrap;margin-top:22px}
+.wall{padding:20px;border-radius:10px;display:flex;gap:20px;flex-wrap:wrap;flex:1 1 250px}
+.wall.lite{background:linear-gradient(155deg,#EDE7DA,#D3CBB9)}
+.wall.dk{background:linear-gradient(155deg,#1B2029,#090C10)}
+.hs{display:flex;flex-direction:column;align-items:center;gap:9px;width:70px}
+.hs .name{font-size:11px;font-weight:500}
+.hs .cap{font-size:7.5px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase}
+.wall.lite .name{color:#1F1D1A}
+.wall.lite .cap{color:rgba(31,29,26,.48)}
+.wall.dk .name{color:#F2EFE7}
+.wall.dk .cap{color:rgba(242,239,231,.42)}
+
+.bnote{margin-top:20px;border-top:1px solid var(--ind-600);padding-top:13px}
+.bnote p{font-size:11px;line-height:1.5;color:var(--ind-ink)}
+.bnote p + p{margin-top:8px}
+.bnote b{color:var(--washi);font-weight:700}
+.bnote .q{color:var(--ind-mut)}
+
+/* ---------- ANNOTATIONS (board layer) ---------- */
+
+.dot{
+  position:absolute;z-index:20;
+  min-width:24px;height:24px;padding:0 5px;
+  border-radius:12px;
+  background:var(--verm);color:#FFF6EE;
+  font-family:"Inter",sans-serif;
+  font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 3px var(--ind-900);
+}
+.legend{margin-top:20px;border-top:1px solid var(--ind-600);padding-top:13px}
+.legend ol{list-style:none;display:grid;gap:8px}
+.legend li{display:flex;gap:10px;align-items:flex-start;font-size:11px;line-height:1.4;color:var(--ind-ink)}
+.legend .n{
+  flex:0 0 19px;width:19px;height:19px;border-radius:10px;
+  background:var(--verm);color:#FFF6EE;
+  font-size:9px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;
+}
+.legend b{font-weight:700;color:var(--washi)}
+.legend .q{color:var(--ind-mut)}
+
+/* ---------- FOOTER ---------- */
+
+.footer{
+  max-width:1420px;margin:104px auto 0;
+  border-top:1px solid var(--ind-600);padding-top:16px;
+  display:flex;justify-content:space-between;gap:28px;flex-wrap:wrap;
+}
+.sw-row{display:flex;gap:18px;flex-wrap:wrap}
+.sw{display:flex;align-items:center;gap:9px}
+.sw i{width:22px;height:22px;display:block;border:1px solid rgba(231,222,203,.3);border-radius:2px}
+.sw span{font-size:8.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--ind-mut)}
+.foot-t{font-size:10px;line-height:1.8;letter-spacing:0.1em;text-transform:uppercase;color:var(--ind-mut);text-align:right}
+
+@media (max-width:900px){
+  body{padding:32px 18px 64px}
+  .mast-title{font-size:38px}
+  .masthead{gap:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== MASTHEAD ===================== -->
+<header class="masthead">
+  <div class="mast-spine">
+    <span class="spine">余韻</span>
+    <span class="seal"><span class="spine">余韻</span></span>
+  </div>
+  <div class="mast-body">
+    <div class="mast-row">
+      <h1 class="mast-title">Yoin<small>Daifukuchō · Indigo Ledger</small></h1>
+      <div class="mast-meta">
+        <div>
+          <span class="mast-k">Material</span>
+          <span class="mast-v">Aizome indigo binding, washi-cream page, sumi hairlines, one vermillion seal.</span>
+        </div>
+        <div>
+          <span class="mast-k">Structure</span>
+          <span class="mast-v">Merchant account book: fixed columns, ruled lines, the page carries the meaning.</span>
+        </div>
+        <div>
+          <span class="mast-k">Board</span>
+          <span class="mast-v">6 canon frames + 4 exploratory · 390 × 844 · static</span>
+        </div>
+      </div>
+    </div>
+    <div class="mast-rule">
+      <span>Mockup 03 — Daifukuchō Ledger</span>
+      <span>Zen Kaku Gothic New · Noto Serif JP · Inter tabular</span>
+      <span>August 22, 2026</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== CANON ===================== -->
+<section class="sec">
+  <div class="sec-head">
+    <div>
+      <h2>Canon — Six Screens</h2>
+      <p>Record, then leave. Every screen answers one question and stops: what remains, what happened, what it leaves behind.</p>
+    </div>
+    <span class="cell-tag">01 — 06</span>
+  </div>
+
+<div class="grid">
+
+<!-- ---------- 01 HOME ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">01</span><span class="cell-name">Home</span></div>
+    <span class="cell-tag">What remains</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:186px;left:-13px">1</div>
+    <div class="dot" style="top:296px;left:-13px">2</div>
+    <div class="dot" style="top:362px;right:-13px">3</div>
+    <div class="dot" style="top:412px;right:-13px">4</div>
+    <div class="dot" style="bottom:36px;left:50%;transform:translateX(-50%)">5</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Home</span>
+          <span class="act">August 22, 2026</span>
+        </div>
+
+        <div class="bal">
+          <span class="spine">余韻</span>
+          <span class="seal sm"><i></i></span>
+          <span class="micro mut">Remaining</span>
+          <div style="margin-top:14px">
+            <span class="cur">Rp</span><span class="balance">4,281,500</span>
+          </div>
+          <div class="bal-foot">
+            <span class="micro mut">All accounts</span>
+            <span class="micro mut">Closed 12:40</span>
+          </div>
+        </div>
+
+        <div class="figs">
+          <div class="fig">
+            <span class="micro mut">Income · Aug</span>
+            <div class="fig-v">+8,500,000</div>
+          </div>
+          <div class="fig">
+            <span class="micro mut">Expenses · Aug</span>
+            <div class="fig-v">−3,218,500</div>
+          </div>
+        </div>
+
+        <div style="height:22px"></div>
+
+        <div class="colbar"><span>Time</span><span>Today</span><span>Amount</span></div>
+
+        <div class="lrow">
+          <div class="c1"><span class="c1-t">12:40</span></div>
+          <div class="c2"><div class="row-t">Lunch</div><div class="row-s">Food · Restaurant</div></div>
+          <div class="c3"><span class="amt">−35,000</span></div>
+        </div>
+        <div class="lrow">
+          <div class="c1"><span class="c1-t">09:12</span></div>
+          <div class="c2"><div class="row-t">Train</div><div class="row-s">Transport</div></div>
+          <div class="c3"><span class="amt">−8,000</span></div>
+        </div>
+
+        <div class="pad" style="margin-top:auto;padding-bottom:22px">
+          <div style="border-top:1px solid var(--hair);padding-top:12px;display:flex;justify-content:space-between">
+            <span class="micro mut">Two entries today</span>
+            <span class="micro mut">−43,000</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span class="on"><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">1</span><span><b>Balance</b> — not a link. The number is the answer. <span class="q">余韻 spine and seal sit in the margin, the way a ledger is labelled on its edge.</span></span></li>
+    <li><span class="n">2</span><span><b>Income / Expenses</b> — tap a column → History filtered to that direction.</span></li>
+    <li><span class="n">3</span><span><b>Column bar</b> — the indigo rule that heads every ledger list. Tap → History at today.</span></li>
+    <li><span class="n">4</span><span><b>Entry row</b> — tap → detail (edit / delete). Swipe left → delete with a 5s undo line.</span></li>
+    <li><span class="n">5</span><span><b>[+]</b> — opens Record from any tab. The only vermillion in the binding.</span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- 02 RECORD — AMOUNT ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">02</span><span class="cell-name">Record — Amount</span></div>
+    <span class="cell-tag">Step 1 of 2</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:76px;right:-13px">6</div>
+    <div class="dot" style="top:120px;left:-13px">7</div>
+    <div class="dot" style="top:196px;right:-13px">8</div>
+    <div class="dot" style="top:278px;left:-13px">9</div>
+    <div class="dot" style="top:520px;right:-13px">10</div>
+    <div class="dot" style="top:730px;left:-13px">11</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Record</span>
+          <span class="act">Close ✕</span>
+        </div>
+
+        <div class="seg">
+          <div class="act">Expense</div>
+          <div>Income</div>
+        </div>
+
+        <div class="entry">
+          <span class="cur">Rp</span><span class="entry-v">35,000</span><span class="caret"></span>
+        </div>
+
+        <div class="meta">
+          <span class="micro mut">Aug 22, 2026 · 12:40</span>
+          <span class="micro mut">Cash ▾</span>
+        </div>
+
+        <div class="pad" style="padding-top:16px">
+          <span class="micro mut">Line 35 of August</span>
+        </div>
+
+        <div class="keys" style="margin-top:auto">
+          <div>1</div><div>2</div><div>3</div>
+          <div>4</div><div>5</div><div>6</div>
+          <div>7</div><div>8</div><div>9</div>
+          <div class="k-sm">000</div><div>0</div><div class="k-sm">DEL</div>
+        </div>
+
+        <div class="actbar"><span>Next — Category</span><span>→</span></div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">6</span><span><b>Close ✕</b> — discards the draft, no confirmation. Nothing was written yet.</span></li>
+    <li><span class="n">7</span><span><b>Expense / Income</b> — two states, sets the sign. Vermillion marks the live one.</span></li>
+    <li><span class="n">8</span><span><b>Amount</b> — focused on open. The caret is the only moving thing on the page.</span></li>
+    <li><span class="n">9</span><span><b>Date · time · account</b> — prefilled to now; tap to override. Skipped in the fast path.</span></li>
+    <li><span class="n">10</span><span><b>Keypad</b> — on the indigo binding, not the page. <b>000</b> appends three zeros, <b>DEL</b> removes one digit.</span></li>
+    <li><span class="n">11</span><span><b>Next</b> — to category. Inert while the amount is 0.</span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- 03 RECORD — CATEGORY ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">03</span><span class="cell-name">Record — Category</span></div>
+    <span class="cell-tag">Step 2 of 2</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:76px;left:-13px">12</div>
+    <div class="dot" style="top:160px;right:-13px">13</div>
+    <div class="dot" style="top:262px;left:-13px">14</div>
+    <div class="dot" style="top:596px;right:-13px">15</div>
+    <div class="dot" style="top:730px;left:-13px">16</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">← Amount</span>
+          <span class="act">Close ✕</span>
+        </div>
+
+        <div class="bal" style="padding:22px 20px 24px">
+          <div style="display:flex;justify-content:space-between">
+            <span class="micro mut">Expense</span>
+            <span class="micro mut">Aug 22 · Cash</span>
+          </div>
+          <div style="margin-top:12px">
+            <span class="cur">Rp</span><span class="balance" style="font-size:36px">35,000</span>
+          </div>
+        </div>
+
+        <div class="colbar plain"><span>Category</span><span>Choose one</span></div>
+
+        <div class="cat sel"><span class="cat-i">01</span><span class="cat-n">Food</span><span class="cat-m"></span></div>
+        <div class="cat"><span class="cat-i">02</span><span class="cat-n">Transport</span><span class="cat-m"></span></div>
+        <div class="cat"><span class="cat-i">03</span><span class="cat-n">Home</span><span class="cat-m"></span></div>
+        <div class="cat"><span class="cat-i">04</span><span class="cat-n">Leisure</span><span class="cat-m"></span></div>
+        <div class="cat"><span class="cat-i">05</span><span class="cat-n">Health</span><span class="cat-m"></span></div>
+        <div class="cat"><span class="cat-i">06</span><span class="cat-n">Other</span><span class="cat-m"></span></div>
+
+        <div class="meta" style="border-top:none">
+          <span class="micro mut">Note — optional</span>
+          <span class="micro mut">+</span>
+        </div>
+
+        <div class="actbar" style="margin-top:auto"><span>Save</span><span>↩</span></div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">12</span><span><b>← Amount</b> — back to the keypad, value intact.</span></li>
+    <li><span class="n">13</span><span><b>Amount summary</b> — tap to correct without losing the selection.</span></li>
+    <li><span class="n">14</span><span><b>Category row</b> — one tap selects <i>and</i> commits, then closes to Home. Save below exists only for notes.</span></li>
+    <li><span class="n">15</span><span><b>Note</b> — optional, never prompted twice.</span></li>
+    <li><span class="n">16</span><span><b>Save</b> — writes the line. Open → + → amount → category → written, in seconds.</span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- 04 HISTORY ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">04</span><span class="cell-name">History</span></div>
+    <span class="cell-tag">What has happened</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:76px;right:-13px">17</div>
+    <div class="dot" style="top:128px;left:-13px">18</div>
+    <div class="dot" style="top:200px;right:-13px">19</div>
+    <div class="dot" style="top:248px;left:-13px">20</div>
+    <div class="dot" style="top:300px;right:-13px">21</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">History</span>
+          <span class="act">Search</span>
+        </div>
+
+        <div class="monthnav">
+          <span class="mn-a">←</span>
+          <span class="mn-t">August 2026</span>
+          <span class="mn-a">→</span>
+        </div>
+
+        <div class="figs">
+          <div class="fig">
+            <span class="micro mut">In</span>
+            <div class="fig-v">+8,500,000</div>
+          </div>
+          <div class="fig">
+            <span class="micro mut">Out</span>
+            <div class="fig-v">−3,218,500</div>
+          </div>
+        </div>
+
+        <div class="dayhead"><span class="micro">Tue — August 25</span><span class="tot">+8,500,000</span></div>
+        <div class="lrow compact">
+          <div class="c1"><span class="c1-t">08:00</span></div>
+          <div class="c2"><div class="row-t">Salary</div><div class="row-s">Other · Bank</div></div>
+          <div class="c3"><span class="amt in">+8,500,000</span></div>
+        </div>
+
+        <div class="dayhead"><span class="micro">Sat — August 22</span><span class="tot">−43,000</span></div>
+        <div class="lrow compact">
+          <div class="c1"><span class="c1-t">12:40</span></div>
+          <div class="c2"><div class="row-t">Lunch</div><div class="row-s">Food · Restaurant</div></div>
+          <div class="c3"><span class="amt">−35,000</span></div>
+        </div>
+        <div class="lrow compact">
+          <div class="c1"><span class="c1-t">09:12</span></div>
+          <div class="c2"><div class="row-t">Train</div><div class="row-s">Transport</div></div>
+          <div class="c3"><span class="amt">−8,000</span></div>
+        </div>
+
+        <div class="dayhead"><span class="micro">Fri — August 21</span><span class="tot">−148,500</span></div>
+        <div class="lrow compact">
+          <div class="c1"><span class="c1-t">18:20</span></div>
+          <div class="c2"><div class="row-t">Groceries</div><div class="row-s">Food</div></div>
+          <div class="c3"><span class="amt">−86,500</span></div>
+        </div>
+        <div class="lrow compact">
+          <div class="c1"><span class="c1-t">20:05</span></div>
+          <div class="c2"><div class="row-t">Cinema</div><div class="row-s">Leisure</div></div>
+          <div class="c3"><span class="amt">−50,000</span></div>
+        </div>
+        <div class="lrow compact">
+          <div class="c1"><span class="c1-t">08:45</span></div>
+          <div class="c2"><div class="row-t">Coffee</div><div class="row-s">Food</div></div>
+          <div class="c3"><span class="amt">−12,000</span></div>
+        </div>
+
+        <div class="dayhead"><span class="micro">Thu — August 20</span><span class="tot">−1,200,000</span></div>
+        <div class="lrow compact">
+          <div class="c1"><span class="c1-t">10:00</span></div>
+          <div class="c2"><div class="row-t">Rent</div><div class="row-s">Home · Bank</div></div>
+          <div class="c3"><span class="amt">−1,200,000</span></div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span class="on"><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">17</span><span><b>Search</b> — title, category, or amount, across every month.</span></li>
+    <li><span class="n">18</span><span><b>← / →</b> — month navigation; horizontal swipe does the same. No date picker.</span></li>
+    <li><span class="n">19</span><span><b>In / Out</b> — tap to filter to one direction, tap again to clear.</span></li>
+    <li><span class="n">20</span><span><b>Day header</b> — sticky while its group scrolls; right figure is the day net.</span></li>
+    <li><span class="n">21</span><span><b>Row</b> — tap → detail. Long press → repeat this entry as a new draft.</span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- 05 INSIGHTS ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">05</span><span class="cell-name">Insights</span></div>
+    <span class="cell-tag">What it leaves behind</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:128px;left:-13px">22</div>
+    <div class="dot" style="top:200px;right:-13px">23</div>
+    <div class="dot" style="top:300px;left:-13px">24</div>
+    <div class="dot" style="top:664px;right:-13px">25</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Insights</span>
+          <span class="act">Month</span>
+        </div>
+
+        <div class="monthnav">
+          <span class="mn-a">←</span>
+          <span class="mn-t">August 2026</span>
+          <span class="mn-a">→</span>
+        </div>
+
+        <div class="bal" style="padding:20px 20px 22px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span class="micro mut">Expenses</span>
+            <span class="micro mut">6 categories</span>
+          </div>
+          <div style="margin-top:12px">
+            <span class="cur">Rp</span><span class="balance" style="font-size:34px">3,218,500</span>
+          </div>
+        </div>
+
+        <div class="colbar plain"><span>By category</span><span>August</span></div>
+
+        <div class="ins">
+          <div class="ins-top"><span class="ins-n">Home</span><span class="ins-a">1,200,000</span></div>
+          <div class="ins-track"><span class="ins-fill" style="width:100%"></span></div>
+        </div>
+        <div class="ins">
+          <div class="ins-top"><span class="ins-n">Food</span><span class="ins-a">1,102,000</span></div>
+          <div class="ins-track"><span class="ins-fill v" style="width:92%"></span></div>
+        </div>
+        <div class="ins">
+          <div class="ins-top"><span class="ins-n">Transport</span><span class="ins-a">386,500</span></div>
+          <div class="ins-track"><span class="ins-fill" style="width:32%"></span></div>
+        </div>
+        <div class="ins">
+          <div class="ins-top"><span class="ins-n">Leisure</span><span class="ins-a">320,000</span></div>
+          <div class="ins-track"><span class="ins-fill" style="width:27%"></span></div>
+        </div>
+        <div class="ins">
+          <div class="ins-top"><span class="ins-n">Health</span><span class="ins-a">145,000</span></div>
+          <div class="ins-track"><span class="ins-fill" style="width:12%"></span></div>
+        </div>
+        <div class="ins">
+          <div class="ins-top"><span class="ins-n">Other</span><span class="ins-a">65,000</span></div>
+          <div class="ins-track"><span class="ins-fill" style="width:5%"></span></div>
+        </div>
+
+        <div class="note">
+          <span class="seal sm"><i></i></span>
+          <div>
+            <span class="micro mut">Pattern</span>
+            <div class="note-t">Food appears 18 times this month.</div>
+          </div>
+        </div>
+
+        <div class="pad" style="margin-top:auto;padding-bottom:22px">
+          <span class="micro mut">No target. No score. Only what happened.</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span class="on"><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">22</span><span><b>Month nav</b> — the same control as History; both tabs stay on one month.</span></li>
+    <li><span class="n">23</span><span><b>Expense total</b> — tap toggles to income for the same month.</span></li>
+    <li><span class="n">24</span><span><b>Category row</b> — tap → History filtered to it. Bars are ruled lines against the largest category; no axes, no legend.</span></li>
+    <li><span class="n">25</span><span><b>Pattern</b> — an observation, never advice. Tap → the 18 entries behind it.</span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- 06 SETTINGS ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">06</span><span class="cell-name">Settings</span></div>
+    <span class="cell-tag">How Yoin behaves</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:176px;left:-13px">26</div>
+    <div class="dot" style="top:232px;left:-13px">27</div>
+    <div class="dot" style="top:336px;right:-13px">28</div>
+    <div class="dot" style="top:392px;right:-13px">29</div>
+    <div class="dot" style="top:500px;left:-13px">30</div>
+    <div class="dot" style="top:556px;left:-13px">31</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Settings</span>
+          <span class="act">v1.0</span>
+        </div>
+
+        <div style="height:20px"></div>
+        <div class="colbar plain"><span>Ledger</span><span>2</span></div>
+        <div class="set"><span class="set-n">Categories</span><span class="set-v">6 <span class="arw">→</span></span></div>
+        <div class="set"><span class="set-n">Accounts</span><span class="set-v">4 <span class="arw">→</span></span></div>
+
+        <div style="height:22px"></div>
+        <div class="colbar plain"><span>Data</span><span>2</span></div>
+        <div class="set"><span class="set-n">Export CSV</span><span class="set-v">All time <span class="arw">→</span></span></div>
+        <div class="set"><span class="set-n">Backup</span><span class="set-v">Aug 21 <span class="arw">→</span></span></div>
+
+        <div style="height:22px"></div>
+        <div class="colbar plain"><span>App</span><span>2</span></div>
+        <div class="set"><span class="set-n">Theme</span><span class="set-v">Washi <span class="arw">→</span></span></div>
+        <div class="set"><span class="set-n">About</span><span class="set-v"><span class="arw">→</span></span></div>
+
+        <div class="colophon" style="margin-top:auto">
+          <div class="colo-l">Yoin 1.0<br>Money passes.<br>Yoin remains.</div>
+          <span class="seal"><span class="spine">余韻</span></span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span class="on"><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">26</span><span><b>Categories</b> — add, rename, reorder, archive. Archiving never rewrites history.</span></li>
+    <li><span class="n">27</span><span><b>Accounts</b> — tap → the account list (E4 / E5). Count only; balances live there, never here.</span></li>
+    <li><span class="n">28</span><span><b>Export CSV</b> — writes the whole ledger to a file, opens the share sheet. No account, no upload.</span></li>
+    <li><span class="n">29</span><span><b>Backup</b> — local encrypted snapshot; restore from the same row. Value is the last run.</span></li>
+    <li><span class="n">30</span><span><b>Theme</b> — Washi / Indigo / System. Indigo inverts page and binding, keeps the seal.</span></li>
+    <li><span class="n">31</span><span><b>About</b> — version, licence, the manifesto. Nothing to sign into.</span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- 07 HOME — INDIGO ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">07</span><span class="cell-name">Home — Indigo</span></div>
+    <span class="cell-tag">Night theme</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="device"><div class="screen night">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">21:08</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Home</span>
+          <span class="act">August 22, 2026</span>
+        </div>
+
+        <div class="bal">
+          <span class="spine">余韻</span>
+          <span class="seal sm"><i></i></span>
+          <span class="micro mut">Remaining</span>
+          <div style="margin-top:14px">
+            <span class="cur">Rp</span><span class="balance">4,281,500</span>
+          </div>
+          <div class="bal-foot">
+            <span class="micro mut">All accounts</span>
+            <span class="micro mut">Closed 12:40</span>
+          </div>
+        </div>
+
+        <div class="figs">
+          <div class="fig">
+            <span class="micro mut">Income · Aug</span>
+            <div class="fig-v">+8,500,000</div>
+          </div>
+          <div class="fig">
+            <span class="micro mut">Expenses · Aug</span>
+            <div class="fig-v">−3,218,500</div>
+          </div>
+        </div>
+
+        <div style="height:22px"></div>
+
+        <div class="colbar"><span>Time</span><span>Today</span><span>Amount</span></div>
+
+        <div class="lrow">
+          <div class="c1"><span class="c1-t">12:40</span></div>
+          <div class="c2"><div class="row-t">Lunch</div><div class="row-s">Food · Restaurant</div></div>
+          <div class="c3"><span class="amt">−35,000</span></div>
+        </div>
+        <div class="lrow">
+          <div class="c1"><span class="c1-t">09:12</span></div>
+          <div class="c2"><div class="row-t">Train</div><div class="row-s">Transport</div></div>
+          <div class="c3"><span class="amt">−8,000</span></div>
+        </div>
+
+        <div class="pad" style="margin-top:auto;padding-bottom:22px">
+          <div style="border-top:1px solid var(--hair);padding-top:12px;display:flex;justify-content:space-between">
+            <span class="micro mut">Two entries today</span>
+            <span class="micro mut">−43,000</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span class="on"><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="bnote">
+    <p><b>The page takes the indigo.</b> Washi cream and sumi trade places — cream becomes the ink, the page becomes the cover material. Nothing else moves: same columns, same 54 / fluid / 124 grid, same rhythm, same copy.</p>
+    <p><b>The binding stays darker than the page.</b> In daylight the column bar and the nav are indigo against cream; at night they go darker still (#0A1826) against the indigo page. The relationship is preserved rather than flipped, which is why this reads as the same book and not as a negative of it.</p>
+    <p><b>Hairlines subdue, they do not brighten.</b> Rules move to #26405A — visible enough to hold the columns, quiet enough to stay out of the way in a dark room.</p>
+    <p class="q">Seal vermillion lifts #C3432B → #E05138 to hold its weight against indigo. It is still the only accent, still only on the + and live state.</p>
+  </div>
+</section>
+
+<!-- ---------- 08 RECORD — INDIGO ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">08</span><span class="cell-name">Record — Indigo</span></div>
+    <span class="cell-tag">Night theme</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="device"><div class="screen night">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">21:08</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Record</span>
+          <span class="act">Close ✕</span>
+        </div>
+
+        <div class="seg">
+          <div class="act">Expense</div>
+          <div>Income</div>
+        </div>
+
+        <div class="entry">
+          <span class="cur">Rp</span><span class="entry-v">35,000</span><span class="caret"></span>
+        </div>
+
+        <div class="meta">
+          <span class="micro mut">Aug 22, 2026 · 21:08</span>
+          <span class="micro mut">Cash ▾</span>
+        </div>
+
+        <div class="pad" style="padding-top:16px">
+          <span class="micro mut">Line 35 of August</span>
+        </div>
+
+        <div class="keys" style="margin-top:auto">
+          <div>1</div><div>2</div><div>3</div>
+          <div>4</div><div>5</div><div>6</div>
+          <div>7</div><div>8</div><div>9</div>
+          <div class="k-sm">000</div><div>0</div><div class="k-sm">DEL</div>
+        </div>
+
+        <div class="actbar"><span>Next — Category</span><span>→</span></div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="bnote">
+    <p><b>Keypad and page, still two materials.</b> In daylight the keypad is the indigo binding under a cream page; at night it is the darkest surface on screen under an indigo page. The hand still lands on a different material than the number it is typing.</p>
+    <p><b>Nothing is dimmed to fake a dark theme.</b> Cream text sits at full strength; only the hairlines and the muted labels step back. A ledger written at night is still a ledger, not a whisper.</p>
+    <p><b>Interactions are unchanged</b> — annotations 6–11 on frame 02 apply here without exception, which is the test a second theme has to pass.</p>
+    <p class="q">Theme lives in Settings as Washi / Indigo / System. Recording never forces a theme of its own.</p>
+  </div>
+</section>
+
+</div>
+</section>
+
+<!-- ===================== EXPERIMENTAL ===================== -->
+<section class="sec exp">
+  <div class="sec-head">
+    <div>
+      <h2>Experimental — Quick Entry</h2>
+      <p>Four ways to shorten open → + → amount → category → save, plus where the money actually sits. Exploration, not canon; each contradicts the others on purpose.</p>
+    </div>
+    <span class="sec-tag">Not canon</span>
+  </div>
+
+<div class="grid">
+
+<!-- ---------- E1 BOTTOM SHEET ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">E1</span><span class="cell-name">Bottom Sheet</span></div>
+    <span class="cell-tag">One surface</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:200px;right:-13px">32</div>
+    <div class="dot" style="top:334px;left:-13px">33</div>
+    <div class="dot" style="top:490px;right:-13px">34</div>
+    <div class="dot" style="top:652px;left:-13px">35</div>
+    <div class="dot" style="top:738px;right:-13px">36</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Home</span>
+          <span class="act">August 22, 2026</span>
+        </div>
+
+        <div class="bal">
+          <span class="spine">余韻</span>
+          <span class="micro mut">Remaining</span>
+          <div style="margin-top:14px">
+            <span class="cur">Rp</span><span class="balance">4,281,500</span>
+          </div>
+          <div class="bal-foot"><span class="micro mut">All accounts</span></div>
+        </div>
+
+        <div class="figs">
+          <div class="fig"><span class="micro mut">Income · Aug</span><div class="fig-v">+8,500,000</div></div>
+          <div class="fig"><span class="micro mut">Expenses · Aug</span><div class="fig-v">−3,218,500</div></div>
+        </div>
+
+        <div style="height:22px"></div>
+        <div class="colbar"><span>Time</span><span>Today</span><span>Amount</span></div>
+        <div class="lrow">
+          <div class="c1"><span class="c1-t">12:40</span></div>
+          <div class="c2"><div class="row-t">Lunch</div><div class="row-s">Food · Restaurant</div></div>
+          <div class="c3"><span class="amt">−35,000</span></div>
+        </div>
+
+        <div class="scrim"></div>
+
+        <div class="sheet">
+          <div class="handle"><i></i></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 20px 20px">
+            <span class="micro mut">New line · Expense</span>
+            <span><span class="cur">Rp</span><span class="entry-v" style="font-size:38px">35,000</span><span class="caret" style="height:28px"></span></span>
+          </div>
+          <div class="keys compact">
+            <div>1</div><div>2</div><div>3</div>
+            <div>4</div><div>5</div><div>6</div>
+            <div>7</div><div>8</div><div>9</div>
+            <div class="k-sm">000</div><div>0</div><div class="k-sm">DEL</div>
+          </div>
+          <div class="chips">
+            <span class="chip on">Food</span>
+            <span class="chip">Transport</span>
+            <span class="chip">Home</span>
+            <span class="chip">Leisure</span>
+            <span class="chip">Health</span>
+            <span class="chip">Other</span>
+          </div>
+          <div class="actbar" style="height:58px"><span>Save line</span><span>↩</span></div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span class="on"><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">32</span><span><b>Scrim</b> — Home stays visible and dimmed behind the sheet. Tap it, or swipe the sheet down, to dismiss.</span></li>
+    <li><span class="n">33</span><span><b>Amount</b> — live at the top of the sheet, right-aligned to the same column the ledger uses.</span></li>
+    <li><span class="n">34</span><span><b>Compact keypad</b> — 60px rows, still on the indigo binding.</span></li>
+    <li><span class="n">35</span><span><b>Category chips</b> — inline, one row, no second screen. Tap selects.</span></li>
+    <li><span class="n">36</span><span><b>Save line</b> — sheet slides away; the new line appears under TODAY behind it. <span class="q">Cost: the sheet hides the ledger it is writing into.</span></span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- E2 ONE-SCREEN COMPOSE ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">E2</span><span class="cell-name">One-screen Compose</span></div>
+    <span class="cell-tag">Category tap = save</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:160px;right:-13px">37</div>
+    <div class="dot" style="top:330px;left:-13px">38</div>
+    <div class="dot" style="top:566px;right:-13px">39</div>
+    <div class="dot" style="top:722px;left:-13px">40</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">New line</span>
+          <span class="act">Close ✕</span>
+        </div>
+
+        <div class="entry" style="padding:22px 20px 18px">
+          <span class="cur">Rp</span><span class="entry-v" style="font-size:44px">35,000</span><span class="caret" style="height:32px"></span>
+        </div>
+
+        <div class="meta">
+          <span class="micro mut">Expense ▾ · Aug 22 · Cash</span>
+          <span class="micro mut">12:40</span>
+        </div>
+
+        <div class="keys mid">
+          <div>1</div><div>2</div><div>3</div>
+          <div>4</div><div>5</div><div>6</div>
+          <div>7</div><div>8</div><div>9</div>
+          <div class="k-sm">000</div><div>0</div><div class="k-sm">DEL</div>
+        </div>
+
+        <div class="colbar plain"><span>Tap a category to write the line</span><span>6</span></div>
+
+        <div class="grid-cat">
+          <div class="on"><span class="ix">01</span>Food</div>
+          <div><span class="ix">02</span>Transport</div>
+          <div><span class="ix">03</span>Home</div>
+          <div><span class="ix">04</span>Leisure</div>
+          <div><span class="ix">05</span>Health</div>
+          <div><span class="ix">06</span>Other</div>
+        </div>
+
+        <div class="pad" style="margin-top:auto;padding-bottom:20px;padding-top:14px">
+          <span class="micro mut">Two taps from open: amount, then category.</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">37</span><span><b>Amount</b> — top of the page, no step counter, no progress bar.</span></li>
+    <li><span class="n">38</span><span><b>Keypad</b> — 70px rows to leave the category grid room below the fold-free layout.</span></li>
+    <li><span class="n">39</span><span><b>Category tile</b> — the tap that writes the line. There is no Save button anywhere on this screen.</span></li>
+    <li><span class="n">40</span><span><b>Hint</b> — appears for the first three entries, then never again. <span class="q">Cost: a mistyped amount is committed by a category tap.</span></span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- E3 INLINE LEDGER LINE ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">E3</span><span class="cell-name">Inline Ledger Line</span></div>
+    <span class="cell-tag">Written in place</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:262px;left:-13px">41</div>
+    <div class="dot" style="top:300px;right:-13px">42</div>
+    <div class="dot" style="top:600px;left:-13px">43</div>
+    <div class="dot" style="bottom:36px;left:50%;transform:translateX(-50%)">44</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Home</span>
+          <span class="act">Writing…</span>
+        </div>
+
+        <div class="bal" style="padding:18px 20px 20px">
+          <span class="micro mut">Remaining</span>
+          <div style="margin-top:10px">
+            <span class="cur">Rp</span><span class="balance" style="font-size:32px">4,281,500</span>
+          </div>
+        </div>
+
+        <div class="colbar"><span>Time</span><span>Today</span><span>Amount</span></div>
+
+        <div class="draft">
+          <div class="c1"><span class="c1-t">12:40</span></div>
+          <div class="c2">
+            <span class="micro" style="color:var(--verm)">New line</span>
+            <div class="draft-tok">
+              <span class="tok on">Food</span>
+              <span class="tok">Transport</span>
+              <span class="tok">Home</span>
+              <span class="tok">Leisure</span>
+            </div>
+          </div>
+          <div class="c3"><span class="draft-v">−35,000</span><span class="caret sm"></span></div>
+        </div>
+
+        <div class="lrow">
+          <div class="c1"><span class="c1-t">12:40</span></div>
+          <div class="c2"><div class="row-t">Lunch</div><div class="row-s">Food · Restaurant</div></div>
+          <div class="c3"><span class="amt">−35,000</span></div>
+        </div>
+        <div class="lrow">
+          <div class="c1"><span class="c1-t">09:12</span></div>
+          <div class="c2"><div class="row-t">Train</div><div class="row-s">Transport</div></div>
+          <div class="c3"><span class="amt">−8,000</span></div>
+        </div>
+
+        <div class="keys compact" style="margin-top:auto">
+          <div>1</div><div>2</div><div>3</div>
+          <div>4</div><div>5</div><div>6</div>
+          <div>7</div><div>8</div><div>9</div>
+          <div class="k-sm">000</div><div>0</div><div class="k-sm">DEL</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span class="on"><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">41</span><span><b>Draft line</b> — an empty ledger row opens in place above today's entries, ruled in vermillion until it is committed.</span></li>
+    <li><span class="n">42</span><span><b>Amount in column</b> — typed in the amount column itself, already aligned with the lines below it.</span></li>
+    <li><span class="n">43</span><span><b>Keypad</b> — docked; the ledger stays on screen the whole time. Tapping a token commits and the rule turns sumi.</span></li>
+    <li><span class="n">44</span><span><b>Long-press [+]</b> — repeats the last entry as a filled draft (Lunch −35,000, Food) ready to confirm. <span class="q">Cost: the draft row pushes the list down mid-scroll.</span></span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- E4 ACCOUNTS ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">E4</span><span class="cell-name">Accounts</span></div>
+    <span class="cell-tag">Where it sits</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:76px;right:-13px">45</div>
+    <div class="dot" style="top:278px;left:-13px">46</div>
+    <div class="dot" style="top:512px;right:-13px">47</div>
+    <div class="dot" style="top:566px;left:-13px">48</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Accounts</span>
+          <span class="act">Transfer</span>
+        </div>
+
+        <div class="bal" style="padding:20px 20px 22px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span class="micro mut">Available</span>
+            <span class="micro mut">3 accounts</span>
+          </div>
+          <div style="margin-top:12px">
+            <span class="cur">Rp</span><span class="balance" style="font-size:34px">3,281,500</span>
+          </div>
+        </div>
+
+        <div class="colbar plain"><span>Account</span><span>Balance</span></div>
+
+        <div class="acct">
+          <div class="a1"><div class="acct-n">Cash</div><div class="acct-s">Wallet</div></div>
+          <div class="a2"><span class="acct-v">331,500</span></div>
+        </div>
+        <div class="acct">
+          <div class="a1"><div class="acct-n">Bank</div><div class="acct-s">Main · salary in</div></div>
+          <div class="a2"><span class="acct-v">2,650,000</span></div>
+        </div>
+        <div class="acct">
+          <div class="a1"><div class="acct-n">E-wallet</div><div class="acct-s">Transit · small spend</div></div>
+          <div class="a2"><span class="acct-v">300,000</span></div>
+        </div>
+
+        <div style="height:22px"></div>
+        <div class="colbar plain"><span>Reserved</span><span>Warn on use</span></div>
+
+        <div class="acct sealed">
+          <div class="a1">
+            <span class="seal sm"><i></i></span>
+            <div><div class="acct-n">Savings</div><div class="acct-s">Reserved · emergency use</div></div>
+          </div>
+          <div class="a2"><span class="acct-v">1,000,000</span></div>
+        </div>
+
+        <div class="rec">
+          <div class="a1"><span class="micro">Total</span></div>
+          <div class="a2"><span class="acct-v" style="font-size:19px">4,281,500</span></div>
+        </div>
+
+        <div class="pad" style="padding-top:14px">
+          <span class="micro mut">Matches Home · 4,281,500</span>
+        </div>
+
+        <div class="pad" style="margin-top:auto;padding-bottom:22px">
+          <span class="micro mut">Reserved money is shown and warned on, never blocked.</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span class="on"><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">45</span><span><b>Transfer</b> — move between two accounts. Writes one paired line, changes no total; never appears in Insights.</span></li>
+    <li><span class="n">46</span><span><b>Account row</b> — tap → that account's ledger. Long press → set as the default for new entries.</span></li>
+    <li><span class="n">47</span><span><b>Savings, reserved</b> — set below the rule with a seal mark. Excluded from <i>Available</i>, included in the total. Still spendable: choosing it raises a quiet line — <i>reserved — emergency use</i> — and lets the entry through. A warning, never a lock.</span></li>
+    <li><span class="n">48</span><span><b>Total</b> — 331,500 + 2,650,000 + 300,000 + 1,000,000. Reconciles to the Home balance, and says so.</span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- E5 ACCOUNTS — MULTI-BANK ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">E5</span><span class="cell-name">Accounts — Multi-bank</span></div>
+    <span class="cell-tag">Name and role</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:76px;right:-13px">49</div>
+    <div class="dot" style="top:320px;left:-13px">50</div>
+    <div class="dot" style="top:392px;right:-13px">51</div>
+    <div class="dot" style="top:576px;left:-13px">52</div>
+    <div class="dot" style="top:632px;right:-13px">53</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Accounts</span>
+          <span class="act">Add</span>
+        </div>
+
+        <div class="bal" style="padding:20px 20px 22px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span class="micro mut">Available</span>
+            <span class="micro mut">4 accounts</span>
+          </div>
+          <div style="margin-top:12px">
+            <span class="cur">Rp</span><span class="balance" style="font-size:34px">3,281,500</span>
+          </div>
+        </div>
+
+        <div class="colbar plain"><span>Account</span><span>Balance</span></div>
+
+        <div class="acct">
+          <div class="a1"><div class="acct-n">Cash</div><div class="acct-s">In the wallet</div></div>
+          <div class="a2"><span class="acct-v">331,500</span></div>
+        </div>
+        <div class="acct">
+          <div class="a1"><div class="acct-n">Bank — Salary In</div><div class="acct-s">Salary lands here</div></div>
+          <div class="a2"><span class="acct-v">1,650,000</span></div>
+        </div>
+        <div class="acct">
+          <div class="a1"><div class="acct-n">Bank — Daily</div><div class="acct-s">Daily spending</div></div>
+          <div class="a2"><span class="acct-v">1,000,000</span></div>
+        </div>
+        <div class="acct">
+          <div class="a1"><div class="acct-n">E-wallet</div><div class="acct-s">Transit and small spend</div></div>
+          <div class="a2"><span class="acct-v">300,000</span></div>
+        </div>
+
+        <div style="height:20px"></div>
+        <div class="colbar plain"><span>Reserved</span><span>Warn on use</span></div>
+
+        <div class="acct sealed">
+          <div class="a1">
+            <span class="seal sm"><i></i></span>
+            <div><div class="acct-n">Bank — Savings</div><div class="acct-s">Reserved · emergency use</div></div>
+          </div>
+          <div class="a2"><span class="acct-v">1,000,000</span></div>
+        </div>
+
+        <div class="rec">
+          <div class="a1"><span class="micro">Total</span></div>
+          <div class="a2"><span class="acct-v" style="font-size:19px">4,281,500</span></div>
+        </div>
+
+        <div class="pad" style="padding-top:12px">
+          <span class="micro mut">Matches Home · 4,281,500</span>
+        </div>
+
+        <div class="pad" style="margin-top:auto;padding-bottom:22px">
+          <span class="micro mut">Three banks, one book.</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span class="on"><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">49</span><span><b>Add</b> — new account asks for a name and a role line, nothing else. No type enum, no institution list, no logo.</span></li>
+    <li><span class="n">50</span><span><b>Row</b> — tap → that account's ledger, its own running balance. Long press → make it the default for new entries.</span></li>
+    <li><span class="n">51</span><span><b>Role line</b> — free text under the name. Two accounts at the same bank are told apart by what they are <i>for</i>, not by what they are.</span></li>
+    <li><span class="n">52</span><span><b>Reserved</b> — sealed below the rule, out of <i>Available</i>, inside the total. Still spendable: choosing it as a source raises a quiet line — <i>reserved — emergency use</i> — and lets the entry through. A warning, never a lock. <span class="q">The split survives any number of banks.</span></span></li>
+    <li><span class="n">53</span><span><b>Total</b> — 331,500 + 1,650,000 + 1,000,000 + 300,000 + 1,000,000. Available is the same 3,281,500 as E4.</span></li>
+  </ol></div>
+</section>
+
+<!-- ---------- E6 TRANSFER ---------- -->
+<section class="cell">
+  <div class="cell-head">
+    <div class="cell-head-left"><span class="cell-num">E6</span><span class="cell-name">Transfer</span></div>
+    <span class="cell-tag">Between pages</span>
+  </div>
+
+  <div class="device-wrap">
+    <div class="dot" style="top:140px;left:-13px">54</div>
+    <div class="dot" style="top:242px;left:-13px">55</div>
+    <div class="dot" style="top:330px;right:-13px">56</div>
+    <div class="dot" style="top:400px;right:-13px">57</div>
+    <div class="dot" style="top:600px;left:-13px">58</div>
+    <div class="dot" style="top:730px;right:-13px">59</div>
+
+    <div class="device"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+            <path d="M1 3.6A10.6 10.6 0 0 1 15 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3.4 6.4a7 7 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5.9 9.1a3.4 3.4 0 0 1 4.2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          </svg>
+          <span class="battery"><i></i></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="apphead">
+          <span class="ttl">Transfer</span>
+          <span class="act">Cancel ✕</span>
+        </div>
+
+        <div class="pick">
+          <div class="p1"><span class="p-lab">From</span></div>
+          <div class="p2"><div class="p-n">Bank — Salary In</div><div class="p-s">Salary lands here</div></div>
+          <div class="p3"><span class="p-v">1,650,000</span></div>
+        </div>
+
+        <div class="swapmark"><span>⇄</span><span class="p-lab">Swap</span></div>
+
+        <div class="pick">
+          <div class="p1"><span class="p-lab">To</span></div>
+          <div class="p2"><div class="p-n">Bank — Daily</div><div class="p-s">Daily spending</div></div>
+          <div class="p3"><span class="p-v">1,000,000</span></div>
+        </div>
+
+        <div class="bal" style="padding:20px 20px 20px">
+          <span class="micro mut">Amount</span>
+          <div style="margin-top:10px;display:flex;align-items:baseline">
+            <span class="cur">Rp</span><span class="entry-v" style="font-size:38px">500,000</span><span class="caret" style="height:28px"></span>
+          </div>
+        </div>
+
+        <div class="feeline">
+          <div class="f1"><span class="micro">Fee</span></div>
+          <div class="f2"><span class="p-v" style="font-size:15px">2,500</span></div>
+        </div>
+
+        <div class="semantics">
+          <p>A transfer moves value between pages of the book. It is ledger-neutral — the month totals do not change.</p>
+          <p>The fee is real money leaving. It is written as an expense under Fee, debited from Bank — Salary In.</p>
+        </div>
+
+        <div class="inset">
+          <div class="inset-h">
+            <span class="micro">How it lands in History</span>
+            <span class="micro mut">Aug 22</span>
+          </div>
+          <div class="irow">
+            <div class="i1"><span class="swap-i">⇄</span></div>
+            <div class="i2"><div class="i-t">Salary In → Daily</div><div class="i-s">Transfer · not counted</div></div>
+            <div class="i3"><span class="i-a neutral">500,000</span></div>
+          </div>
+          <div class="irow">
+            <div class="i1"><span class="c1-t">12:41</span></div>
+            <div class="i2"><div class="i-t">Transfer fee</div><div class="i-s">Fee</div></div>
+            <div class="i3"><span class="i-a">−2,500</span></div>
+          </div>
+        </div>
+
+        <div class="actbar" style="margin-top:auto"><span>Confirm transfer</span><span>↩</span></div>
+      </div>
+
+      <nav class="nav">
+        <span><i class="mk"></i>Home</span>
+        <span><i class="mk"></i>History</span>
+        <span class="plus"><span class="plus-btn">+</span></span>
+        <span><i class="mk"></i>Insights</span>
+        <span class="on"><i class="mk"></i>Settings</span>
+      </nav>
+      <div class="home-ind"></div>
+    </div></div>
+  </div>
+
+  <div class="legend"><ol>
+    <li><span class="n">54</span><span><b>From</b> — tap → account picker. Its current balance sits in the amount column, already aligned. Picking the reserved account is allowed; it surfaces <i>reserved — emergency use</i> under the row and nothing else.</span></li>
+    <li><span class="n">55</span><span><b>To</b> — same picker, source excluded. <b>⇄ Swap</b> reverses the pair in one tap.</span></li>
+    <li><span class="n">56</span><span><b>Amount</b> — same keypad as Record. Blocked above the source balance.</span></li>
+    <li><span class="n">57</span><span><b>Fee</b> — its own line, editable, defaults to 0. Left at 0 it writes no expense row at all. Fees post to a dedicated <b>Fee</b> category, never folded into Other, so what the banks take stays countable. <span class="q">A seventh category; canon Settings still lists six.</span></span></li>
+    <li><span class="n">58</span><span><b>How it lands</b> — the two lines this writes, shown before committing. The transfer line carries a ⇄ and no sign; it never reaches Insights or the month totals. The fee is an ordinary expense in the Fee category, and does.</span></li>
+    <li><span class="n">59</span><span><b>Confirm</b> — writes both lines at once. Undo removes both. <span class="q">Cost: two rows appear in History for one action the user thinks of as one move.</span></span></li>
+  </ol></div>
+</section>
+
+</div>
+</section>
+
+<!-- ===================== BRAND ===================== -->
+<section class="sec" style="margin-top:104px">
+  <div class="sec-head">
+    <div>
+      <h2>Brand — Splash &amp; Icon</h2>
+      <p>The book, closed. Both compositions are the same three marks: indigo cover, washi title slip, one vermillion stamp. No interactive elements here, so no annotation dots — notes instead.</p>
+    </div>
+    <span class="cell-tag">Cold open · 512 px</span>
+  </div>
+
+<div class="brand-row">
+
+  <!-- ---------- SPLASH ---------- -->
+  <div class="tile">
+    <div class="cell-head">
+      <div class="cell-head-left"><span class="cell-num">S1</span><span class="cell-name">Splash</span></div>
+      <span class="cell-tag">Frozen frame</span>
+    </div>
+
+    <div class="device-wrap">
+      <div class="device"><div class="screen">
+        <div class="island"></div>
+        <div class="splash">
+          <div class="frule"></div>
+          <div class="slip"><span class="spine">余韻</span></div>
+          <div class="stamp"></div>
+          <div class="word">
+            <b>Yoin</b>
+            <i>The trace that remains</i>
+          </div>
+        </div>
+        <div class="home-ind"></div>
+      </div></div>
+    </div>
+
+    <div class="bnote">
+      <p><b>The cover, not a logo screen.</b> Indigo fills the frame, a blind rule sits 26px in like a stamped border, and the washi title slip is pasted at the left third the way a merchant book is labelled on its board. The vermillion stamp lands below it.</p>
+      <p><b>Status bar hidden.</b> A real cold open shows no clock and no battery — only the home indicator survives, drawn by the system. The frame is otherwise the whole screen.</p>
+      <p><b>No spinner, no progress, no motion.</b> Capacitor's splash is one static frozen frame: it cannot animate, and it should not pretend to. It holds for as long as the ledger takes to open, then the page replaces it.</p>
+      <p class="q">余韻 at 34px is the only place the brand is set large. Everywhere else it is a 19px spine mark.</p>
+    </div>
+  </div>
+
+  <!-- ---------- ICON ---------- -->
+  <div class="tile wide">
+    <div class="cell-head">
+      <div class="cell-head-left"><span class="cell-num">S2</span><span class="cell-name">App Icon</span></div>
+      <span class="cell-tag">512 → 60</span>
+    </div>
+
+    <div class="ico ico-512">
+      <div class="rule"></div>
+      <div class="slip"><span class="spine">余韻</span></div>
+      <div class="stamp"></div>
+    </div>
+    <div class="art-cap">
+      <span>512 × 512 · unmasked artwork</span>
+      <span>Variant A</span>
+    </div>
+
+    <div class="walls">
+      <div class="wall lite">
+        <div class="hs">
+          <div class="ico ico-60 m-ios"><div class="rule"></div><div class="slip"><span class="spine">余韻</span></div><div class="stamp"></div></div>
+          <span class="name">Yoin</span>
+          <span class="cap">A · iOS</span>
+        </div>
+        <div class="hs">
+          <div class="ico ico-60 m-and"><div class="rule"></div><div class="slip"><span class="spine">余韻</span></div><div class="stamp"></div></div>
+          <span class="name">Yoin</span>
+          <span class="cap">A · Android</span>
+        </div>
+        <div class="hs">
+          <div class="ico ico-60 plain m-ios"><div class="rule"></div><div class="slip"><span class="spine">余韻</span></div><div class="stamp"></div></div>
+          <span class="name">Yoin</span>
+          <span class="cap">B · iOS</span>
+        </div>
+        <div class="hs">
+          <div class="ico ico-60 plain m-and"><div class="rule"></div><div class="slip"><span class="spine">余韻</span></div><div class="stamp"></div></div>
+          <span class="name">Yoin</span>
+          <span class="cap">B · Android</span>
+        </div>
+      </div>
+
+      <div class="wall dk">
+        <div class="hs">
+          <div class="ico ico-60 m-ios"><div class="rule"></div><div class="slip"><span class="spine">余韻</span></div><div class="stamp"></div></div>
+          <span class="name">Yoin</span>
+          <span class="cap">A · iOS</span>
+        </div>
+        <div class="hs">
+          <div class="ico ico-60 m-and"><div class="rule"></div><div class="slip"><span class="spine">余韻</span></div><div class="stamp"></div></div>
+          <span class="name">Yoin</span>
+          <span class="cap">A · Android</span>
+        </div>
+        <div class="hs">
+          <div class="ico ico-60 plain m-ios"><div class="rule"></div><div class="slip"><span class="spine">余韻</span></div><div class="stamp"></div></div>
+          <span class="name">Yoin</span>
+          <span class="cap">B · iOS</span>
+        </div>
+        <div class="hs">
+          <div class="ico ico-60 plain m-and"><div class="rule"></div><div class="slip"><span class="spine">余韻</span></div><div class="stamp"></div></div>
+          <span class="name">Yoin</span>
+          <span class="cap">B · Android</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bnote">
+      <p><b>One geometry, two variants.</b> <b>A</b> keeps 余韻 on the slip. <b>B</b> drops the characters below 120px and keeps only the three shapes: indigo field, offset cream bar, vermillion square. Both are the same artwork; B is A with the type turned off.</p>
+      <p><b>Ship B.</b> At 60px the characters in A are roughly 8px tall — they read as smudge, not as text, and dirty the one clean edge the icon has. Nothing is lost: at that size the mark is recognised by the offset bar and the red square, never by the reading. Keep A for the 512 store listing and anywhere above 120px.</p>
+      <p><b>The circle mask costs the stamp.</b> Android crops the corners, so the stamp sits at 20% / 18% inset rather than tight to the edge — safe under both masks. The iOS squircle here is a 22.5% border-radius approximation, not the true superellipse.</p>
+      <p class="q">No glyph, no monogram, no pictogram of money. The icon is a book cover seen from above, which is what the app is.</p>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<footer class="footer">
+  <div class="sw-row">
+    <span class="sw"><i style="background:#0F2437"></i><span>Ground 0F2437</span></span>
+    <span class="sw"><i style="background:#173350"></i><span>Cover 173350</span></span>
+    <span class="sw"><i style="background:#1B3A5C"></i><span>Chrome 1B3A5C</span></span>
+    <span class="sw"><i style="background:#F6F1E6"></i><span>Washi F6F1E6</span></span>
+    <span class="sw"><i style="background:#E8DFC9"></i><span>Page E8DFC9</span></span>
+    <span class="sw"><i style="background:#1F1D1A"></i><span>Sumi 1F1D1A</span></span>
+    <span class="sw"><i style="background:#C3432B"></i><span>Seal C3432B</span></span>
+  </div>
+  <div class="foot-t">
+    Zen Kaku Gothic New — UI · Noto Serif JP — 余韻 only · Inter — all amounts, tabular<br>
+    Fixed columns 54 / fluid / 116 · hairlines 1px · vermillion reserved for +, live state, seal
+  </div>
+</footer>
+
+</body>
+</html>

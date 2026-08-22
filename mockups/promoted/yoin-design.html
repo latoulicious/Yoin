@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yoin — Design (Approved)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Serif+JP:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#35312b;
+  --board-line:rgba(255,255,255,.045);
+  --board-ink:#cfc7b6;
+  --board-ink-2:#8d8676;
+
+  --paper:#f5f0e3;
+  --paper-2:#efe8d6;
+  --paper-3:#e8e0cb;
+  --ink:#25221e;
+  --ink-2:#57524a;
+  --ink-3:#8d8578;
+  --rule:#cec5b0;
+  --rule-2:#ddd4bf;
+  --red:#b0342a;
+  --red-soft:rgba(176,52,42,.09);
+
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sans:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  --serif:'Noto Serif JP',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--board);
+  background-image:
+    repeating-linear-gradient(0deg,var(--board-line) 0 1px,transparent 1px 40px),
+    repeating-linear-gradient(90deg,var(--board-line) 0 1px,transparent 1px 40px),
+    radial-gradient(120% 90% at 50% -10%,#403b34,#332f2a 70%);
+  color:var(--board-ink);
+  font-family:var(--mono);
+  font-variant-numeric:tabular-nums;
+  padding:56px 48px 96px;
+}
+
+/* ── board chrome ───────────────────────────────────────── */
+.board-head{max-width:1400px;margin:0 auto 56px;display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap;border-bottom:1px dashed rgba(255,255,255,.14);padding-bottom:22px}
+.board-title{font-family:var(--sans);font-weight:600;font-size:26px;letter-spacing:.02em;color:#efe9db}
+.board-title span{color:var(--red);font-family:var(--serif);font-size:22px;margin-left:10px;letter-spacing:0}
+.board-meta{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--board-ink-2);margin-left:auto;text-align:right;line-height:1.9}
+.approved{
+  display:inline-block;margin-left:14px;vertical-align:6px;
+  font-size:10px;letter-spacing:.24em;color:var(--red);font-family:var(--mono);font-weight:600;
+  border:1.5px solid var(--red);padding:4px 9px;border-radius:2px;
+}
+
+.rail{
+  max-width:1400px;margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,414px);
+  justify-content:center;
+  gap:104px 120px;
+}
+.slot{width:414px}
+.slot-label{display:flex;align-items:baseline;gap:10px;margin:0 0 16px 2px}
+.slot-no{font-size:11px;letter-spacing:.14em;color:var(--red);border:1px solid rgba(176,52,42,.55);padding:2px 7px}
+.slot-name{font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:.04em;color:#e9e2d3}
+.slot-sub{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--board-ink-2)}
+
+/* ── device ─────────────────────────────────────────────── */
+.wrap{position:relative;width:414px}
+.device{
+  position:relative;width:414px;height:868px;padding:12px;
+  background:linear-gradient(160deg,#4a453d,#211f1c 42%,#3a352e);
+  border-radius:52px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06) inset,
+    0 2px 0 rgba(255,255,255,.08) inset,
+    0 34px 60px -18px rgba(0,0,0,.65),
+    0 4px 12px rgba(0,0,0,.4);
+}
+.device::before,.device::after{content:"";position:absolute;background:linear-gradient(90deg,#2a2723,#544d43);border-radius:2px}
+.device::before{left:-3px;top:186px;width:3px;height:56px;box-shadow:0 76px 0 0 #443f38}
+.device::after{right:-3px;top:232px;width:3px;height:92px}
+.screen{
+  position:relative;width:390px;height:844px;border-radius:41px;overflow:hidden;
+  background:var(--paper);
+  background-image:
+    repeating-linear-gradient(0deg,rgba(0,0,0,.014) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.011) 0 1px,transparent 1px 4px),
+    radial-gradient(130% 70% at 15% 0%,#fbf7ec,#f4efe1 55%,#ece5d3);
+  color:var(--ink);
+  display:flex;flex-direction:column;
+  box-shadow:0 0 0 1px rgba(0,0,0,.35);
+}
+
+/* ── status bar ─────────────────────────────────────────── */
+.sbar{height:44px;flex:0 0 44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;position:relative}
+.sbar-time{font-family:var(--sans);font-weight:600;font-size:14px;letter-spacing:.01em}
+.island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:104px;height:26px;border-radius:14px;background:#1b1917}
+.sbar-ico{display:flex;align-items:center;gap:6px}
+.sig{display:flex;align-items:flex-end;gap:2px;height:11px}
+.sig i{display:block;width:3px;background:var(--ink);border-radius:.5px}
+.sig i:nth-child(1){height:4px}
+.sig i:nth-child(2){height:6px}
+.sig i:nth-child(3){height:8.5px}
+.sig i:nth-child(4){height:11px}
+.wifi{width:15px;height:11px;position:relative}
+.wifi i{position:absolute;left:50%;bottom:0;transform:translateX(-50%);border:1.6px solid var(--ink);border-bottom:none;border-radius:50% 50% 0 0}
+.wifi i:nth-child(1){width:15px;height:7.5px;bottom:3.5px;opacity:.9}
+.wifi i:nth-child(2){width:8px;height:4px;bottom:2px}
+.wifi i:nth-child(3){width:2.6px;height:2.6px;border:none;background:var(--ink);border-radius:50%;bottom:0}
+.batt{width:24px;height:11.5px;border:1.3px solid var(--ink);border-radius:3px;position:relative;padding:1.4px}
+.batt::after{content:"";position:absolute;right:-3px;top:3.4px;width:1.8px;height:4px;background:var(--ink);border-radius:0 1px 1px 0}
+.batt i{display:block;height:100%;width:78%;background:var(--ink);border-radius:1px}
+
+/* ── app chrome ─────────────────────────────────────────── */
+.appbar{height:52px;flex:0 0 52px;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px dashed var(--rule)}
+.appbar-t{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+.appbar-s{font-size:10px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase}
+.push{margin-left:auto}
+.icobtn{font-family:var(--mono);font-size:17px;line-height:1;color:var(--ink-2);width:24px;text-align:center}
+
+.seal{
+  width:34px;height:34px;border:1.4px solid var(--red);border-radius:3px;color:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:13px;line-height:1.05;letter-spacing:0;
+  writing-mode:vertical-rl;transform:rotate(-3.5deg);opacity:.92;
+  box-shadow:0 0 0 2.5px var(--paper),0 0 0 3.5px rgba(176,52,42,.18);
+}
+
+.body{flex:1;overflow:hidden;position:relative}
+.pad{padding:0 20px}
+.lbl{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.rule-solid{border-top:1px solid var(--ink);opacity:.75}
+.rule-dbl{border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);height:3px;opacity:.8}
+
+.perf{
+  height:9px;margin:0 -20px;
+  background:radial-gradient(circle at 5px 4.5px,rgba(53,49,43,.55) 0 2.1px,transparent 2.4px) repeat-x;
+  background-size:10px 9px;opacity:.5;
+}
+.tear{height:9px;margin:0 -20px;background:var(--paper-2);
+  -webkit-mask:radial-gradient(circle at 6px -1px,transparent 0 6px,#000 6.4px) repeat-x;
+  mask:radial-gradient(circle at 6px -1px,transparent 0 6px,#000 6.4px) repeat-x;
+  -webkit-mask-size:12px 9px;mask-size:12px 9px}
+.receipt{background:var(--paper-2);margin:0 -20px;padding:16px 20px 0;box-shadow:0 1px 0 rgba(0,0,0,.05) inset}
+
+/* ── register rows ──────────────────────────────────────── */
+.reg{display:flex;align-items:baseline;gap:0}
+.reg .lead{flex:1;border-bottom:1px dotted var(--rule);transform:translateY(-4px);margin:0 9px;min-width:14px}
+.amt{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;min-width:112px;white-space:nowrap}
+.amt.big{font-size:38px;font-weight:500;letter-spacing:-.02em;min-width:0}
+.cur{color:var(--ink-3);font-size:.58em;margin-right:.4em;vertical-align:.12em}
+.pos{font-weight:600}
+.neg{font-weight:400}
+
+.txn{display:flex;align-items:center;height:52px;border-bottom:1px dotted var(--rule-2)}
+.txn .t-main{flex:1;min-width:0}
+.txn .t-name{font-family:var(--sans);font-size:14.5px;font-weight:500;letter-spacing:.005em}
+.txn .t-meta{font-size:10px;letter-spacing:.09em;color:var(--ink-3);text-transform:uppercase;margin-top:3px}
+.txn .amt{font-size:14.5px}
+.code{display:inline-block;border:1px solid var(--rule);color:var(--ink-3);font-size:9px;letter-spacing:.1em;padding:1px 4px;margin-right:7px;vertical-align:1px}
+
+.dayhead{display:flex;align-items:baseline;height:22px;margin-top:14px}
+.dayhead .d{font-size:10px;letter-spacing:.2em;color:var(--ink-2)}
+.dayhead .s{margin-left:auto;font-size:10px;letter-spacing:.1em;color:var(--ink-3)}
+
+/* ── record ─────────────────────────────────────────────── */
+.seg{display:flex;height:40px;border:1px solid var(--rule);margin-top:20px}
+.seg div{flex:1;display:flex;align-items:center;justify-content:center;font-size:10.5px;letter-spacing:.2em;color:var(--ink-3)}
+.seg div+div{border-left:1px dashed var(--rule)}
+.seg .on{color:var(--red);background:var(--red-soft);box-shadow:0 0 0 1px var(--red) inset;font-weight:600}
+
+.entry{margin-top:22px;padding:18px 0 16px;border-top:1px solid var(--ink);border-bottom:1px dashed var(--rule)}
+.entry .row{display:flex;align-items:flex-end;justify-content:flex-end;gap:8px}
+.caret{display:inline-block;width:2px;height:34px;background:var(--red);margin-bottom:4px}
+.entry .foot{display:flex;margin-top:12px}
+.entry .foot span:last-child{margin-left:auto}
+
+.keys{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px dashed var(--rule);border-left:1px dashed var(--rule);margin-top:24px}
+.keys div{height:66px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:400;border-right:1px dashed var(--rule);border-bottom:1px dashed var(--rule)}
+.keys.tight div{height:60px;font-size:21px}
+.keys .k-sm{font-size:12px;letter-spacing:.14em;color:var(--ink-2)}
+
+.cbox{width:28px;height:28px;border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;font-size:9.5px;letter-spacing:.06em;color:var(--ink-3)}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px dashed var(--rule);border-left:1px dashed var(--rule)}
+.cgrid div{height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border-right:1px dashed var(--rule);border-bottom:1px dashed var(--rule);position:relative}
+.cgrid .g-n{font-family:var(--sans);font-size:12.5px;font-weight:500;color:var(--ink-2)}
+.cgrid .on{background:var(--red-soft);box-shadow:0 0 0 1.5px var(--red) inset}
+.cgrid .on .cbox{border-color:var(--red);color:var(--red);background:var(--paper)}
+.cgrid .on .g-n{color:var(--red);font-weight:600}
+.tile-stamp{position:absolute;right:-6px;top:6px;transform:rotate(-8deg);font-size:8px;letter-spacing:.2em;color:var(--red);border:1px solid var(--red);padding:2px 5px;background:var(--paper);font-weight:600}
+.undo{display:flex;align-items:center;height:28px;margin-top:16px;border-top:1px dashed var(--rule);padding-top:10px;font-size:10px;letter-spacing:.12em;color:var(--ink-3);text-transform:uppercase}
+.undo b{color:var(--red);margin-left:auto;font-weight:600;letter-spacing:.2em}
+
+.stamp{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  height:56px;margin-top:20px;color:var(--red);
+  font-size:11.5px;letter-spacing:.26em;font-weight:600;
+  border:1.5px solid var(--red);box-shadow:0 0 0 3px var(--paper),0 0 0 4.5px rgba(176,52,42,.35);
+  background:var(--red-soft);
+}
+
+/* ── history / insights ─────────────────────────────────── */
+.mnav{display:flex;align-items:center;height:44px;border-bottom:1px dashed var(--rule)}
+.mnav .m{flex:1;text-align:center;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.24em}
+.mnav .a{color:var(--ink-2);font-size:15px;width:26px;text-align:center}
+
+.strip{display:flex;padding:14px 0 16px}
+.strip div{flex:1}
+.strip div+div{border-left:1px dotted var(--rule);padding-left:14px}
+.strip .v{font-size:14px;margin-top:5px;font-variant-numeric:tabular-nums}
+
+.sub{display:flex;align-items:center;height:46px;border-bottom:1px dotted var(--rule-2)}
+.sub .s-name{font-family:var(--sans);font-size:13.5px;font-weight:500;width:88px}
+.sub .s-n{font-size:9.5px;color:var(--ink-3);letter-spacing:.1em;width:46px}
+.sub .s-bar{flex:1;height:3px;background:rgba(37,34,30,.09);margin-right:12px;position:relative}
+.sub .s-bar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink);opacity:.45;display:block}
+.sub .amt{font-size:13px;min-width:96px}
+
+.total{display:flex;align-items:baseline;margin-top:6px;padding:14px 0 0}
+.total .t{font-size:10px;letter-spacing:.2em;color:var(--red)}
+.total .amt{font-size:19px;font-weight:600;color:var(--red)}
+.total .lead{flex:1;border-bottom:1px dotted var(--rule);margin:0 9px;transform:translateY(-4px)}
+.total.mute .t{color:var(--ink-2)}
+.total.mute .amt{color:var(--ink);font-size:15px;font-weight:500}
+
+.pattern{margin-top:22px;padding:18px 18px 18px 20px;border:1px dashed var(--rule);background:var(--paper-2);display:flex;gap:14px;align-items:flex-start}
+.pattern p{font-family:var(--serif);font-size:13.5px;line-height:1.75;color:var(--ink-2)}
+.pattern .q{font-size:9.5px;letter-spacing:.2em;color:var(--ink-3);text-transform:uppercase;margin-bottom:8px;font-family:var(--mono)}
+
+/* ── accounts ───────────────────────────────────────────── */
+.sec{font-size:9.5px;letter-spacing:.22em;color:var(--ink-3);text-transform:uppercase;height:22px;display:flex;align-items:flex-end;margin-top:18px}
+.acct{display:flex;align-items:center;height:64px;border-bottom:1px dotted var(--rule-2);gap:13px}
+.acct .a-main{flex:1;min-width:0}
+.acct .a-name{font-family:var(--sans);font-size:14.5px;font-weight:500;display:block}
+.acct .a-meta{font-size:9.5px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase;margin-top:4px;display:block}
+.acct .amt{font-size:15px}
+.vault{background:var(--paper-2);margin:14px -20px 0;padding:0 20px;box-shadow:3px 0 0 var(--red) inset}
+.vault-hatch{height:8px;margin:0 -20px;background:repeating-linear-gradient(-45deg,rgba(176,52,42,.24) 0 2px,transparent 2px 8px)}
+.vault .acct{border-bottom:none}
+.sealed{font-size:8.5px;letter-spacing:.2em;color:var(--red);border:1px solid var(--red);padding:2px 6px;transform:rotate(-3deg);display:inline-block;background:var(--paper);font-weight:600}
+.xfer{display:flex;align-items:center;justify-content:center;gap:10px;height:40px;margin-top:20px;border:1px dashed var(--rule);font-size:10px;letter-spacing:.2em;color:var(--ink-2);text-transform:uppercase}
+
+/* ── transfer ───────────────────────────────────────────── */
+.pick{display:flex;align-items:center;height:54px;padding:0 14px;border:1px solid var(--rule);background:var(--paper-2)}
+.pick .p-lbl{font-size:9px;letter-spacing:.22em;color:var(--ink-3);width:46px;text-transform:uppercase}
+.pick .p-main{flex:1;min-width:0;border-left:1px dotted var(--rule);padding-left:14px}
+.pick .p-name{font-family:var(--sans);font-size:13.5px;font-weight:500;display:block}
+.pick .p-bal{font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);margin-top:3px;display:block}
+.pick .p-arw{color:var(--rule);font-size:13px;margin-left:10px}
+.swap{display:flex;align-items:center;height:28px}
+.swap .line{flex:1;border-top:1px dashed var(--rule)}
+.swap .g{width:28px;height:28px;border:1px solid var(--red);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;margin:0 12px;background:var(--paper)}
+.fee{display:flex;align-items:baseline;height:36px;border-bottom:1px dashed var(--rule)}
+.fee .f-l{font-size:10px;letter-spacing:.2em;color:var(--ink-2);text-transform:uppercase}
+.fee .lead{flex:1;border-bottom:1px dotted var(--rule);margin:0 9px;transform:translateY(-4px)}
+.fee .amt{font-size:14px}
+.tape-note{margin-top:16px;padding:14px 16px;border:1px dashed var(--rule);background:var(--paper-2)}
+.tape-note p{font-size:11.5px;line-height:1.85;color:var(--ink-2)}
+.tape-note p+p{margin-top:8px}
+.tape-note b{color:var(--red);font-weight:600}
+.inset{margin-top:16px;border:1px solid var(--rule);background:var(--paper-2)}
+.inset-h{display:flex;align-items:center;height:26px;padding:0 12px;border-bottom:1px solid var(--rule);font-size:9px;letter-spacing:.2em;color:var(--ink-3);text-transform:uppercase}
+.inset-h span:last-child{margin-left:auto}
+.iline{display:flex;align-items:center;height:42px;padding:0 12px;border-bottom:1px dotted var(--rule-2)}
+.iline:last-child{border-bottom:none}
+.iline .i-main{flex:1;min-width:0}
+.iline .i-name{font-family:var(--sans);font-size:13px;font-weight:500;display:block}
+.iline .i-meta{font-size:9px;letter-spacing:.1em;color:var(--ink-3);text-transform:uppercase;margin-top:3px;display:block}
+.iline .amt{font-size:13px;min-width:92px}
+.amt.neutral{color:var(--ink-3);font-weight:400}
+
+/* ── settings ───────────────────────────────────────────── */
+.opt{display:flex;align-items:center;height:52px;border-bottom:1px dotted var(--rule-2)}
+.opt .o-name{font-family:var(--sans);font-size:14.5px;font-weight:500}
+.opt .o-val{margin-left:auto;font-size:11px;letter-spacing:.08em;color:var(--ink-3)}
+.opt .o-arw{margin-left:12px;color:var(--rule);font-size:13px}
+.colophon{margin-top:26px;display:flex;align-items:center;gap:14px}
+.colophon .c-t{font-size:9.5px;letter-spacing:.16em;color:var(--ink-3);line-height:1.9;text-transform:uppercase}
+
+/* ── bottom nav ─────────────────────────────────────────── */
+.nav{
+  height:78px;flex:0 0 78px;display:flex;align-items:center;padding:0 14px 12px;
+  border-top:1px dashed var(--rule);background:linear-gradient(180deg,rgba(232,224,203,0),rgba(232,224,203,.55));
+}
+.nav a{flex:1;text-align:center;font-size:9px;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase;text-decoration:none;padding-top:6px}
+.nav a.on{color:var(--ink)}
+.nav a.on::after{content:"";display:block;width:24px;height:1.5px;background:var(--red);margin:6px auto 0}
+.nav .plus{
+  flex:0 0 52px;height:52px;border-radius:50%;border:1.5px solid var(--red);color:var(--red);
+  display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;padding:0 0 3px;
+  box-shadow:0 0 0 3px var(--paper),0 0 0 4.5px rgba(176,52,42,.3);
+}
+
+/* ── carbon copy (dark theme) ───────────────────────────── */
+.screen.carbon{
+  --paper:#211e1b;
+  --paper-2:#292521;
+  --paper-3:#302b26;
+  --ink:#e6e0d2;
+  --ink-2:#a9a293;
+  --ink-3:#7a7466;
+  --rule:#4b453c;
+  --rule-2:#3a352e;
+  --red:#d6503f;
+  --red-soft:rgba(214,80,63,.14);
+  background:#211e1b;
+  background-image:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.016) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.013) 0 1px,transparent 1px 4px),
+    radial-gradient(130% 70% at 15% 0%,#2b2723,#221f1c 55%,#1a1815);
+  box-shadow:0 0 0 1px rgba(0,0,0,.6);
+}
+.carbon .island{background:#0d0c0b}
+.carbon .perf{
+  background:radial-gradient(circle at 5px 4.5px,rgba(230,224,210,.55) 0 2.1px,transparent 2.4px) repeat-x;
+  background-size:10px 9px;opacity:.5;
+}
+.carbon .nav{background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.32))}
+.carbon .receipt{box-shadow:0 1px 0 rgba(255,255,255,.035) inset}
+.carbon .cbox{background:rgba(255,255,255,.02)}
+
+/* ── brand band ─────────────────────────────────────────── */
+.band{max-width:1400px;margin:104px auto 52px;border-top:1px dashed rgba(255,255,255,.14);padding-top:30px}
+.band-row{display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap}
+.band-title{font-family:var(--sans);font-size:20px;font-weight:600;letter-spacing:.06em;color:#e9e2d3;text-transform:uppercase}
+.band-note{font-size:11.5px;line-height:1.75;color:var(--board-ink-2);max-width:680px;margin-top:10px}
+.band-note b{color:var(--board-ink);font-weight:500}
+.brand-row{max-width:1400px;margin:0 auto;display:flex;gap:120px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+
+.splash{align-items:center;justify-content:center;position:relative}
+.splash-mark{
+  width:74px;height:74px;border:2px solid var(--red);border-radius:4px;color:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:26px;line-height:1.06;writing-mode:vertical-rl;
+  transform:rotate(-3.5deg);
+  box-shadow:0 0 0 4px var(--paper),0 0 0 5.5px rgba(176,52,42,.2);
+}
+.splash-word{font-family:var(--sans);font-size:30px;font-weight:600;letter-spacing:.3em;margin:38px 0 0 .3em;color:var(--ink)}
+.splash-rule{width:120px;border-top:1px dashed var(--rule);margin:22px 0}
+.splash-whisper{font-size:9.5px;letter-spacing:.32em;color:var(--ink-3);text-transform:uppercase}
+.splash-perf{position:absolute;left:0;right:0;bottom:46px;height:9px;
+  background:radial-gradient(circle at 5px 4.5px,rgba(53,49,43,.42) 0 2.1px,transparent 2.4px) repeat-x;
+  background-size:10px 9px;opacity:.4}
+
+.brand-tile{width:512px}
+.icon{
+  width:1em;height:1em;position:relative;display:flex;align-items:center;justify-content:center;
+  background:var(--paper);
+  background-image:
+    repeating-linear-gradient(0deg,rgba(0,0,0,.014) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.011) 0 1px,transparent 1px 4px),
+    radial-gradient(130% 100% at 22% 0%,#fbf7ec,#f4efe1 58%,#eae2ce);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);
+  flex:0 0 auto;
+}
+.icon .hanko{
+  width:.54em;height:.54em;border-radius:.055em;background:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 0 0 .012em rgba(255,255,255,.22);
+}
+.icon .hanko span{font-family:var(--serif);font-size:.34em;line-height:1;color:#f7f3e8;margin-top:-.02em}
+.icon-512{font-size:512px}
+.mask-sq{border-radius:22.5%}
+.mask-ci{border-radius:50%}
+.icon-cap{display:flex;gap:16px;margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--board-ink-2)}
+.icon-cap b{color:var(--board-ink);font-weight:500}
+.ctx{display:flex;gap:20px;margin-top:34px}
+.wall{flex:1;padding:22px 18px 16px;border-radius:6px}
+.wall.lightw{background:linear-gradient(160deg,#d8d2c6,#b9b2a4)}
+.wall.darkw{background:linear-gradient(160deg,#2a2724,#141311)}
+.wall-row{display:flex;gap:26px;justify-content:center}
+.wall-item{text-align:center}
+.wall-item .icon{box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.32)}
+.app-label{font-family:var(--sans);font-size:11px;letter-spacing:.02em;margin-top:8px}
+.lightw .app-label{color:#2a2724;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.darkw .app-label{color:#f0ece2;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.wall-cap{margin-top:16px;font-size:9px;letter-spacing:.16em;text-transform:uppercase;text-align:center}
+.lightw .wall-cap{color:rgba(42,39,36,.6)}
+.darkw .wall-cap{color:rgba(240,236,226,.5)}
+
+/* ── annotations (board layer) ──────────────────────────── */
+.dot{
+  position:absolute;z-index:5;width:24px;height:24px;border-radius:50%;
+  background:var(--paper);border:1.5px solid var(--red);color:var(--red);
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.dot::after{content:"";position:absolute;top:50%;height:1px;background:rgba(176,52,42,.7)}
+.dot.l::after{left:24px;width:20px}
+.dot.r::after{right:24px;width:20px}
+
+.legend{margin-top:26px;border-top:1px dashed rgba(255,255,255,.16);padding-top:16px}
+.legend li{list-style:none;display:flex;gap:10px;font-size:11.5px;line-height:1.65;color:var(--board-ink);margin-bottom:7px}
+.legend .n{flex:0 0 19px;height:19px;border-radius:50%;border:1px solid rgba(176,52,42,.75);color:#e08a80;display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:1px}
+.legend em{font-style:normal;color:var(--board-ink-2)}
+.legend b{color:#efe9db;font-weight:500}
+
+.board-foot{max-width:1400px;margin:88px auto 0;border-top:1px dashed rgba(255,255,255,.14);padding-top:20px;display:flex;flex-wrap:wrap;gap:36px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--board-ink-2)}
+.board-foot b{color:var(--board-ink);font-weight:500}
+.swatch{display:inline-block;width:11px;height:11px;vertical-align:-1px;margin-right:6px;border:1px solid rgba(255,255,255,.2)}
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <div>
+    <div class="board-title">Yoin — Design <span>余韻</span><span class="approved">APPROVED</span></div>
+    <div class="slot-sub" style="margin-top:8px">Promoted Archival Receipt direction · design reference · 9 screens + brand · 390 × 844</div>
+    <div class="slot-sub" style="margin-top:6px;text-transform:none;letter-spacing:.06em">Exploration boards remain in <b style="color:var(--board-ink)">mockups/</b> — this file is the spec.</div>
+  </div>
+  <div class="board-meta">
+    IBM Plex Mono · IBM Plex Sans · Noto Serif JP<br>
+    Paper #F5F0E3 · Ink #25221E · Hanko #B0342A<br>
+    IDR · Rp · Record. Reflect. Remain.
+  </div>
+</header>
+
+<main class="rail">
+
+<!-- ══════════════ 01 · HOME ══════════════ -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">01</span><span class="slot-name">Home</span><span class="slot-sub">What remains?</span></div>
+  <div class="wrap">
+    <div class="device"><div class="screen">
+
+      <div class="sbar">
+        <span class="sbar-time">9:41</span>
+        <span class="island"></span>
+        <span class="sbar-ico">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="wifi"><i></i><i></i><i></i></span>
+          <span class="batt"><i></i></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="appbar-t">Yoin</span>
+        <span class="appbar-s">Ledger</span>
+        <span class="push"></span>
+        <span class="seal">余韻</span>
+      </div>
+
+      <div class="body pad">
+        <div style="height:20px"></div>
+        <div class="reg" style="font-size:10px;letter-spacing:.2em;color:var(--ink-3)">
+          <span>AUGUST 22, 2026</span><span class="lead"></span><span>SAT · ENTRY 002</span>
+        </div>
+
+        <div style="height:18px"></div>
+        <div class="lbl">Remaining</div>
+        <div class="amt big" style="text-align:left;margin-top:2px"><span class="cur">Rp</span>4,281,500</div>
+
+        <div style="height:12px"></div>
+        <div class="receipt">
+          <div class="lbl" style="margin-bottom:10px">This month · August</div>
+          <div class="reg" style="font-size:12.5px"><span>Income</span><span class="lead"></span><span class="amt pos">+8,500,000</span></div>
+          <div style="height:8px"></div>
+          <div class="reg" style="font-size:12.5px"><span>Expenses</span><span class="lead"></span><span class="amt neg">−3,218,500</span></div>
+          <div style="height:14px"></div>
+          <div class="tear"></div>
+        </div>
+
+        <div style="height:16px"></div>
+        <div class="perf"></div>
+
+        <div class="dayhead"><span class="d">TODAY</span><span class="s">−43,000</span></div>
+        <div class="rule-solid"></div>
+
+        <div class="txn">
+          <span class="t-main">
+            <span class="t-name">Lunch</span>
+            <span class="t-meta" style="display:block"><span class="code">FD</span>Restaurant · 12:40</span>
+          </span>
+          <span class="amt neg">−35,000</span>
+        </div>
+        <div class="txn">
+          <span class="t-main">
+            <span class="t-name">Train</span>
+            <span class="t-meta" style="display:block"><span class="code">TR</span>Transport · 09:12</span>
+          </span>
+          <span class="amt neg">−8,000</span>
+        </div>
+
+        <div style="height:16px"></div>
+        <div class="reg" style="font-size:10px;letter-spacing:.18em;color:var(--ink-2)">
+          <span>ALL ACTIVITY</span><span class="lead"></span><span>→</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#" class="on">Home</a>
+        <a href="#">History</a>
+        <span class="plus">+</span>
+        <a href="#">Insights</a>
+        <a href="#">Settings</a>
+      </nav>
+
+    </div></div>
+
+    <span class="dot l" style="top:204px;left:-42px">1</span>
+    <span class="dot r" style="top:278px;right:-42px">2</span>
+    <span class="dot l" style="top:394px;left:-42px">3</span>
+    <span class="dot r" style="top:501px;right:-42px">4</span>
+    <span class="dot l" style="top:799px;left:141px">5</span>
+  </div>
+
+  <ul class="legend">
+    <li><span class="n">1</span><span>Tap the remaining balance — opens <b>Accounts</b> (frame 05). This is the ledger's entry point into where the money sits; the nav stays five slots.</span></li>
+    <li><span class="n">2</span><span>Tap the month block — opens Insights for August.</span></li>
+    <li><span class="n">3</span><span>Tap a row — transaction detail (edit, delete).</span></li>
+    <li><span class="n">4</span><span>Tap <em>ALL ACTIVITY →</em> — opens History.</span></li>
+    <li><span class="n">5</span><span>Tap <b>+</b> — opens Record with the keypad focused. Long-press repeats the last transaction.</span></li>
+    <li><span class="n">—</span><span><b>Rule:</b> Home answers one question — <em>where am I now</em>. Balance first, month second, today's lines third. No charts.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════ 02 · RECORD ══════════════ -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">02</span><span class="slot-name">Record</span><span class="slot-sub">One screen · category tap saves</span></div>
+  <div class="wrap">
+    <div class="device"><div class="screen">
+
+      <div class="sbar">
+        <span class="sbar-time">9:41</span>
+        <span class="island"></span>
+        <span class="sbar-ico">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="wifi"><i></i><i></i><i></i></span>
+          <span class="batt"><i></i></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="icobtn">×</span>
+        <span class="appbar-t" style="margin-left:4px">Record</span>
+        <span class="push"></span>
+        <span class="appbar-s">Entry 003</span>
+      </div>
+
+      <div class="body pad">
+        <div class="seg" style="margin-top:14px;height:36px">
+          <div class="on">EXPENSE</div>
+          <div>INCOME</div>
+        </div>
+
+        <div class="entry" style="margin-top:16px;padding:14px 0 12px">
+          <div class="row">
+            <span class="cur" style="font-size:18px;color:var(--ink-3);margin-right:auto">Rp</span>
+            <span class="amt" style="font-size:38px;font-weight:500;letter-spacing:-.02em;min-width:0">35,000</span>
+            <span class="caret" style="height:28px"></span>
+          </div>
+          <div class="foot lbl" style="margin-top:8px"><span>Aug 22 2026 · 12:40</span><span>Cash</span></div>
+        </div>
+
+        <div class="keys tight" style="margin-top:16px">
+          <div>1</div><div>2</div><div>3</div>
+          <div>4</div><div>5</div><div>6</div>
+          <div>7</div><div>8</div><div>9</div>
+          <div class="k-sm">000</div><div>0</div><div class="k-sm">DEL</div>
+        </div>
+
+        <div class="reg lbl" style="margin-top:14px"><span>Tap a category to save</span><span class="lead"></span><span>1 tap</span></div>
+        <div style="height:6px"></div>
+        <div class="cgrid">
+          <div class="on"><span class="cbox">FD</span><span class="g-n">Food</span><span class="tile-stamp">SAVING</span></div>
+          <div><span class="cbox">TR</span><span class="g-n">Transport</span></div>
+          <div><span class="cbox">HM</span><span class="g-n">Home</span></div>
+          <div><span class="cbox">LS</span><span class="g-n">Leisure</span></div>
+          <div><span class="cbox">HL</span><span class="g-n">Health</span></div>
+          <div><span class="cbox">OT</span><span class="g-n">Other</span></div>
+        </div>
+
+        <div class="undo"><span>Last · Coffee −12,000</span><b>UNDO</b></div>
+      </div>
+
+      <nav class="nav">
+        <a href="#">Home</a>
+        <a href="#">History</a>
+        <span class="plus">+</span>
+        <a href="#">Insights</a>
+        <a href="#">Settings</a>
+      </nav>
+
+    </div></div>
+
+    <span class="dot l" style="top:82px;left:-42px">6</span>
+    <span class="dot r" style="top:140px;right:-42px">7</span>
+    <span class="dot l" style="top:400px;left:-42px">8</span>
+    <span class="dot r" style="top:602px;right:-42px">9</span>
+    <span class="dot l" style="top:740px;left:-42px">10</span>
+  </div>
+
+  <ul class="legend">
+    <li><span class="n">6</span><span><b>×</b> discards the draft and returns Home. Nothing is written until a category is tapped.</span></li>
+    <li><span class="n">7</span><span>Expense / Income toggle. Expense is the default; this is the only mode switch on the screen.</span></li>
+    <li><span class="n">8</span><span>Keypad. No decimals, no currency picker — amounts are whole rupiah.</span></li>
+    <li><span class="n">9</span><span><b>Tapping a category is the save.</b> The tile stamps and the screen closes. No SAVE button, no confirm step, no second screen.</span></li>
+    <li><span class="n">10</span><span><em>UNDO</em> holds the last write for 5 seconds. <b>Rule:</b> with no confirm step, undo is mandatory — it is the only way back from a mis-tap.</span></li>
+    <li><span class="n">—</span><span><b>Rule:</b> the manual grid offers six categories. <em>Fee</em> is a system category, printed only by transfers (frame 06), never offered here.</span></li>
+    <li><span class="n">—</span><span>Whole flow: open → <b>+</b> → amount → category. Three taps after the amount, and the interface is gone.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════ 03 · HISTORY ══════════════ -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">03</span><span class="slot-name">History</span><span class="slot-sub">What has happened?</span></div>
+  <div class="wrap">
+    <div class="device"><div class="screen">
+
+      <div class="sbar">
+        <span class="sbar-time">9:41</span>
+        <span class="island"></span>
+        <span class="sbar-ico">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="wifi"><i></i><i></i><i></i></span>
+          <span class="batt"><i></i></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="appbar-t">History</span>
+        <span class="push"></span>
+        <span class="appbar-s">Filter</span>
+        <span class="icobtn">≡</span>
+      </div>
+
+      <div class="body pad">
+        <div class="mnav">
+          <span class="a">‹</span><span class="m">AUGUST 2026</span><span class="a">›</span>
+        </div>
+
+        <div class="strip">
+          <div><div class="lbl">In</div><div class="v pos">+8,500,000</div></div>
+          <div><div class="lbl">Out</div><div class="v neg">−3,218,500</div></div>
+          <div><div class="lbl">Net</div><div class="v pos">+5,281,500</div></div>
+        </div>
+
+        <div class="perf"></div>
+
+        <div class="dayhead"><span class="d">AUG 25 · TUE</span><span class="s">+8,500,000</span></div>
+        <div class="rule-solid"></div>
+        <div class="txn">
+          <span class="t-main"><span class="t-name">Salary</span>
+          <span class="t-meta" style="display:block"><span class="code">IN</span>Bank — Salary In · 09:00</span></span>
+          <span class="amt pos">+8,500,000</span>
+        </div>
+
+        <div class="dayhead"><span class="d">AUG 22 · SAT</span><span class="s">−43,000</span></div>
+        <div class="rule-solid"></div>
+        <div class="txn">
+          <span class="t-main"><span class="t-name">Lunch</span>
+          <span class="t-meta" style="display:block"><span class="code">FD</span>Restaurant · 12:40</span></span>
+          <span class="amt neg">−35,000</span>
+        </div>
+        <div class="txn">
+          <span class="t-main"><span class="t-name">Train</span>
+          <span class="t-meta" style="display:block"><span class="code">TR</span>Transport · 09:12</span></span>
+          <span class="amt neg">−8,000</span>
+        </div>
+
+        <div class="dayhead"><span class="d">AUG 21 · FRI</span><span class="s">−148,500</span></div>
+        <div class="rule-solid"></div>
+        <div class="txn">
+          <span class="t-main"><span class="t-name">Cinema</span>
+          <span class="t-meta" style="display:block"><span class="code">LS</span>Leisure · 20:10</span></span>
+          <span class="amt neg">−50,000</span>
+        </div>
+        <div class="txn">
+          <span class="t-main"><span class="t-name">Groceries</span>
+          <span class="t-meta" style="display:block"><span class="code">FD</span>Market · 18:20</span></span>
+          <span class="amt neg">−86,500</span>
+        </div>
+        <div class="txn">
+          <span class="t-main"><span class="t-name">Coffee</span>
+          <span class="t-meta" style="display:block"><span class="code">FD</span>Kiosk · 08:05</span></span>
+          <span class="amt neg">−12,000</span>
+        </div>
+
+        <div class="dayhead"><span class="d">AUG 19 · WED</span><span class="s">−1,200,000</span></div>
+        <div class="rule-solid"></div>
+        <div class="txn">
+          <span class="t-main"><span class="t-name">Rent</span>
+          <span class="t-meta" style="display:block"><span class="code">HM</span>Home · 10:00</span></span>
+          <span class="amt neg">−1,200,000</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#">Home</a>
+        <a href="#" class="on">History</a>
+        <span class="plus">+</span>
+        <a href="#">Insights</a>
+        <a href="#">Settings</a>
+      </nav>
+
+    </div></div>
+
+    <span class="dot r" style="top:82px;right:-42px">11</span>
+    <span class="dot l" style="top:130px;left:-42px">12</span>
+    <span class="dot r" style="top:284px;right:-42px">13</span>
+  </div>
+
+  <ul class="legend">
+    <li><span class="n">11</span><span><em>Filter</em> — narrow by category or account. <b>Rule:</b> the list is always chronological; there is no sort control.</span></li>
+    <li><span class="n">12</span><span><b>‹ ›</b> steps the month. Every day header carries that day's own subtotal.</span></li>
+    <li><span class="n">13</span><span>Tap a row — transaction detail. Swipe left to delete.</span></li>
+    <li><span class="n">—</span><span><b>Rule:</b> every printed subtotal reconciles. Day totals sum to the month strip; the month strip reconciles with Home and Insights.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════ 04 · INSIGHTS ══════════════ -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">04</span><span class="slot-name">Insights</span><span class="slot-sub">What does it leave behind?</span></div>
+  <div class="wrap">
+    <div class="device"><div class="screen">
+
+      <div class="sbar">
+        <span class="sbar-time">9:41</span>
+        <span class="island"></span>
+        <span class="sbar-ico">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="wifi"><i></i><i></i><i></i></span>
+          <span class="batt"><i></i></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="appbar-t">Insights</span>
+        <span class="push"></span>
+        <span class="appbar-s">Register</span>
+      </div>
+
+      <div class="body pad">
+        <div class="mnav">
+          <span class="a">‹</span><span class="m">AUGUST 2026</span><span class="a">›</span>
+        </div>
+
+        <div style="height:16px"></div>
+        <div class="lbl">Remaining after August</div>
+        <div class="amt big" style="text-align:left;margin-top:2px;font-size:32px"><span class="cur">Rp</span>4,281,500</div>
+
+        <div style="height:16px"></div>
+        <div class="perf"></div>
+
+        <div class="reg lbl" style="margin-top:10px"><span>Expenses by category</span><span class="lead"></span><span>56 entries</span></div>
+        <div class="rule-solid" style="margin-top:6px"></div>
+
+        <div class="sub"><span class="s-name">Home</span><span class="s-n">2×</span><span class="s-bar"><i style="width:100%"></i></span><span class="amt">1,200,000</span></div>
+        <div class="sub"><span class="s-name">Food</span><span class="s-n">18×</span><span class="s-bar"><i style="width:96%"></i></span><span class="amt">1,146,500</span></div>
+        <div class="sub"><span class="s-name">Leisure</span><span class="s-n">5×</span><span class="s-bar"><i style="width:29%"></i></span><span class="amt">350,000</span></div>
+        <div class="sub"><span class="s-name">Transport</span><span class="s-n">22×</span><span class="s-bar"><i style="width:24%"></i></span><span class="amt">284,000</span></div>
+        <div class="sub"><span class="s-name">Health</span><span class="s-n">3×</span><span class="s-bar"><i style="width:11%"></i></span><span class="amt">128,000</span></div>
+        <div class="sub"><span class="s-name">Other</span><span class="s-n">5×</span><span class="s-bar"><i style="width:9%"></i></span><span class="amt">102,500</span></div>
+        <div class="sub"><span class="s-name">Fee</span><span class="s-n">3×</span><span class="s-bar"><i style="width:1%"></i></span><span class="amt">7,500</span></div>
+
+        <div class="rule-dbl" style="margin-top:10px"></div>
+        <div class="total"><span class="t">TOTAL EXPENSES</span><span class="lead"></span><span class="amt">−3,218,500</span></div>
+
+        <div class="pattern">
+          <span class="seal" style="flex:0 0 34px">余韻</span>
+          <span>
+            <div class="q">Pattern</div>
+            <p>Food appears 18 times this month.</p>
+          </span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#">Home</a>
+        <a href="#">History</a>
+        <span class="plus">+</span>
+        <a href="#" class="on">Insights</a>
+        <a href="#">Settings</a>
+      </nav>
+
+    </div></div>
+
+    <span class="dot l" style="top:130px;left:-42px">14</span>
+    <span class="dot r" style="top:301px;right:-42px">15</span>
+  </div>
+
+  <ul class="legend">
+    <li><span class="n">14</span><span><b>‹ ›</b> steps the month. Same register grammar as History — no separate chart language.</span></li>
+    <li><span class="n">15</span><span>Tap a subtotal row — History, filtered to that category for the month.</span></li>
+    <li><span class="n">—</span><span><b>Rule:</b> <em>Fee</em> is a category of its own, never folded into <em>Other</em>. A year of transfer fees has to read as one subtotal.</span></li>
+    <li><span class="n">—</span><span><b>Rule:</b> the pattern note states a count and stops. No target, no streak, no verdict, no comparison to last month.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════ 05 · ACCOUNTS ══════════════ -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">05</span><span class="slot-name">Accounts</span><span class="slot-sub">Where it remains</span></div>
+  <div class="wrap">
+    <div class="device"><div class="screen">
+
+      <div class="sbar">
+        <span class="sbar-time">9:41</span>
+        <span class="island"></span>
+        <span class="sbar-ico">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="wifi"><i></i><i></i><i></i></span>
+          <span class="batt"><i></i></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="appbar-t">Accounts</span>
+        <span class="push"></span>
+        <span class="appbar-s">5 tapes</span>
+        <span class="icobtn">≡</span>
+      </div>
+
+      <div class="body pad">
+        <div class="sec" style="margin-top:16px">Spendable</div>
+        <div class="rule-solid" style="margin-top:6px"></div>
+
+        <div class="acct">
+          <span class="cbox">01</span>
+          <span class="a-main"><span class="a-name">Cash</span><span class="a-meta">On hand · last movement Aug 22</span></span>
+          <span class="amt">331,500</span>
+        </div>
+        <div class="acct">
+          <span class="cbox">02</span>
+          <span class="a-main"><span class="a-name">Bank — Salary In</span><span class="a-meta">Salary lands here</span></span>
+          <span class="amt">1,650,000</span>
+        </div>
+        <div class="acct">
+          <span class="cbox">03</span>
+          <span class="a-main"><span class="a-name">Bank — Daily</span><span class="a-meta">Daily spending · cards</span></span>
+          <span class="amt">1,000,000</span>
+        </div>
+        <div class="acct">
+          <span class="cbox">04</span>
+          <span class="a-main"><span class="a-name">E-wallet</span><span class="a-meta">Transport · small purchases</span></span>
+          <span class="amt">300,000</span>
+        </div>
+
+        <div class="rule-solid" style="margin-top:12px"></div>
+        <div class="total mute" style="padding-top:12px">
+          <span class="t">SPENDABLE</span><span class="lead"></span><span class="amt">3,281,500</span>
+        </div>
+
+        <div class="sec">Reserved</div>
+        <div class="rule-solid" style="margin-top:6px"></div>
+
+        <div class="vault" style="margin-top:10px">
+          <div class="vault-hatch"></div>
+          <div class="acct">
+            <span class="cbox">05</span>
+            <span class="a-main"><span class="a-name">Bank — Savings</span><span class="a-meta">Reserved · untouched since Jun 30</span></span>
+            <span class="amt">1,000,000</span>
+          </div>
+          <div style="display:flex;align-items:center;padding-bottom:14px">
+            <span class="sealed">RESERVED</span>
+            <span class="lbl" style="margin-left:12px">Counted, not spent</span>
+          </div>
+          <div class="tear"></div>
+        </div>
+
+        <div class="xfer" style="margin-top:18px"><span>+</span><span>Add account</span></div>
+
+        <div style="height:16px"></div>
+        <div class="rule-dbl"></div>
+        <div class="total" style="padding-top:12px">
+          <span class="t">TOTAL REMAINING</span><span class="lead"></span><span class="amt"><span class="cur">Rp</span>4,281,500</span>
+        </div>
+        <div class="lbl" style="margin-top:9px">Reconciles with Home · spendable + reserved</div>
+      </div>
+
+      <nav class="nav">
+        <a href="#" class="on">Home</a>
+        <a href="#">History</a>
+        <span class="plus">+</span>
+        <a href="#">Insights</a>
+        <a href="#">Settings</a>
+      </nav>
+
+    </div></div>
+
+    <span class="dot r" style="top:82px;right:-42px">16</span>
+    <span class="dot l" style="top:184px;left:-42px">17</span>
+    <span class="dot r" style="top:445px;right:-42px">18</span>
+    <span class="dot l" style="top:553px;left:-42px">19</span>
+    <span class="dot r" style="top:664px;right:-42px">20</span>
+  </div>
+
+  <ul class="legend">
+    <li><span class="n">16</span><span><b>≡</b> — add, rename, reorder, archive. Also reached from Settings › Accounts.</span></li>
+    <li><span class="n">17</span><span>Tap a tape — that account's own ledger and running balance. Reached from Home by tapping the balance (dot 1).</span></li>
+    <li><span class="n">18</span><span><em>SPENDABLE</em> counts the open tapes only; reserved is added back in the total below.</span></li>
+    <li><span class="n">19</span><span><b>Rule:</b> a reserved account is <b>pickable and usable</b>. The seal warns, it never refuses — choosing it anywhere prints <em>reserved — emergency use</em> and lets you continue.</span></li>
+    <li><span class="n">20</span><span><em>Add account</em> — a name and a role line, nothing else. No institution list, no icon set.</span></li>
+    <li><span class="n">—</span><span><b>Rule:</b> accounts are <b>name + role</b>, not a type enum. <em>Bank — Salary In</em> and <em>Bank — Daily</em> are two tapes at one bank; the role line says what each does, so the app never defines what a "bank" is.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════ 06 · TRANSFER ══════════════ -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">06</span><span class="slot-name">Transfer</span><span class="slot-sub">Ledger-neutral · fee is not</span></div>
+  <div class="wrap">
+    <div class="device"><div class="screen">
+
+      <div class="sbar">
+        <span class="sbar-time">9:41</span>
+        <span class="island"></span>
+        <span class="sbar-ico">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="wifi"><i></i><i></i><i></i></span>
+          <span class="batt"><i></i></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="icobtn">‹</span>
+        <span class="appbar-t" style="margin-left:4px">Transfer</span>
+        <span class="push"></span>
+        <span class="appbar-s">Aug 22 2026</span>
+      </div>
+
+      <div class="body pad">
+        <div style="height:14px"></div>
+
+        <div class="pick">
+          <span class="p-lbl">From</span>
+          <span class="p-main"><span class="p-name">Bank — Salary In</span><span class="p-bal">BALANCE 1,650,000 → 1,147,500</span></span>
+          <span class="p-arw">›</span>
+        </div>
+
+        <div class="swap"><span class="line"></span><span class="g">⇄</span><span class="line"></span></div>
+
+        <div class="pick">
+          <span class="p-lbl">To</span>
+          <span class="p-main"><span class="p-name">Bank — Daily</span><span class="p-bal">BALANCE 1,000,000 → 1,500,000</span></span>
+          <span class="p-arw">›</span>
+        </div>
+
+        <div class="entry" style="margin-top:22px;padding:14px 0 12px">
+          <div class="row">
+            <span class="cur" style="font-size:16px;color:var(--ink-3);margin-right:auto">Rp</span>
+            <span class="amt" style="font-size:36px;font-weight:500;letter-spacing:-.02em;min-width:0">500,000</span>
+            <span class="caret" style="height:26px"></span>
+          </div>
+        </div>
+
+        <div class="fee">
+          <span class="f-l">Fee</span><span class="lead"></span><span class="amt neg">−2,500</span>
+        </div>
+
+        <div class="tape-note">
+          <p>A transfer moves value between your own tapes. It is not income and not expense — August stays <b>+8,500,000 / −3,218,500</b>.</p>
+          <p>The fee is money that left. It prints as an expense row in its own category: <b>Fee −2,500</b>.</p>
+        </div>
+
+        <div class="inset">
+          <div class="inset-h"><span>How it lands in History</span><span>Aug 22</span></div>
+          <div class="iline">
+            <span class="i-main">
+              <span class="i-name">Salary In → Daily</span>
+              <span class="i-meta"><span class="code">⇄</span>Transfer · ledger-neutral</span>
+            </span>
+            <span class="amt neutral">500,000</span>
+          </div>
+          <div class="iline">
+            <span class="i-main">
+              <span class="i-name">Transfer fee</span>
+              <span class="i-meta"><span class="code">FE</span>Fee · auto-printed</span>
+            </span>
+            <span class="amt neg">−2,500</span>
+          </div>
+        </div>
+
+        <div class="stamp" style="margin-top:18px">CONFIRM TRANSFER</div>
+      </div>
+
+      <nav class="nav">
+        <a href="#">Home</a>
+        <a href="#">History</a>
+        <span class="plus">+</span>
+        <a href="#">Insights</a>
+        <a href="#">Settings</a>
+      </nav>
+
+    </div></div>
+
+    <span class="dot l" style="top:148px;left:-42px">21</span>
+    <span class="dot r" style="top:190px;right:-42px">22</span>
+    <span class="dot l" style="top:230px;left:-42px">23</span>
+    <span class="dot r" style="top:315px;right:-42px">24</span>
+    <span class="dot l" style="top:368px;left:-42px">25</span>
+    <span class="dot r" style="top:595px;right:-42px">26</span>
+    <span class="dot l" style="top:696px;left:-42px">27</span>
+  </div>
+
+  <ul class="legend">
+    <li><span class="n">21</span><span><em>From</em> picker — every tape. A reserved account appears and can be chosen; it warns rather than refusing.</span></li>
+    <li><span class="n">22</span><span><b>⇄</b> swaps From and To. Both pickers print balance <em>before → after</em>, so the result is visible before confirming.</span></li>
+    <li><span class="n">23</span><span><em>To</em> picker — the same list minus the account already chosen as From.</span></li>
+    <li><span class="n">24</span><span>Amount, same keypad grammar as Record. Capped at the From balance minus the fee.</span></li>
+    <li><span class="n">25</span><span><em>Fee</em> — optional, defaults to 0. Typed here, never hidden inside the amount.</span></li>
+    <li><span class="n">26</span><span><b>Rule:</b> one action prints two rows — the transfer as a signless, category-less neutral line, the fee beneath it as a real expense in <b>Fee</b>.</span></li>
+    <li><span class="n">27</span><span><em>CONFIRM TRANSFER</em> writes both rows atomically. Deleting the transfer later removes its auto-printed fee with it.</span></li>
+    <li><span class="n">—</span><span><b>Rule:</b> transfers are ledger-neutral; fees are not. Moving your own money must never look like spending it, and a fee must never disappear because it arrived attached to a transfer.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════ 07 · SETTINGS ══════════════ -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">07</span><span class="slot-name">Settings</span><span class="slot-sub">How should Yoin behave?</span></div>
+  <div class="wrap">
+    <div class="device"><div class="screen">
+
+      <div class="sbar">
+        <span class="sbar-time">9:41</span>
+        <span class="island"></span>
+        <span class="sbar-ico">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="wifi"><i></i><i></i><i></i></span>
+          <span class="batt"><i></i></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="appbar-t">Settings</span>
+        <span class="push"></span>
+        <span class="appbar-s">v1.0</span>
+      </div>
+
+      <div class="body pad">
+        <div class="sec">Ledger</div>
+        <div class="rule-solid" style="margin-top:6px"></div>
+        <div class="opt"><span class="o-name">Categories</span><span class="o-val">6 + 1 system</span><span class="o-arw">›</span></div>
+        <div class="opt"><span class="o-name">Accounts</span><span class="o-val">5 tapes</span><span class="o-arw">›</span></div>
+
+        <div class="sec">Data</div>
+        <div class="rule-solid" style="margin-top:6px"></div>
+        <div class="opt"><span class="o-name">Export CSV</span><span class="o-val">56 entries</span><span class="o-arw">›</span></div>
+        <div class="opt"><span class="o-name">Backup</span><span class="o-val">Aug 21, 23:04</span><span class="o-arw">›</span></div>
+
+        <div class="sec">Appearance</div>
+        <div class="rule-solid" style="margin-top:6px"></div>
+        <div class="opt"><span class="o-name">Theme</span><span class="o-val">Paper</span><span class="o-arw">›</span></div>
+
+        <div class="sec">About</div>
+        <div class="rule-solid" style="margin-top:6px"></div>
+        <div class="opt"><span class="o-name">About Yoin</span><span class="o-val">余韻</span><span class="o-arw">›</span></div>
+
+        <div class="perf" style="margin-top:22px"></div>
+
+        <div class="colophon">
+          <span class="seal">余韻</span>
+          <span class="c-t">
+            Yoin · 1.0 · local ledger<br>
+            Money passes. Yoin remains.
+          </span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#">Home</a>
+        <a href="#">History</a>
+        <span class="plus">+</span>
+        <a href="#">Insights</a>
+        <a href="#" class="on">Settings</a>
+      </nav>
+
+    </div></div>
+
+    <span class="dot l" style="top:180px;left:-42px">28</span>
+    <span class="dot r" style="top:232px;right:-42px">29</span>
+    <span class="dot l" style="top:330px;left:-42px">30</span>
+    <span class="dot r" style="top:382px;right:-42px">31</span>
+    <span class="dot l" style="top:480px;left:-42px">32</span>
+  </div>
+
+  <ul class="legend">
+    <li><span class="n">28</span><span><em>Categories</em> — add, rename, reorder, archive the six manual categories. Archiving keeps history intact. <em>Fee</em> is the system category and is not editable.</span></li>
+    <li><span class="n">29</span><span><em>Accounts</em> — second entry point to frame 05, alongside tapping the Home balance. The nav stays five slots.</span></li>
+    <li><span class="n">30</span><span><em>Export CSV</em> — the full ledger to the share sheet, in a format that outlives this app.</span></li>
+    <li><span class="n">31</span><span><em>Backup</em> — encrypted file, last run shown. Restore lives on the same screen.</span></li>
+    <li><span class="n">32</span><span><em>Theme</em> — Paper / Carbon (frames 08–09). No accent picker, no theme shop.</span></li>
+    <li><span class="n">—</span><span><b>Rule:</b> currency is IDR only — <b>Rp</b> everywhere, no Currency row. A setting with one option is not a setting; the row returns when a second currency does.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════ 08 · HOME — CARBON ══════════════ -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">08</span><span class="slot-name">Home — Carbon</span><span class="slot-sub">Same sheet, carbon copy</span></div>
+  <div class="wrap">
+    <div class="device"><div class="screen carbon">
+
+      <div class="sbar">
+        <span class="sbar-time">9:41</span>
+        <span class="island"></span>
+        <span class="sbar-ico">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="wifi"><i></i><i></i><i></i></span>
+          <span class="batt"><i></i></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="appbar-t">Yoin</span>
+        <span class="appbar-s">Ledger</span>
+        <span class="push"></span>
+        <span class="seal">余韻</span>
+      </div>
+
+      <div class="body pad">
+        <div style="height:20px"></div>
+        <div class="reg" style="font-size:10px;letter-spacing:.2em;color:var(--ink-3)">
+          <span>AUGUST 22, 2026</span><span class="lead"></span><span>SAT · ENTRY 002</span>
+        </div>
+
+        <div style="height:18px"></div>
+        <div class="lbl">Remaining</div>
+        <div class="amt big" style="text-align:left;margin-top:2px"><span class="cur">Rp</span>4,281,500</div>
+
+        <div style="height:12px"></div>
+        <div class="receipt">
+          <div class="lbl" style="margin-bottom:10px">This month · August</div>
+          <div class="reg" style="font-size:12.5px"><span>Income</span><span class="lead"></span><span class="amt pos">+8,500,000</span></div>
+          <div style="height:8px"></div>
+          <div class="reg" style="font-size:12.5px"><span>Expenses</span><span class="lead"></span><span class="amt neg">−3,218,500</span></div>
+          <div style="height:14px"></div>
+          <div class="tear"></div>
+        </div>
+
+        <div style="height:16px"></div>
+        <div class="perf"></div>
+
+        <div class="dayhead"><span class="d">TODAY</span><span class="s">−43,000</span></div>
+        <div class="rule-solid"></div>
+
+        <div class="txn">
+          <span class="t-main">
+            <span class="t-name">Lunch</span>
+            <span class="t-meta" style="display:block"><span class="code">FD</span>Restaurant · 12:40</span>
+          </span>
+          <span class="amt neg">−35,000</span>
+        </div>
+        <div class="txn">
+          <span class="t-main">
+            <span class="t-name">Train</span>
+            <span class="t-meta" style="display:block"><span class="code">TR</span>Transport · 09:12</span>
+          </span>
+          <span class="amt neg">−8,000</span>
+        </div>
+
+        <div style="height:16px"></div>
+        <div class="reg" style="font-size:10px;letter-spacing:.18em;color:var(--ink-2)">
+          <span>ALL ACTIVITY</span><span class="lead"></span><span>→</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#" class="on">Home</a>
+        <a href="#">History</a>
+        <span class="plus">+</span>
+        <a href="#">Insights</a>
+        <a href="#">Settings</a>
+      </nav>
+
+    </div></div>
+  </div>
+
+  <ul class="legend">
+    <li><span class="n">—</span><span><b>Carbon copy, not dark mode.</b> Identical layout, rhythm and column widths to frame 01 — only the material changes. Interactions and dots 1–5 apply unchanged.</span></li>
+    <li><span class="n">—</span><span><b>Ground</b> warm near-black #211E1B with the same grain; <b>ink</b> becomes pale #E6E0D2 — the pressed-through copy rather than printed ink.</span></li>
+    <li><span class="n">—</span><span><b>Perforations invert.</b> On paper the punched holes read dark; on carbon they read light. Torn edges use the same mask and survive untouched.</span></li>
+    <li><span class="n">—</span><span><b>Hanko red</b> stays the only stamp colour, lifted #B0342A → #D6503F for contrast. No second accent is introduced by the theme.</span></li>
+    <li><span class="n">—</span><span><b>Rule:</b> the theme is one variable block. Dark is not permission to add glow, elevation or borders the paper theme does not have.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════ 09 · RECORD — CARBON ══════════════ -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">09</span><span class="slot-name">Record — Carbon</span><span class="slot-sub">One-screen compose, dark</span></div>
+  <div class="wrap">
+    <div class="device"><div class="screen carbon">
+
+      <div class="sbar">
+        <span class="sbar-time">9:41</span>
+        <span class="island"></span>
+        <span class="sbar-ico">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="wifi"><i></i><i></i><i></i></span>
+          <span class="batt"><i></i></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="icobtn">×</span>
+        <span class="appbar-t" style="margin-left:4px">Record</span>
+        <span class="push"></span>
+        <span class="appbar-s">Entry 003</span>
+      </div>
+
+      <div class="body pad">
+        <div class="seg" style="margin-top:14px;height:36px">
+          <div class="on">EXPENSE</div>
+          <div>INCOME</div>
+        </div>
+
+        <div class="entry" style="margin-top:16px;padding:14px 0 12px">
+          <div class="row">
+            <span class="cur" style="font-size:18px;color:var(--ink-3);margin-right:auto">Rp</span>
+            <span class="amt" style="font-size:38px;font-weight:500;letter-spacing:-.02em;min-width:0">35,000</span>
+            <span class="caret" style="height:28px"></span>
+          </div>
+          <div class="foot lbl" style="margin-top:8px"><span>Aug 22 2026 · 12:40</span><span>Cash</span></div>
+        </div>
+
+        <div class="keys tight" style="margin-top:16px">
+          <div>1</div><div>2</div><div>3</div>
+          <div>4</div><div>5</div><div>6</div>
+          <div>7</div><div>8</div><div>9</div>
+          <div class="k-sm">000</div><div>0</div><div class="k-sm">DEL</div>
+        </div>
+
+        <div class="reg lbl" style="margin-top:14px"><span>Tap a category to save</span><span class="lead"></span><span>1 tap</span></div>
+        <div style="height:6px"></div>
+        <div class="cgrid">
+          <div class="on"><span class="cbox">FD</span><span class="g-n">Food</span><span class="tile-stamp">SAVING</span></div>
+          <div><span class="cbox">TR</span><span class="g-n">Transport</span></div>
+          <div><span class="cbox">HM</span><span class="g-n">Home</span></div>
+          <div><span class="cbox">LS</span><span class="g-n">Leisure</span></div>
+          <div><span class="cbox">HL</span><span class="g-n">Health</span></div>
+          <div><span class="cbox">OT</span><span class="g-n">Other</span></div>
+        </div>
+
+        <div class="undo"><span>Last · Coffee −12,000</span><b>UNDO</b></div>
+      </div>
+
+      <nav class="nav">
+        <a href="#">Home</a>
+        <a href="#">History</a>
+        <span class="plus">+</span>
+        <a href="#">Insights</a>
+        <a href="#">Settings</a>
+      </nav>
+
+    </div></div>
+  </div>
+
+  <ul class="legend">
+    <li><span class="n">—</span><span>Carbon version of frame 02 — the one-screen compose. Dots 6–10 apply identically; theme never alters behaviour.</span></li>
+    <li><span class="n">—</span><span>The keypad's dashed grid holds at hairline weight. Keys get no fill and no raised state — on carbon the grid is the only structure needed.</span></li>
+    <li><span class="n">—</span><span>The committing tile keeps its red inset ring, 14% wash and <em>SAVING</em> stamp; the wash is the same value, just over a dark ground.</span></li>
+    <li><span class="n">—</span><span>The stamp ring is drawn in the paper colour, so on carbon it reads as the sheet showing through — the same object, not a dark-mode substitute.</span></li>
+    <li><span class="n">—</span><span>Frames 03–07 use the identical token swap; they are not redrawn here because the theme adds no new decisions.</span></li>
+  </ul>
+</section>
+
+</main>
+
+<section class="band">
+  <div class="band-row">
+    <div>
+      <div class="band-title">Brand — Splash &amp; Icon</div>
+      <p class="band-note">The two surfaces seen before any data exists. Both carry the same object: <b>a red seal on receipt paper</b>. The splash uses the outlined in-app seal; the icon uses a solid block, because 60px forgives nothing.</p>
+    </div>
+  </div>
+</section>
+
+<div class="brand-row">
+
+  <section class="slot">
+    <div class="slot-label"><span class="slot-no">10</span><span class="slot-name">Splash</span><span class="slot-sub">Cold open · one frozen frame</span></div>
+    <div class="wrap">
+      <div class="device"><div class="screen splash">
+        <span class="splash-mark">余韻</span>
+        <span class="splash-word">YOIN</span>
+        <span class="splash-rule"></span>
+        <span class="splash-whisper">Record · Reflect · Remain</span>
+        <span class="splash-perf"></span>
+      </div></div>
+    </div>
+    <ul class="legend">
+      <li><span class="n">—</span><span><b>Capacitor constraint:</b> the splash is one static frozen frame — no spinner, no progress bar, no fade. Designed as a still, so nothing is lost being one.</span></li>
+      <li><span class="n">—</span><span>Status bar hidden. A cold open shows the brand, not the battery.</span></li>
+      <li><span class="n">—</span><span>The seal is the same object as the one in Home's header, scaled to 74px. One mark, two sizes — no separate launch logo.</span></li>
+      <li><span class="n">—</span><span>Same paper and grain as every screen, so the app never cuts to a different material at launch. Perforation near the bottom implies the tape continues past the frame.</span></li>
+      <li><span class="n">—</span><span>The whisper is optional and safe to drop — the frame still reads with the seal and wordmark alone.</span></li>
+    </ul>
+  </section>
+
+  <section class="brand-tile">
+    <div class="slot-label"><span class="slot-no">11</span><span class="slot-name">App icon</span><span class="slot-sub">512 → 60 · legibility is the test</span></div>
+
+    <div class="icon icon-512"><span class="hanko"><span>余</span></span></div>
+    <div class="icon-cap">
+      <span><b>512 × 512</b> · store artwork, unmasked</span>
+      <span>Paper #F5F0E3 · Hanko #B0342A</span>
+    </div>
+
+    <div class="ctx">
+      <div class="wall lightw">
+        <div class="wall-row">
+          <div class="wall-item">
+            <div class="icon mask-sq" style="font-size:60px"><span class="hanko"><span>余</span></span></div>
+            <div class="app-label">Yoin</div>
+          </div>
+          <div class="wall-item">
+            <div class="icon mask-ci" style="font-size:60px"><span class="hanko"><span>余</span></span></div>
+            <div class="app-label">Yoin</div>
+          </div>
+        </div>
+        <div class="wall-cap">Light wallpaper · 60px · squircle / circle</div>
+      </div>
+
+      <div class="wall darkw">
+        <div class="wall-row">
+          <div class="wall-item">
+            <div class="icon mask-sq" style="font-size:60px"><span class="hanko"><span>余</span></span></div>
+            <div class="app-label">Yoin</div>
+          </div>
+          <div class="wall-item">
+            <div class="icon mask-ci" style="font-size:60px"><span class="hanko"><span>余</span></span></div>
+            <div class="app-label">Yoin</div>
+          </div>
+        </div>
+        <div class="wall-cap">Dark wallpaper · 60px · squircle / circle</div>
+      </div>
+    </div>
+
+    <ul class="legend">
+      <li><span class="n">—</span><span>A solid hanko block with the paper-coloured 余 knocked out, sitting on receipt paper. A stamp on tape, not a logo in a box.</span></li>
+      <li><span class="n">—</span><span>One kanji, not 余韻 — two stacked characters turn to grey mush at 60px; 余 keeps its counters.</span></li>
+      <li><span class="n">—</span><span>The block is ~54% of the canvas and centred, so the silhouette survives both masks and nothing lives in the corners they eat.</span></li>
+      <li><span class="n">—</span><span>No wordmark inside the icon. "Yoin" is the OS label underneath; repeating it in the artwork only costs contrast.</span></li>
+      <li><span class="n">—</span><span>Paper ground rather than a red flood: red-on-paper holds its edge on light and dark wallpaper without a stroke or a shadow.</span></li>
+      <li><span class="n">—</span><span><em>Note:</em> the squircle preview is a 22.5% CSS radius, close to but not exactly Apple's curve. The shipped asset is a plain 1024px square; iOS applies the real mask.</span></li>
+    </ul>
+  </section>
+
+</div>
+
+<footer class="board-foot">
+  <span><b>Type</b> &nbsp;IBM Plex Mono (ledger, amounts, tabular) · IBM Plex Sans (labels, row names) · Noto Serif JP (seal, pattern note)</span>
+  <span><b>Palette</b>
+    <span class="swatch" style="background:#f5f0e3"></span>Paper
+    <span class="swatch" style="background:#efe8d6;margin-left:14px"></span>Tape
+    <span class="swatch" style="background:#25221e;margin-left:14px"></span>Ink
+    <span class="swatch" style="background:#8d8578;margin-left:14px"></span>Ash
+    <span class="swatch" style="background:#b0342a;margin-left:14px"></span>Hanko
+    <span class="swatch" style="background:#211e1b;margin-left:14px"></span>Carbon
+  </span>
+  <span><b>Rules</b> &nbsp;One ink, one stamp colour · amounts right-aligned and tabular · lists over cards · subtotals always reconcile · no gamification, no moralising</span>
+</footer>
+
+</body>
+</html>
