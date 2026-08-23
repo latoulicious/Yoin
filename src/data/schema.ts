@@ -42,4 +42,8 @@ export const upgrades: capSQLiteVersionUpgrade[] = [
         ('Fee','FE',1,7);`,
     ],
   },
+  {
+    toVersion: 2,
+    statements: [`INSERT INTO accounts (name, role_note, reserved) VALUES ('Cash','',0);`],
+  },
 ]

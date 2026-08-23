@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { getDb } from './data/db'
+import { deleteTransaction } from './data/repo'
+import Record, { type SavedEntry } from './screens/Record'
 import { useTheme, type ThemePref } from './theme'
 
 type Screen = 'home' | 'history' | 'record' | 'insights' | 'settings'
@@ -97,9 +100,29 @@ function NavTab({
   )
 }
 
+const UNDO_WINDOW_MS = 5000
+
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
+  const [lastEntry, setLastEntry] = useState<SavedEntry | null>(null)
+  const undoTimer = useRef<number | undefined>(undefined)
   const { pref, setPref, resolved } = useTheme()
+
+  useEffect(() => () => clearTimeout(undoTimer.current), [])
+
+  function handleSaved(entry: SavedEntry) {
+    clearTimeout(undoTimer.current)
+    setLastEntry(entry)
+    setScreen('home')
+    undoTimer.current = window.setTimeout(() => setLastEntry(null), UNDO_WINDOW_MS)
+  }
+
+  async function undo(entry: SavedEntry) {
+    clearTimeout(undoTimer.current)
+    const db = await getDb()
+    await deleteTransaction(db, entry.id)
+    setLastEntry((current) => (current?.id === entry.id ? null : current))
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-paper text-ink">
@@ -120,10 +143,27 @@ export default function App() {
       <main className="flex-1 px-5">
         {screen === 'settings' ? (
           <ThemeSetting pref={pref} setPref={setPref} resolved={resolved} />
+        ) : screen === 'record' ? (
+          <Record onClose={() => setScreen('home')} onSaved={handleSaved} />
         ) : (
           <Placeholder label={SCREEN_LABEL[screen]} />
         )}
       </main>
+
+      {lastEntry && (
+        <div className="mx-5 flex h-[38px] items-center border-t border-dashed border-rule pt-2.5 text-[10px] tracking-[.12em] uppercase text-ink-3">
+          <span>
+            {`Last · ${lastEntry.label} ${lastEntry.kind === 'income' ? '+' : '−'}${lastEntry.amount.toLocaleString('en-US')}`}
+          </span>
+          <button
+            type="button"
+            onClick={() => void undo(lastEntry)}
+            className="ml-auto font-semibold tracking-[.2em] text-hanko"
+          >
+            UNDO
+          </button>
+        </div>
+      )}
 
       <nav className="border-t border-dashed border-rule pb-[env(safe-area-inset-bottom)]">
         <div className="flex h-[78px] items-center px-3.5 pb-3">
