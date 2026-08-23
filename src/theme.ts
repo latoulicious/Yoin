@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core'
+import { StatusBar, Style } from '@capacitor/status-bar'
 import { useEffect, useState } from 'react'
 
 export type ThemePref = 'system' | 'paper' | 'carbon'
@@ -39,6 +41,13 @@ export function useTheme() {
     const root = document.documentElement
     if (resolved === 'carbon') root.setAttribute('data-theme', 'carbon')
     else root.removeAttribute('data-theme')
+    if (!Capacitor.isNativePlatform()) return
+    // read back the just-applied token so the native bar can't drift from index.css
+    const paper = getComputedStyle(root).getPropertyValue('--paper').trim()
+    Promise.all([
+      StatusBar.setStyle({ style: resolved === 'carbon' ? Style.Dark : Style.Light }),
+      StatusBar.setBackgroundColor({ color: paper }),
+    ]).catch(console.warn)
   }, [resolved])
 
   function setPref(next: ThemePref) {
