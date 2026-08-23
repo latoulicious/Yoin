@@ -55,14 +55,19 @@ function signedOf(txn: Transaction): number {
   return txn.kind === 'income' || txn.kind === 'transfer_in' ? txn.amount : -txn.amount
 }
 
+function rowLabel(txn: Transaction): string {
+  if (txn.categoryName !== null) return txn.categoryName
+  if (txn.kind === 'transfer_out') return 'Transfer out'
+  if (txn.kind === 'transfer_in') return 'Transfer in'
+  return 'Uncategorized'
+}
+
 function Row({ txn }: { txn: Transaction }) {
   const value = signedOf(txn)
   return (
     <div className="flex h-[52px] items-center border-b border-dotted border-rule-2">
       <span className="min-w-0 flex-1">
-        <span className="block font-sans text-[14.5px] font-medium">
-          {txn.categoryName ?? 'Uncategorized'}
-        </span>
+        <span className="block font-sans text-[14.5px] font-medium">{rowLabel(txn)}</span>
         <span className="mt-[3px] block text-[10px] tracking-[.09em] uppercase text-ink-3">
           <span className="mr-[7px] inline-block border border-rule px-1 py-px align-[1px] text-[9px] tracking-[.1em]">
             {txn.categoryCode ?? '··'}

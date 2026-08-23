@@ -1,4 +1,4 @@
-import type { Changes, SQLiteDBConnection } from '@capacitor-community/sqlite'
+import type { capSQLiteSet, Changes, SQLiteDBConnection } from '@capacitor-community/sqlite'
 import { persist } from './db'
 
 export type TxnKind = 'expense' | 'income' | 'transfer_out' | 'transfer_in' | 'fee'
@@ -33,6 +33,14 @@ export interface TransactionInput {
   note: string
   occurredAt: string
   transferGroupId?: string | null
+}
+
+export interface TransferInput {
+  fromId: number
+  toId: number
+  amount: number
+  fee: number
+  occurredAt: string
 }
 
 export interface Transaction {
@@ -100,6 +108,9 @@ interface TransactionRow {
 
 const SIGNED_AMOUNT = `CASE WHEN kind IN ('income','transfer_in') THEN amount ELSE -amount END`
 
+const INSERT_TXN = `INSERT INTO transactions (amount, kind, category_id, account_id, note, occurred_at, transfer_group_id)
+   VALUES (?, ?, ?, ?, ?, ?, ?)`
+
 export async function listAccounts(db: SQLiteDBConnection): Promise<Account[]> {
   const rows = await query<AccountRow>(db, 'SELECT id, name, role_note, reserved FROM accounts ORDER BY id')
   return rows.map((r) => ({ id: r.id, name: r.name, roleNote: r.role_note, reserved: r.reserved !== 0 }))
@@ -139,25 +150,62 @@ export async function listCategories(db: SQLiteDBConnection): Promise<Category[]
 }
 
 export async function addTransaction(db: SQLiteDBConnection, input: TransactionInput): Promise<number> {
-  const changes = await write(
-    db,
-    `INSERT INTO transactions (amount, kind, category_id, account_id, note, occurred_at, transfer_group_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [
-      input.amount,
-      input.kind,
-      input.categoryId,
-      input.accountId,
-      input.note,
-      input.occurredAt,
-      input.transferGroupId ?? null,
-    ],
-  )
+  const changes = await write(db, INSERT_TXN, [
+    input.amount,
+    input.kind,
+    input.categoryId,
+    input.accountId,
+    input.note,
+    input.occurredAt,
+    input.transferGroupId ?? null,
+  ])
   return lastId(changes, 'addTransaction')
 }
 
 export async function deleteTransaction(db: SQLiteDBConnection, id: number): Promise<void> {
   await write(db, 'DELETE FROM transactions WHERE id = ?', [id])
+}
+
+export async function addTransferGroup(db: SQLiteDBConnection, input: TransferInput): Promise<string> {
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new Error('addTransferGroup: amount must be positive')
+  }
+  if (!Number.isFinite(input.fee) || input.fee < 0) {
+    throw new Error('addTransferGroup: fee must not be negative')
+  }
+  const feeRows = await query<{ id: number }>(
+    db,
+    `SELECT id FROM categories WHERE code = 'FE' AND system = 1`,
+  )
+  const feeCategoryId = feeRows[0]?.id
+  if (feeCategoryId === undefined) throw new Error('addTransferGroup: Fee category missing')
+
+  const groupId = crypto.randomUUID()
+  const set: capSQLiteSet[] = [
+    {
+      statement: INSERT_TXN,
+      values: [input.amount, 'transfer_out', null, input.fromId, '', input.occurredAt, groupId],
+    },
+    {
+      statement: INSERT_TXN,
+      values: [input.amount, 'transfer_in', null, input.toId, '', input.occurredAt, groupId],
+    },
+  ]
+  if (input.fee > 0) {
+    set.push({
+      statement: INSERT_TXN,
+      values: [input.fee, 'fee', feeCategoryId, input.fromId, '', input.occurredAt, groupId],
+    })
+  }
+
+  // executeSet wraps the set in one transaction, so a half-written transfer can't land.
+  await db.executeSet(set)
+  await persist()
+  return groupId
+}
+
+export async function deleteTransferGroup(db: SQLiteDBConnection, groupId: string): Promise<void> {
+  await write(db, 'DELETE FROM transactions WHERE transfer_group_id = ?', [groupId])
 }
 
 export async function accountBalances(db: SQLiteDBConnection): Promise<AccountBalance[]> {

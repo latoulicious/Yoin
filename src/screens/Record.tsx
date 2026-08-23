@@ -8,7 +8,8 @@ export interface SavedEntry {
   id: number
   label: string
   amount: number
-  kind: Kind
+  kind: Kind | 'transfer'
+  groupId?: string
 }
 
 const KINDS: Kind[] = ['expense', 'income']

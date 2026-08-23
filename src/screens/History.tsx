@@ -3,6 +3,7 @@ import { getDb } from '../data/db'
 import {
   dayGroups,
   deleteTransaction,
+  deleteTransferGroup,
   listAccounts,
   monthTotals,
   type Account,
@@ -62,6 +63,12 @@ function signedOf(txn: Transaction): number {
   return txn.kind === 'income' || txn.kind === 'transfer_in' ? txn.amount : -txn.amount
 }
 
+function rowLabel(txn: Transaction): string {
+  if (txn.categoryName !== null) return txn.categoryName
+  if (txn.kind === 'transfer_out' || txn.kind === 'transfer_in') return KIND_LABEL[txn.kind]
+  return 'Uncategorized'
+}
+
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="mt-2.5 flex items-baseline text-[10px] tracking-[.16em] uppercase text-ink-2">
@@ -99,9 +106,7 @@ function Detail({
         </div>
 
         <div className="mt-2 flex items-end justify-between gap-3">
-          <span className="font-sans text-[15px] font-medium">
-            {txn.categoryName ?? 'Uncategorized'}
-          </span>
+          <span className="font-sans text-[15px] font-medium">{rowLabel(txn)}</span>
           <span className={`${AMOUNT} text-[20px] ${value < 0 ? '' : 'font-semibold'}`}>
             {signedText(value)}
           </span>
@@ -121,7 +126,7 @@ function Detail({
           onClick={onDelete}
           className="mt-4 flex h-10 w-full items-center justify-center border border-hanko text-[10.5px] font-semibold tracking-[.2em] uppercase text-hanko"
         >
-          Delete
+          {txn.transferGroupId === null ? 'Delete' : 'Delete transfer'}
         </button>
       </div>
     </div>
@@ -155,9 +160,10 @@ export default function History() {
     }
   }, [month, version])
 
-  async function remove(id: number) {
+  async function remove(txn: Transaction) {
     const db = await getDb()
-    await deleteTransaction(db, id)
+    if (txn.transferGroupId !== null) await deleteTransferGroup(db, txn.transferGroupId)
+    else await deleteTransaction(db, txn.id)
     setSelected(null)
     setVersion((current) => current + 1)
   }
@@ -238,7 +244,7 @@ export default function History() {
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block font-sans text-[14.5px] font-medium">
-                      {txn.categoryName ?? 'Uncategorized'}
+                      {rowLabel(txn)}
                     </span>
                     <span className="mt-[3px] block text-[10px] tracking-[.09em] uppercase text-ink-3">
                       <span className="mr-[7px] inline-block border border-rule px-1 py-px align-[1px] text-[9px] tracking-[.1em]">
@@ -262,7 +268,7 @@ export default function History() {
           txn={selected}
           accountName={accounts.find((a) => a.id === selected.accountId)?.name ?? '—'}
           onClose={() => setSelected(null)}
-          onDelete={() => void remove(selected.id)}
+          onDelete={() => void remove(selected)}
         />
       )}
     </div>

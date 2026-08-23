@@ -3,12 +3,16 @@ import { getDb, persist } from './db'
 import {
   accountBalances,
   addTransaction,
+  addTransferGroup,
   createAccount,
   dayGroups,
   deleteTransaction,
+  deleteTransferGroup,
   listAccounts,
   listCategories,
   monthTotals,
+  type DayGroup,
+  type Transaction,
 } from './repo'
 
 declare global {
@@ -20,6 +24,7 @@ declare global {
 // 1970 keeps the round-trip in a month the real ledger can never occupy.
 const MONTH = '1970-01'
 const ACCOUNT_NAME = 'devcheck'
+const DEST_NAME = 'devcheck dest'
 
 async function devcheck(): Promise<void> {
   const db = await getDb()
@@ -78,11 +83,39 @@ async function devcheck(): Promise<void> {
   assert(afterDelete.length === 1, `expected 1 day group after delete, got ${afterDelete.length}`)
 
   await deleteTransaction(db, incomeId)
+  await assertTotals(db, { income: 0, expense: 0 })
+
+  const destId = await createAccount(db, { name: DEST_NAME, roleNote: 'temporary', reserved: false })
+  const groupId = await addTransferGroup(db, {
+    fromId: accountId,
+    toId: destId,
+    amount: 2000,
+    fee: 25,
+    occurredAt: `${MONTH}-03T08:00:00`,
+  })
+  const legs = groupRows(await dayGroups(db, MONTH), groupId)
+  assert(legs.length === 3, `expected 3 rows in transfer group, got ${legs.length}`)
+  assert(
+    legs.filter((r) => r.kind === 'fee').length === 1,
+    'expected exactly one fee row in transfer group',
+  )
+  await assertBalance(db, accountId, -2025)
+  await assertBalance(db, destId, 2000)
+  await assertTotals(db, { income: 0, expense: 25 })
+
+  await deleteTransferGroup(db, groupId)
+  const afterGroupDelete = groupRows(await dayGroups(db, MONTH), groupId)
+  assert(
+    afterGroupDelete.length === 0,
+    `expected 0 rows after deleteTransferGroup, got ${afterGroupDelete.length}`,
+  )
+  await assertTotals(db, { income: 0, expense: 0 })
+
   await purge(db)
   const remaining = await listAccounts(db)
   assert(
-    remaining.every((a) => a.id !== accountId),
-    `devcheck account ${accountId} survived cleanup`,
+    remaining.every((a) => a.id !== accountId && a.id !== destId),
+    `devcheck accounts ${accountId}/${destId} survived cleanup`,
   )
 
   console.log('yoin devcheck OK')
@@ -103,9 +136,13 @@ async function assertTotals(db: SQLiteDBConnection, expected: { income: number; 
   )
 }
 
+function groupRows(groups: DayGroup[], groupId: string): Transaction[] {
+  return groups.flatMap((g) => g.rows).filter((r) => r.transferGroupId === groupId)
+}
+
 async function purge(db: SQLiteDBConnection): Promise<void> {
   await db.run('DELETE FROM transactions WHERE substr(occurred_at, 1, 7) = ?', [MONTH])
-  await db.run('DELETE FROM accounts WHERE name = ?', [ACCOUNT_NAME])
+  await db.run('DELETE FROM accounts WHERE name IN (?, ?)', [ACCOUNT_NAME, DEST_NAME])
   await persist()
 }
 

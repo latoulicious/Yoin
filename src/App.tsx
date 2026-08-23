@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { getDb } from './data/db'
-import { deleteTransaction } from './data/repo'
+import { deleteTransaction, deleteTransferGroup } from './data/repo'
+import Accounts from './screens/Accounts'
 import History from './screens/History'
 import Home from './screens/Home'
 import Record, { type SavedEntry } from './screens/Record'
+import Transfer from './screens/Transfer'
 import { useTheme, type ThemePref } from './theme'
 
-type Screen = 'home' | 'history' | 'record' | 'insights' | 'accounts' | 'settings'
+type Screen = 'home' | 'history' | 'record' | 'insights' | 'accounts' | 'transfer' | 'settings'
 
 const SCREEN_LABEL: Record<Screen, string> = {
   home: 'Ledger',
@@ -14,6 +16,7 @@ const SCREEN_LABEL: Record<Screen, string> = {
   record: 'Record',
   insights: 'Insights',
   accounts: 'Accounts',
+  transfer: 'Transfer',
   settings: 'Settings',
 }
 
@@ -118,15 +121,16 @@ export default function App() {
     clearTimeout(undoTimer.current)
     setLastEntry(entry)
     setDataVersion((current) => current + 1)
-    setScreen('home')
+    setScreen(entry.kind === 'transfer' ? 'accounts' : 'home')
     undoTimer.current = window.setTimeout(() => setLastEntry(null), UNDO_WINDOW_MS)
   }
 
   async function undo(entry: SavedEntry) {
     clearTimeout(undoTimer.current)
     const db = await getDb()
-    await deleteTransaction(db, entry.id)
-    setLastEntry((current) => (current?.id === entry.id ? null : current))
+    if (entry.groupId !== undefined) await deleteTransferGroup(db, entry.groupId)
+    else await deleteTransaction(db, entry.id)
+    setLastEntry((current) => (current === entry ? null : current))
     setDataVersion((current) => current + 1)
   }
 
@@ -155,6 +159,10 @@ export default function App() {
           <Home key={dataVersion} onNavigate={setScreen} />
         ) : screen === 'history' ? (
           <History key={dataVersion} />
+        ) : screen === 'accounts' ? (
+          <Accounts key={dataVersion} onTransfer={() => setScreen('transfer')} />
+        ) : screen === 'transfer' ? (
+          <Transfer onClose={() => setScreen('accounts')} onSaved={handleSaved} />
         ) : (
           <Placeholder label={SCREEN_LABEL[screen]} />
         )}
