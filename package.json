@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "postinstall": "node -e \"const{createRequire}=require('node:module'),fs=require('node:fs');const r=createRequire(require.resolve('jeep-sqlite/package.json'));fs.mkdirSync('public/assets',{recursive:true});fs.copyFileSync(r.resolve('sql.js/dist/sql-wasm.wasm'),'public/assets/sql-wasm.wasm')\""
+    "postinstall": "node -e \"const fs=require('node:fs');fs.mkdirSync('public/assets',{recursive:true});fs.copyFileSync(require.resolve('sql.js/dist/sql-wasm.wasm'),'public/assets/sql-wasm.wasm')\""
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.1",
@@ -27,6 +27,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.1.0",
     "oxlint": "^1.75.0",
+    "sql.js": "1.12.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.2.2"
