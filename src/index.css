@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+
+/* subset contains only 余韻 — extend the subset before adding serif glyphs. */
+@font-face {
+  font-family: 'Noto Serif JP';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/noto-serif-jp-subset.woff2') format('woff2');
+}
+
+:root {
+  --paper: #f5f0e3;
+  --paper-2: #efe8d6;
+  --paper-3: #e8e0cb;
+  --ink: #25221e;
+  --ink-2: #57524a;
+  --ink-3: #8d8578;
+  --rule: #cec5b0;
+  --rule-2: #ddd4bf;
+  --red: #b0342a;
+  --red-soft: rgba(176, 52, 42, 0.09);
+}
+
+:root[data-theme="carbon"] {
+  --paper: #211e1b;
+  --paper-2: #292521;
+  --paper-3: #302b26;
+  --ink: #e6e0d2;
+  --ink-2: #a9a293;
+  --ink-3: #7a7466;
+  --rule: #4b453c;
+  --rule-2: #3a352e;
+  --red: #d6503f;
+  --red-soft: rgba(214, 80, 63, 0.14);
+}
+
+/* inline (not plain @theme) so utilities emit var(--paper) at the use site —
+   plain @theme would freeze the Paper values and break the carbon override. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-2: var(--rule-2);
+  --color-hanko: var(--red);
+  --color-hanko-soft: var(--red-soft);
+
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --font-sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Noto Serif JP', serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}

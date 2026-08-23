@@ -1,0 +1,2481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yoin — Quiet Editorial (design.md)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Serif+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   YOIN — Quiet Editorial mockup board
+   Tokens transcribed from design.md (§5 §6 §7 §9 §10 §11 §12 §14)
+   ============================================================ */
+
+/* ---- Board shell (not part of the product design language) ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #D9D7D2;
+  color: #3A3936;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  -webkit-font-smoothing: antialiased;
+}
+.board-head { padding: 48px 48px 32px; }
+.board-mark {
+  font-family: "Noto Serif JP", Georgia, serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: 0.08em;
+  color: #2B2A27;
+}
+.board-title {
+  margin-top: 12px;
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 500;
+  color: #2B2A27;
+}
+.board-sub {
+  margin-top: 8px;
+  max-width: 720px;
+  font-size: 13px;
+  line-height: 20px;
+  color: #6E6B65;
+}
+.board-meta {
+  margin-top: 16px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #85817A;
+}
+.row-label {
+  padding: 0 48px 16px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6E6B65;
+}
+.row-label span { color: #99958E; letter-spacing: 0.04em; text-transform: none; }
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 414px);
+  justify-content: start;
+  align-items: start;
+  column-gap: 56px;
+  row-gap: 64px;
+  padding: 0 48px 64px;
+}
+.col { width: 414px; }
+.screen-name {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-left: 4px;
+}
+.screen-no {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: #8F8B84;
+}
+.screen-title { font-size: 14px; font-weight: 500; color: #2B2A27; }
+.screen-state { font-size: 12px; color: #85817A; }
+
+/* ---- Device ---- */
+.device {
+  width: 414px;
+  padding: 12px;
+  background: #232220;
+  border-radius: 46px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.10), 0 18px 40px rgba(0,0,0,.10);
+}
+.screen {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  border-radius: 34px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  /* Light theme — Paper / Ink */
+  --canvas:  #F4F2ED;
+  --surface: #FAF9F6;
+  --elev:    #FFFFFF;
+  --muted-s: #ECE9E3;
+
+  --c1: #292825;
+  --c2: #68655F;
+  --c3: #96928A;
+  --c4: #B8B4AC;
+
+  --l1: #E8E5DE;
+  --l2: #DDD9D1;
+  --l3: #C8C3BA;
+
+  --accent: #A65A4B;
+  --accent-soft: #E7D3CE;
+
+  --income:  #5F7664;
+  --expense: #946057;
+  --neutral: #77736B;
+
+  background: var(--canvas);
+  color: var(--c1);
+  font-family: "Inter", -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.screen.dark {
+  /* Dark theme — Ink / Ash (not an inversion) */
+  --canvas:  #171716;
+  --surface: #20201E;
+  --elev:    #282724;
+  --muted-s: #242320;
+
+  --c1: #E8E5DE;
+  --c2: #A8A49C;
+  --c3: #716E68;
+  --c4: #53514D;
+
+  --l1: #292824;
+  --l2: #34322E;
+  --l3: #47443F;
+
+  --accent: #C47A68;
+  --accent-soft: #49302A;
+
+  --income:  #91AA96;
+  --expense: #C18A7E;
+  --neutral: #AAA59C;
+}
+
+/* ---- Status bar / home indicator ---- */
+.status {
+  flex: 0 0 auto;
+  height: 44px;
+  padding: 0 28px 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--c1);
+}
+.status-right { display: flex; align-items: center; gap: 6px; }
+.sig { display: flex; align-items: flex-end; gap: 2px; height: 10px; }
+.sig i { display: block; width: 3px; background: var(--c1); border-radius: 1px; }
+.sig i:nth-child(1) { height: 4px; }
+.sig i:nth-child(2) { height: 6px; }
+.sig i:nth-child(3) { height: 8px; }
+.sig i:nth-child(4) { height: 10px; }
+.wifi { width: 16px; height: 12px; color: var(--c1); opacity: .9; }
+.batt {
+  position: relative;
+  width: 22px; height: 11px;
+  border: 1px solid var(--c1);
+  border-radius: 3px;
+  opacity: .85;
+}
+.batt::before {
+  content: ""; position: absolute; left: 1.5px; top: 1.5px;
+  width: 14px; height: 6px; background: var(--c1); border-radius: 1px;
+}
+.batt::after {
+  content: ""; position: absolute; right: -3px; top: 3.5px;
+  width: 2px; height: 4px; background: var(--c1); border-radius: 0 1px 1px 0;
+}
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.pad { padding: 0 24px; }
+.home-bar {
+  flex: 0 0 auto;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.home-bar i {
+  display: block;
+  width: 134px; height: 5px;
+  border-radius: 3px;
+  background: var(--c4);
+}
+
+/* ---- Typography (§9) ---- */
+.t-display { font-size: 48px; line-height: 52px; font-weight: 300; letter-spacing: -0.02em; }
+.t-numeric { font-size: 40px; line-height: 44px; font-weight: 300; letter-spacing: -0.015em; }
+.t-heading { font-size: 28px; line-height: 34px; font-weight: 400; letter-spacing: -0.01em; }
+.t-title   { font-size: 20px; line-height: 26px; font-weight: 500; }
+.t-body    { font-size: 16px; line-height: 24px; }
+.t-label   { font-size: 13px; line-height: 18px; }
+.t-caption { font-size: 12px; line-height: 16px; }
+.serif { font-family: "Noto Serif JP", Georgia, serif; font-weight: 400; }
+.c2 { color: var(--c2); }
+.c3 { color: var(--c3); }
+.c4 { color: var(--c4); }
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0;
+}
+.income  { color: var(--income); }
+.expense { color: var(--expense); }
+
+.eyebrow {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c3);
+}
+.eyebrow-strong { color: var(--c2); }
+
+/* ---- Rules (§12) ---- */
+.rule    { height: 1px; background: var(--l2); border: 0; margin: 0; }
+.rule-sub { height: 1px; background: var(--l1); border: 0; margin: 0; }
+.rule-strong { height: 1px; background: var(--l3); border: 0; margin: 0; }
+
+/* ---- Spacing (§10) ---- */
+.s-xs  { height: 4px; }
+.s-sm  { height: 8px; }
+.s-md  { height: 12px; }
+.s-lg  { height: 16px; }
+.s-xl  { height: 24px; }
+.s-2xl { height: 32px; }
+.s-3xl { height: 48px; }
+.s-4xl { height: 64px; }
+
+/* ---- Journal entries (§18 §19) ---- */
+.entry {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0 14px;
+}
+.entry + .entry { border-top: 1px solid var(--l1); }
+.entry-name { font-size: 16px; line-height: 24px; color: var(--c1); }
+.entry-meta { font-size: 12px; line-height: 16px; color: var(--c3); margin-top: 2px; }
+.entry-amt { font-size: 16px; line-height: 24px; white-space: nowrap; }
+
+.group-head {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 8px;
+}
+
+/* list continues below the fold — the clip is honest, the fade says so */
+.body.has-more::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 48px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0), var(--canvas));
+  pointer-events: none;
+}
+
+.summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+.summary + .summary { border-top: 1px solid var(--l1); }
+
+/* ---- Bottom navigation (§20) ---- */
+.nav {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--l2);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 14px 6px;
+}
+.nav-item {
+  position: relative;
+  flex: 1 1 0;
+  text-align: center;
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c3);
+  padding: 8px 0;
+}
+.nav-item.is-on { color: var(--accent); }
+.nav-fab-wrap { flex: 0 0 auto; width: 76px; display: flex; justify-content: center; position: relative; }
+.fab {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; line-height: 1; font-weight: 300;
+  margin-top: -12px;
+}
+.screen.dark .fab { color: #171716; }
+
+/* ---- Record: segmented toggle, amount, keypad ---- */
+.seg { position: relative; display: flex; gap: 28px; }
+.seg-item {
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c3);
+  padding-bottom: 8px;
+  border-bottom: 1px solid transparent;
+}
+.seg-item.is-on { color: var(--accent); border-bottom-color: var(--accent); }
+
+.amount-line {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.amount-cur { font-size: 24px; line-height: 44px; color: var(--c3); font-weight: 300; }
+.caret {
+  display: inline-block;
+  width: 2px; height: 40px;
+  background: var(--accent);
+  transform: translateY(6px);
+}
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-top: 1px solid var(--l1);
+}
+.field-label { font-size: 13px; line-height: 18px; color: var(--c3); }
+.field-val { font-size: 15px; line-height: 22px; color: var(--c1); display: flex; align-items: center; gap: 10px; }
+.chev { color: var(--c4); font-size: 15px; line-height: 1; }
+
+.keys {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--l1);
+}
+.key {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 400;
+  color: var(--c1);
+  border-bottom: 1px solid var(--l1);
+  font-variant-numeric: tabular-nums;
+}
+.key.dim { color: var(--c3); font-size: 18px; }
+.key svg { width: 22px; height: 16px; }
+
+.btn-primary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+}
+.topbar-act { position: relative; font-size: 15px; color: var(--c2); }
+.topbar-act.accent { color: var(--accent); font-weight: 500; }
+
+/* ---- Category list ---- */
+.cat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--l1);
+  font-size: 16px;
+  color: var(--c1);
+}
+.cat .hint { font-size: 12px; color: var(--c3); }
+.cat.is-on { color: var(--accent); }
+.cat-mark {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 12px;
+  vertical-align: middle;
+}
+.cat-mark.empty { background: transparent; }
+
+/* ---- Insights bars (§19 charts: no chart junk) ---- */
+.bar-row { position: relative; padding: 10px 0; }
+.bar-row + .bar-row { border-top: 1px solid var(--l1); }
+.bar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 15px;
+  line-height: 22px;
+}
+.bar-track { height: 2px; background: var(--l1); }
+.bar-fill { height: 2px; background: var(--expense); opacity: .75; }
+.w100 { width: 100%; }
+.w93  { width: 93%; }
+.w36  { width: 36%; }
+.w25  { width: 25%; }
+.w10  { width: 10%; }
+.w4   { width: 4%; }
+
+.note { position: relative; padding: 10px 0; font-size: 15px; line-height: 22px; color: var(--c2); }
+.note + .note { border-top: 1px solid var(--l1); }
+.note b { font-weight: 500; color: var(--c1); }
+
+/* ---- Settings rows ---- */
+.set {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--l1);
+  font-size: 16px;
+  color: var(--c1);
+}
+.set-val { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--c3); }
+
+/* ---- Annotation dots (overlay only, never structural) ---- */
+.a {
+  position: absolute;
+  z-index: 6;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: "Inter", sans-serif;
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  opacity: .92;
+}
+.a-l   { left: -21px; top: 50%; margin-top: -8px; }
+.a-lt  { left: -21px; top: 4px; }
+.a-r   { right: -21px; top: 50%; margin-top: -8px; }
+.a-rt  { right: -21px; top: 4px; }
+.a-ro  { right: -21px; top: -2px; }
+.a-tl  { left: -6px; top: -14px; }
+.a-fab { left: 50%; margin-left: 14px; top: -22px; }
+.a-nav { top: -12px; right: 4px; }
+
+/* ---- Legend ---- */
+.legend {
+  margin: 18px 0 0;
+  padding: 0 0 0 4px;
+  list-style: none;
+}
+.legend li {
+  display: flex;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4A4844;
+}
+.legend b {
+  flex: 0 0 auto;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: #E7D3CE;
+  border: 1px solid #A65A4B;
+  color: #A65A4B;
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+.legend em { font-style: normal; color: #7C7871; }
+
+/* ============================================================
+   EXPERIMENTAL SECTION — board chrome marks it as exploration.
+   Frame internals still use the same tokens; nothing below is canon.
+   ============================================================ */
+.exp-band {
+  margin: 8px 48px 28px;
+  padding-top: 40px;
+  border-top: 1px dashed #B2AEA7;
+}
+.exp-kicker {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px dashed #A9A49C;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7C7871;
+}
+.exp-title, .brand-title {
+  margin-top: 14px;
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 500;
+  color: #2B2A27;
+}
+.exp-sub, .brand-sub {
+  margin-top: 8px;
+  max-width: 680px;
+  font-size: 13px;
+  line-height: 20px;
+  color: #6E6B65;
+}
+.tag-exp {
+  padding: 1px 6px;
+  border: 1px dashed #A9A49C;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #85817A;
+}
+.side-note {
+  margin-top: 16px;
+  padding: 2px 0 2px 14px;
+  border-left: 1px dashed #B2AEA7;
+  font-size: 12px;
+  line-height: 18px;
+  color: #5C5954;
+}
+.side-note b {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: #85817A;
+  margin-bottom: 3px;
+}
+
+/* ---- Bottom sheet (E1) ---- */
+.dimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: rgba(41, 40, 37, .34);
+}
+.sheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 4;
+  padding: 0 24px 30px;
+  background: var(--surface);
+  border-top: 1px solid var(--l2);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -2px 28px rgba(0,0,0,.07);
+}
+.grabber {
+  width: 36px; height: 4px;
+  margin: 10px auto 0;
+  border-radius: 2px;
+  background: var(--c4);
+}
+
+/* ---- Chips / tokens ---- */
+.chips { position: relative; display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 7px 12px;
+  border: 1px solid var(--l2);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--c2);
+}
+.chip.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.chip.sm { padding: 5px 10px; font-size: 12px; line-height: 16px; }
+
+/* ---- Compact keypad + category grid (E2, E3) ---- */
+.keys.compact .key { height: 52px; }
+.grid-cat {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--l1);
+}
+.gcell {
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: var(--c1);
+  border-bottom: 1px solid var(--l1);
+}
+.gcell.is-on { color: var(--accent); background: var(--accent-soft); }
+
+/* ---- Inline ledger line (E3) ---- */
+.entry.composing { position: relative; }
+.entry.composing::before {
+  content: "";
+  position: absolute;
+  left: -12px; top: 12px; bottom: 12px;
+  width: 2px;
+  background: var(--accent);
+}
+.caret.sm { height: 22px; transform: translateY(4px); }
+
+.body.stack { display: flex; flex-direction: column; }
+.grow { flex: 1 1 auto; }
+
+/* ---- Accounts (E4) ---- */
+.reserve {
+  position: relative;
+  padding: 20px;
+  border-radius: 8px;
+  background: var(--muted-s);
+}
+.neutral { color: var(--neutral); }
+.mark {
+  display: inline-block;
+  width: 16px;
+  margin-right: 8px;
+  color: var(--c3);
+  font-size: 14px;
+}
+.reserve .entry:first-of-type { padding-top: 0; }
+.reserve .entry:last-of-type { padding-bottom: 0; }
+.total-row {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 14px 0 0;
+}
+
+/* ============================================================
+   BRAND — splash & icon. Canon: this is the shipped identity.
+   ============================================================ */
+.brand-band {
+  margin: 8px 48px 28px;
+  padding-top: 40px;
+  border-top: 1px solid #B2AEA7;
+}
+.brand-kicker {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid #A9A49C;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7C7871;
+}
+
+/* ---- Splash (cold open) ---- */
+.body.splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.splash-mark {
+  font-size: 46px;
+  line-height: 58px;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  color: var(--c1);
+}
+.splash-name {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.36em;
+  text-indent: 0.36em;
+  text-transform: uppercase;
+  color: var(--c3);
+}
+.splash-foot {
+  position: absolute;
+  left: 0; right: 0; bottom: 44px;
+  letter-spacing: 0.06em;
+}
+
+/* ---- App icon ---- */
+.brand-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 56px;
+  padding: 0 48px 64px;
+}
+.icon-art {
+  position: relative;
+  width: var(--s);
+  height: var(--s);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(158deg, #F8F6F2 0%, #F2EFE9 58%, #E9E5DD 100%);
+}
+.icon-art .glyph {
+  font-family: "Noto Serif JP", Georgia, serif;
+  font-weight: 400;
+  font-size: calc(var(--s) * 0.46);
+  line-height: 1;
+  color: #292825;
+  transform: translate(calc(var(--s) * -0.035), calc(var(--s) * -0.055));
+}
+.icon-art .seal {
+  position: absolute;
+  right: calc(var(--s) * 0.17);
+  bottom: calc(var(--s) * 0.17);
+  width: calc(var(--s) * 0.125);
+  height: calc(var(--s) * 0.125);
+  border-radius: calc(var(--s) * 0.014);
+  background: #A65A4B;
+}
+.icon-big {
+  --s: 512px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 18px 40px rgba(0,0,0,.10);
+}
+.icon-sm { --s: 60px; }
+.mask-ios   { border-radius: calc(var(--s) * 0.2237); overflow: hidden; }
+.mask-round { border-radius: 50%; overflow: hidden; }
+
+.strip { display: flex; gap: 14px; }
+.strip + .strip { margin-top: 18px; }
+.strip-cap {
+  margin: 0 0 10px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #85817A;
+}
+.wall {
+  width: 104px;
+  padding: 20px 0 15px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+.wall.light { background: linear-gradient(165deg, #E9E6DF 0%, #D2CEC5 100%); }
+.wall.dark  { background: linear-gradient(165deg, #262523 0%, #0E0E0D 100%); }
+.wall-label { font-size: 11px; line-height: 14px; }
+.wall.light .wall-label { color: #35342F; }
+.wall.dark  .wall-label { color: #E8E5DE; }
+.brand-cap {
+  margin-top: 14px;
+  max-width: 512px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #5C5954;
+}
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <div class="board-mark">余韻</div>
+  <h1 class="board-title">Yoin — Quiet Editorial (design.md)</h1>
+  <p class="board-sub">A personal financial journal. Editorial composition: hierarchy from typography, whitespace and hairline rules — not cards or elevation. Tokens transcribed verbatim from design.md §5–§14. Numbered dots mark interactive elements; the legend under each frame names the action.</p>
+  <div class="board-meta">8 frames · 390 × 844 · Light: paper / ink · Dark: ink / ash</div>
+</header>
+
+<div class="row-label">Light theme — paper / ink <span>· 01–06</span></div>
+<div class="row">
+
+  <!-- ============ 1 · HOME ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">01</span><span class="screen-title">Home</span><span class="screen-state">What remains?</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="s-sm"></div>
+          <div class="serif t-title" style="letter-spacing:.1em">余韻</div>
+
+          <div class="s-3xl"></div>
+
+          <div class="group-head" style="padding-bottom:0">
+            <div class="eyebrow eyebrow-strong">August 22, 2026</div>
+            <span class="a a-r">1</span>
+          </div>
+
+          <div class="s-lg"></div>
+          <div class="t-numeric num">Rp 4,281,500</div>
+          <div class="s-xs"></div>
+          <div class="t-caption c3">remaining</div>
+
+          <div class="s-2xl"></div>
+          <hr class="rule">
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Today</div>
+          <div class="s-md"></div>
+
+          <div class="entry">
+            <span class="a a-r">2</span>
+            <div>
+              <div class="entry-name">Lunch</div>
+              <div class="entry-meta">Restaurant · 12:40</div>
+            </div>
+            <div class="entry-amt num expense">−35,000</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">Train</div>
+              <div class="entry-meta">Transport · 09:12</div>
+            </div>
+            <div class="entry-amt num expense">−8,000</div>
+          </div>
+
+          <div class="s-xl"></div>
+          <hr class="rule">
+          <div class="s-xl"></div>
+
+          <div class="group-head" style="padding-bottom:0">
+            <div class="eyebrow">This month</div>
+            <span class="a a-r">3</span>
+          </div>
+          <div class="s-md"></div>
+
+          <div class="summary">
+            <div class="t-body c2">Income</div>
+            <div class="t-body num income">+8,500,000</div>
+          </div>
+          <div class="summary">
+            <div class="t-body c2">Expenses</div>
+            <div class="t-body num expense">−3,218,500</div>
+          </div>
+
+          <div class="s-4xl"></div>
+          <div class="t-caption c4 serif" style="letter-spacing:.06em">Money passes. Yoin remains.</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item is-on">Home</div>
+        <div class="nav-item">History<span class="a a-nav">5</span></div>
+        <div class="nav-fab-wrap"><span class="a a-fab">4</span><div class="fab">+</div></div>
+        <div class="nav-item">Insights</div>
+        <div class="nav-item">Settings<span class="a a-nav">6</span></div>
+      </nav>
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Date header — tap to move to another day or month.</span></li>
+      <li><b>2</b><span>Entry row — tap opens the transaction detail; swipe left to edit or delete.</span></li>
+      <li><b>3</b><span>“This month” block — tap opens Insights for August 2026.</span></li>
+      <li><b>4</b><span>+ — primary action, opens Record (accent is reserved for this). <em>Frame 02</em></span></li>
+      <li><b>5</b><span>History tab — full chronological record. <em>Frame 04</em></span></li>
+      <li><b>6</b><span>Settings tab — categories, accounts, export, backup. <em>Frame 06</em></span></li>
+    </ol>
+  </div>
+
+  <!-- ============ 2 · RECORD (amount) ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">02</span><span class="screen-title">Record</span><span class="screen-state">amount / keypad</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="topbar">
+            <div class="topbar-act">Cancel<span class="a a-rt">6</span></div>
+            <div class="topbar-act accent">Next<span class="a a-rt">5</span></div>
+          </div>
+
+          <div class="s-lg"></div>
+
+          <div class="seg">
+            <span class="a a-r">1</span>
+            <div class="seg-item is-on">Expense</div>
+            <div class="seg-item">Income</div>
+          </div>
+
+          <div class="s-3xl"></div>
+
+          <div class="eyebrow">Amount</div>
+          <div class="s-md"></div>
+          <div class="amount-line">
+            <span class="amount-cur">Rp</span>
+            <span class="t-numeric num">35,000</span>
+            <span class="caret"></span>
+          </div>
+
+          <div class="s-2xl"></div>
+
+          <div class="field">
+            <span class="a a-r">4</span>
+            <div class="field-label">Date</div>
+            <div class="field-val"><span class="num">August 22, 2026 · 12:40</span><span class="chev">›</span></div>
+          </div>
+          <div class="field">
+            <div class="field-label">Account</div>
+            <div class="field-val">Cash<span class="chev">›</span></div>
+          </div>
+          <div class="field">
+            <div class="field-label">Note</div>
+            <div class="field-val c3">Optional<span class="chev">›</span></div>
+          </div>
+
+          <div class="s-xl"></div>
+        </div>
+
+        <div class="keys">
+          <span class="a a-lt">2</span>
+          <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+          <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+          <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+          <div class="key dim">000</div>
+          <div class="key">0</div>
+          <div class="key dim" style="position:relative">
+            <span class="a a-r">3</span>
+            <svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+              <path d="M7 1.5h13.2v13H7L1.2 8z"/><path d="M11 5.5l5 5M16 5.5l-5 5"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="pad">
+          <div class="s-xl"></div>
+          <div class="t-caption c4">Capture first. Understand later.</div>
+        </div>
+      </div>
+
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Toggle expense / income — selected state carries the accent underline.</span></li>
+      <li><b>2</b><span>Keypad enters the amount directly; no field focus step.</span></li>
+      <li><b>3</b><span>Delete last digit.</span></li>
+      <li><b>4</b><span>Date, account, note — tap to change; all pre-filled so they can be skipped.</span></li>
+      <li><b>5</b><span>Next — goes to category select. <em>Frame 03</em></span></li>
+      <li><b>6</b><span>Cancel — discards the entry and returns Home.</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ 3 · RECORD (category) ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">03</span><span class="screen-title">Record</span><span class="screen-state">category select</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="topbar">
+            <div class="topbar-act">‹ Back<span class="a a-rt">1</span></div>
+            <div class="topbar-act c3">Step 2 of 2</div>
+          </div>
+
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Expense</div>
+          <div class="s-md"></div>
+          <div class="amount-line">
+            <span class="amount-cur">Rp</span>
+            <span class="t-numeric num">35,000</span>
+          </div>
+          <div class="s-sm"></div>
+          <div class="t-caption c3 num">August 22, 2026 · 12:40 · Cash</div>
+
+          <div class="s-2xl"></div>
+          <hr class="rule">
+          <div class="s-xl"></div>
+
+          <div class="group-head" style="padding-bottom:0">
+            <div class="eyebrow">Category</div>
+            <span class="a a-r">2</span>
+          </div>
+          <div class="s-sm"></div>
+
+          <div class="cat is-on">
+            <span class="a a-r">3</span>
+            <div><span class="cat-mark"></span>Food</div>
+            <div class="hint num">used 18× this month</div>
+          </div>
+          <div class="cat">
+            <div><span class="cat-mark empty"></span>Transport</div>
+            <div class="hint num">12×</div>
+          </div>
+          <div class="cat">
+            <div><span class="cat-mark empty"></span>Home</div>
+            <div class="hint num">3×</div>
+          </div>
+          <div class="cat">
+            <div><span class="cat-mark empty"></span>Leisure</div>
+            <div class="hint num">4×</div>
+          </div>
+          <div class="cat">
+            <div><span class="cat-mark empty"></span>Health</div>
+            <div class="hint num">1×</div>
+          </div>
+          <div class="cat" style="border-bottom-color:transparent">
+            <div><span class="cat-mark empty"></span>Other</div>
+            <div class="hint num">2×</div>
+          </div>
+
+          <div class="s-2xl"></div>
+          <div class="t-caption c3">Choosing a category saves the record and returns Home.</div>
+          <div class="s-xl"></div>
+          <div class="btn-primary">Save<span class="a a-ro">4</span></div>
+        </div>
+      </div>
+
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Back — returns to the amount keypad, amount kept. <em>Frame 02</em></span></li>
+      <li><b>2</b><span>Category list — six fixed categories, edited in Settings.</span></li>
+      <li><b>3</b><span>Tap a category — saves the record and returns Home immediately (selected state shown).</span></li>
+      <li><b>4</b><span>Save — same commit for users who prefer an explicit confirm.</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ 4 · HISTORY ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">04</span><span class="screen-title">History</span><span class="screen-state">What has happened?</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="s-md"></div>
+          <div class="t-heading serif">History</div>
+
+          <div class="s-xl"></div>
+
+          <div class="group-head">
+            <div style="display:flex;align-items:baseline;gap:20px;position:relative">
+              <span class="a" style="left:-21px;top:0">1</span>
+              <span class="c3" style="font-size:18px">‹</span>
+              <span class="eyebrow eyebrow-strong">August 2026</span>
+              <span class="c3" style="font-size:18px;position:relative">›<span class="a" style="right:-21px;top:0">2</span></span>
+            </div>
+          </div>
+          <hr class="rule">
+
+          <div class="s-lg"></div>
+
+          <div class="group-head">
+            <div class="eyebrow">August 25</div>
+            <div class="t-caption num c3">+8,500,000</div>
+          </div>
+          <div class="entry" style="padding-top:0">
+            <span class="a a-r">3</span>
+            <div>
+              <div class="entry-name">Salary</div>
+              <div class="entry-meta">Other · 08:00 · scheduled</div>
+            </div>
+            <div class="entry-amt num income">+8,500,000</div>
+          </div>
+
+          <div class="s-sm"></div>
+          <hr class="rule-sub">
+          <div class="s-sm"></div>
+
+          <div class="group-head">
+            <div class="eyebrow">August 22</div>
+            <div class="t-caption num c3">−43,000</div>
+          </div>
+          <div class="entry" style="padding-top:0">
+            <div>
+              <div class="entry-name">Lunch</div>
+              <div class="entry-meta">Restaurant · 12:40</div>
+            </div>
+            <div class="entry-amt num expense">−35,000</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">Train</div>
+              <div class="entry-meta">Transport · 09:12</div>
+            </div>
+            <div class="entry-amt num expense">−8,000</div>
+          </div>
+
+          <div class="s-sm"></div>
+          <hr class="rule-sub">
+          <div class="s-sm"></div>
+
+          <div class="group-head">
+            <div class="eyebrow">August 21</div>
+            <div class="t-caption num c3">−62,000</div>
+          </div>
+          <div class="entry" style="padding-top:0">
+            <div>
+              <div class="entry-name">Cinema</div>
+              <div class="entry-meta">Leisure · 19:30</div>
+            </div>
+            <div class="entry-amt num expense">−50,000</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">Coffee</div>
+              <div class="entry-meta">Restaurant · 08:20</div>
+            </div>
+            <div class="entry-amt num expense">−12,000</div>
+          </div>
+
+          <div class="s-sm"></div>
+          <hr class="rule-sub">
+          <div class="s-sm"></div>
+
+          <div class="group-head">
+            <div class="eyebrow">August 20</div>
+            <div class="t-caption num c3">−86,500</div>
+          </div>
+          <div class="entry" style="padding-top:0">
+            <div>
+              <div class="entry-name">Groceries</div>
+              <div class="entry-meta">Food · 17:05</div>
+            </div>
+            <div class="entry-amt num expense">−86,500</div>
+          </div>
+
+          <div class="s-sm"></div>
+          <hr class="rule-sub">
+          <div class="s-sm"></div>
+
+          <div class="group-head">
+            <div class="eyebrow">August 01</div>
+            <div class="t-caption num c3">−1,200,000</div>
+          </div>
+          <div class="entry" style="padding-top:0">
+            <div>
+              <div class="entry-name">Rent</div>
+              <div class="entry-meta">Home · 09:00</div>
+            </div>
+            <div class="entry-amt num expense">−1,200,000</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item">Home</div>
+        <div class="nav-item is-on">History</div>
+        <div class="nav-fab-wrap"><div class="fab">+</div></div>
+        <div class="nav-item">Insights</div>
+        <div class="nav-item">Settings</div>
+      </nav>
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Previous month — the record is browsed month by month.</span></li>
+      <li><b>2</b><span>Next month.</span></li>
+      <li><b>3</b><span>Entry row — tap opens the transaction detail; the day total sits in the group header.</span></li>
+      <li><b>4</b><span>Day group headers are sticky while scrolling; the list continues into earlier months.</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ 5 · INSIGHTS ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">05</span><span class="screen-title">Insights</span><span class="screen-state">What does it leave behind?</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="s-md"></div>
+          <div class="t-heading serif">What remains</div>
+
+          <div class="s-lg"></div>
+
+          <div class="group-head" style="padding-bottom:0">
+            <div class="eyebrow eyebrow-strong">August 2026</div>
+            <span class="a a-r">1</span>
+          </div>
+
+          <div class="s-lg"></div>
+          <div class="t-numeric num expense">−3,218,500</div>
+          <div class="s-xs"></div>
+          <div class="t-caption c3">spent across 40 records</div>
+
+          <div class="s-xl"></div>
+          <hr class="rule">
+          <div class="s-lg"></div>
+
+          <div class="group-head" style="padding-bottom:0">
+            <div class="eyebrow">By category</div>
+            <span class="a a-r">2</span>
+          </div>
+          <div class="s-sm"></div>
+
+          <div class="bar-row" style="padding-top:0">
+            <div class="bar-head"><span>Home</span><span class="num c2">1,200,000</span></div>
+            <div class="bar-track"><div class="bar-fill w100"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-head"><span>Food</span><span class="num c2">1,118,500</span></div>
+            <div class="bar-track"><div class="bar-fill w93"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-head"><span>Transport</span><span class="num c2">428,000</span></div>
+            <div class="bar-track"><div class="bar-fill w36"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-head"><span>Leisure</span><span class="num c2">302,000</span></div>
+            <div class="bar-track"><div class="bar-fill w25"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-head"><span>Health</span><span class="num c2">120,000</span></div>
+            <div class="bar-track"><div class="bar-fill w10"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-head"><span>Other</span><span class="num c2">50,000</span></div>
+            <div class="bar-track"><div class="bar-fill w4"></div></div>
+          </div>
+
+          <div class="s-xl"></div>
+          <hr class="rule">
+          <div class="s-lg"></div>
+
+          <div class="group-head" style="padding-bottom:0">
+            <div class="eyebrow">Patterns</div>
+            <span class="a a-r">3</span>
+          </div>
+          <div class="s-sm"></div>
+
+          <div class="note" style="padding-top:0"><b>Food</b> appears <b class="num">18</b> times this month.</div>
+          <div class="note"><b>Transport</b> repeats on weekday mornings.</div>
+          <div class="note">Largest record: <b>Rent</b> <b class="num">−1,200,000</b>, August 1.</div>
+
+          <div class="s-2xl"></div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item">Home</div>
+        <div class="nav-item">History</div>
+        <div class="nav-fab-wrap"><div class="fab">+</div></div>
+        <div class="nav-item is-on">Insights</div>
+        <div class="nav-item">Settings</div>
+      </nav>
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Period header — tap to switch month, or hold for a twelve-month view.</span></li>
+      <li><b>2</b><span>Category row — tap opens History filtered to that category. Bars are relative to the largest category, no axis, no labels on the rule.</span></li>
+      <li><b>3</b><span>Pattern notes — tap opens the records behind the observation. Statements only, no advice or scoring.</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ 6 · SETTINGS ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">06</span><span class="screen-title">Settings</span><span class="screen-state">How should Yoin behave?</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="s-md"></div>
+          <div class="t-heading serif">Settings</div>
+
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Record</div>
+          <div class="s-sm"></div>
+          <div class="set">
+            <span class="a a-r">1</span>
+            <div>Categories</div>
+            <div class="set-val"><span class="num">6</span><span class="chev">›</span></div>
+          </div>
+          <div class="set">
+            <div>Accounts</div>
+            <div class="set-val"><span class="num">2</span><span class="chev">›</span></div>
+          </div>
+
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Data</div>
+          <div class="s-sm"></div>
+          <div class="set">
+            <span class="a a-r">2</span>
+            <div>Export CSV</div>
+            <div class="set-val"><span class="num">1,284 records</span><span class="chev">›</span></div>
+          </div>
+          <div class="set">
+            <span class="a a-r">3</span>
+            <div>Backup</div>
+            <div class="set-val">Aug 20<span class="chev">›</span></div>
+          </div>
+
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Appearance</div>
+          <div class="s-sm"></div>
+          <div class="set">
+            <span class="a a-r">4</span>
+            <div>Theme</div>
+            <div class="set-val">Light<span class="chev">›</span></div>
+          </div>
+
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">About</div>
+          <div class="s-sm"></div>
+          <div class="set" style="border-bottom-color:transparent">
+            <span class="a a-r">5</span>
+            <div>About Yoin</div>
+            <div class="set-val num">1.0.0<span class="chev">›</span></div>
+          </div>
+
+          <div class="s-2xl"></div>
+
+          <div class="serif t-title c3" style="letter-spacing:.1em">余韻</div>
+          <div class="s-sm"></div>
+          <div class="t-caption c4">Record. Reflect. Remain.</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item">Home</div>
+        <div class="nav-item">History</div>
+        <div class="nav-fab-wrap"><div class="fab">+</div></div>
+        <div class="nav-item">Insights</div>
+        <div class="nav-item is-on">Settings</div>
+      </nav>
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Categories — add, rename, reorder, archive. Feeds the Record category list.</span></li>
+      <li><b>2</b><span>Export CSV — writes the full ledger to a file and opens the system share sheet.</span></li>
+      <li><b>3</b><span>Backup — encrypted snapshot to the user’s own storage; row shows the last run.</span></li>
+      <li><b>4</b><span>Theme — Light / Dark / System. <em>Frames 07–08</em></span></li>
+      <li><b>5</b><span>About — version, licences, the manifesto.</span></li>
+    </ol>
+  </div>
+
+</div>
+
+<div class="row-label">Dark theme — ink / ash <span>· 07–08 · same material language, not an inversion</span></div>
+<div class="row">
+
+  <!-- ============ 7 · HOME (dark) ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">07</span><span class="screen-title">Home</span><span class="screen-state">dark</span></div>
+    <div class="device"><div class="screen dark">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="s-sm"></div>
+          <div class="serif t-title" style="letter-spacing:.1em">余韻</div>
+
+          <div class="s-3xl"></div>
+
+          <div class="group-head" style="padding-bottom:0">
+            <div class="eyebrow eyebrow-strong">August 22, 2026</div>
+            <span class="a a-r">1</span>
+          </div>
+
+          <div class="s-lg"></div>
+          <div class="t-numeric num">Rp 4,281,500</div>
+          <div class="s-xs"></div>
+          <div class="t-caption c3">remaining</div>
+
+          <div class="s-2xl"></div>
+          <hr class="rule">
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Today</div>
+          <div class="s-md"></div>
+
+          <div class="entry">
+            <span class="a a-r">2</span>
+            <div>
+              <div class="entry-name">Lunch</div>
+              <div class="entry-meta">Restaurant · 12:40</div>
+            </div>
+            <div class="entry-amt num expense">−35,000</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">Train</div>
+              <div class="entry-meta">Transport · 09:12</div>
+            </div>
+            <div class="entry-amt num expense">−8,000</div>
+          </div>
+
+          <div class="s-xl"></div>
+          <hr class="rule">
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">This month</div>
+          <div class="s-md"></div>
+
+          <div class="summary">
+            <div class="t-body c2">Income</div>
+            <div class="t-body num income">+8,500,000</div>
+          </div>
+          <div class="summary">
+            <div class="t-body c2">Expenses</div>
+            <div class="t-body num expense">−3,218,500</div>
+          </div>
+
+          <div class="s-4xl"></div>
+          <div class="t-caption c4 serif" style="letter-spacing:.06em">Money passes. Yoin remains.</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item is-on">Home</div>
+        <div class="nav-item">History</div>
+        <div class="nav-fab-wrap"><span class="a a-fab">3</span><div class="fab">+</div></div>
+        <div class="nav-item">Insights</div>
+        <div class="nav-item">Settings</div>
+      </nav>
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Same structure as frame 01 — only the material changes: charcoal surfaces, warm white ink, subdued rules.</span></li>
+      <li><b>2</b><span>Entry row — tap opens detail. Income moss and expense clay both lighten so they stay recognisable without dominating.</span></li>
+      <li><b>3</b><span>+ — accent lifts to #C47A68 on dark; the glyph inside takes the canvas colour, never pure white.</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ 8 · RECORD (dark) ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">08</span><span class="screen-title">Record</span><span class="screen-state">dark · amount / keypad</span></div>
+    <div class="device"><div class="screen dark">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="topbar">
+            <div class="topbar-act">Cancel</div>
+            <div class="topbar-act accent">Next<span class="a a-rt">3</span></div>
+          </div>
+
+          <div class="s-lg"></div>
+
+          <div class="seg">
+            <span class="a a-r">1</span>
+            <div class="seg-item is-on">Expense</div>
+            <div class="seg-item">Income</div>
+          </div>
+
+          <div class="s-3xl"></div>
+
+          <div class="eyebrow">Amount</div>
+          <div class="s-md"></div>
+          <div class="amount-line">
+            <span class="amount-cur">Rp</span>
+            <span class="t-numeric num">35,000</span>
+            <span class="caret"></span>
+          </div>
+
+          <div class="s-2xl"></div>
+
+          <div class="field">
+            <div class="field-label">Date</div>
+            <div class="field-val"><span class="num">August 22, 2026 · 12:40</span><span class="chev">›</span></div>
+          </div>
+          <div class="field">
+            <div class="field-label">Account</div>
+            <div class="field-val">Cash<span class="chev">›</span></div>
+          </div>
+          <div class="field">
+            <div class="field-label">Note</div>
+            <div class="field-val c3">Optional<span class="chev">›</span></div>
+          </div>
+
+          <div class="s-xl"></div>
+        </div>
+
+        <div class="keys">
+          <span class="a a-lt">2</span>
+          <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+          <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+          <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+          <div class="key dim">000</div>
+          <div class="key">0</div>
+          <div class="key dim">
+            <svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+              <path d="M7 1.5h13.2v13H7L1.2 8z"/><path d="M11 5.5l5 5M16 5.5l-5 5"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="pad">
+          <div class="s-xl"></div>
+          <div class="t-caption c4">Capture first. Understand later.</div>
+        </div>
+      </div>
+
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Selected segment keeps the accent underline; on dark the underline carries most of the signal, the fill none.</span></li>
+      <li><b>2</b><span>Keypad rules drop to #292824 — present when looked for, gone when not.</span></li>
+      <li><b>3</b><span>Next — the only accent text on the screen. <em>Frame 03 equivalent</em></span></li>
+    </ol>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     EXPERIMENTAL — QUICK ENTRY (exploration, not canon)
+     ============================================================ -->
+<div class="exp-band">
+  <span class="exp-kicker">Experimental — not canon</span>
+  <div class="exp-title">Experimental — Quick Entry</div>
+  <p class="exp-sub">Three attempts to collapse the two-step record flow (amount → category → save) onto a single surface. Same tokens, same August 2026 data. The frames above stay the reference; these are proposals.</p>
+</div>
+
+<div class="row-label">Exploration <span>· E1–E3 · light theme</span></div>
+<div class="row">
+
+  <!-- ============ E1 · BOTTOM SHEET ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">E1</span><span class="screen-title">Bottom sheet</span><span class="tag-exp">Exp</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <!-- Home, still readable underneath -->
+      <div class="body">
+        <div class="pad">
+          <div class="s-sm"></div>
+          <div class="serif t-title" style="letter-spacing:.1em">余韻</div>
+
+          <div class="s-3xl"></div>
+
+          <div class="eyebrow eyebrow-strong">August 22, 2026</div>
+          <div class="s-lg"></div>
+          <div class="t-numeric num">Rp 4,281,500</div>
+          <div class="s-xs"></div>
+          <div class="t-caption c3">remaining</div>
+
+          <div class="s-2xl"></div>
+          <hr class="rule">
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Today</div>
+          <div class="s-md"></div>
+
+          <div class="entry">
+            <div>
+              <div class="entry-name">Lunch</div>
+              <div class="entry-meta">Restaurant · 12:40</div>
+            </div>
+            <div class="entry-amt num expense">−35,000</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">Train</div>
+              <div class="entry-meta">Transport · 09:12</div>
+            </div>
+            <div class="entry-amt num expense">−8,000</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item is-on">Home</div>
+        <div class="nav-item">History</div>
+        <div class="nav-fab-wrap"><div class="fab">+</div></div>
+        <div class="nav-item">Insights</div>
+        <div class="nav-item">Settings</div>
+      </nav>
+      <div class="home-bar"><i></i></div>
+
+      <div class="dimmer"></div>
+      <span class="a" style="right:20px;top:116px">6</span>
+
+      <div class="sheet">
+        <div class="grabber"></div>
+        <span class="a" style="left:50%;margin-left:26px;top:6px">1</span>
+
+        <div class="s-lg"></div>
+
+        <div class="seg">
+          <span class="a a-r">2</span>
+          <div class="seg-item is-on">Expense</div>
+          <div class="seg-item">Income</div>
+        </div>
+
+        <div class="s-xl"></div>
+
+        <div class="amount-line">
+          <span class="a a-r">3</span>
+          <span class="amount-cur">Rp</span>
+          <span class="t-numeric num">35,000</span>
+          <span class="caret"></span>
+        </div>
+
+        <div class="s-lg"></div>
+
+        <div class="chips">
+          <span class="a a-r">4</span>
+          <div class="chip is-on">Food</div>
+          <div class="chip">Transport</div>
+          <div class="chip">Home</div>
+          <div class="chip">Leisure</div>
+          <div class="chip">Health</div>
+          <div class="chip">Other</div>
+        </div>
+
+        <div class="s-lg"></div>
+
+        <div class="keys compact">
+          <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+          <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+          <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+          <div class="key dim">000</div>
+          <div class="key">0</div>
+          <div class="key dim">
+            <svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+              <path d="M7 1.5h13.2v13H7L1.2 8z"/><path d="M11 5.5l5 5M16 5.5l-5 5"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="s-lg"></div>
+        <div class="btn-primary">Save<span class="a a-ro">5</span></div>
+      </div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Handle — swipe down dismisses the sheet; nothing is written.</span></li>
+      <li><b>2</b><span>Expense / income stays inside the sheet — no screen is ever pushed.</span></li>
+      <li><b>3</b><span>Amount, entered on the compact keypad below.</span></li>
+      <li><b>4</b><span>Category chips inline — the most used category is pre-selected, so most records need one tap.</span></li>
+      <li><b>5</b><span>Save — commits and the sheet settles back down onto Home.</span></li>
+      <li><b>6</b><span>Home stays visible under the dim: the record is placed into a page you can still see. <em>Cost: chips cap the category list at what fits two rows.</em></span></li>
+    </ol>
+  </div>
+
+  <!-- ============ E2 · ONE-SCREEN COMPOSE ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">E2</span><span class="screen-title">One-screen compose</span><span class="tag-exp">Exp</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body stack">
+        <div class="pad">
+          <div class="topbar">
+            <div class="seg">
+              <span class="a a-l">1</span>
+              <div class="seg-item is-on">Expense</div>
+              <div class="seg-item">Income</div>
+            </div>
+            <div class="topbar-act">Cancel<span class="a a-rt">5</span></div>
+          </div>
+
+          <div class="s-3xl"></div>
+
+          <div class="eyebrow">Amount</div>
+          <div class="s-md"></div>
+          <div class="amount-line">
+            <span class="amount-cur">Rp</span>
+            <span class="t-numeric num">35,000</span>
+            <span class="caret"></span>
+          </div>
+          <div class="s-sm"></div>
+          <div class="t-caption c3 num">August 22, 2026 · 12:40 · Cash</div>
+
+          <div class="s-2xl"></div>
+        </div>
+
+        <div class="grow"></div>
+
+        <div class="keys compact">
+          <span class="a a-lt">2</span>
+          <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+          <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+          <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+          <div class="key dim">000</div>
+          <div class="key">0</div>
+          <div class="key dim">
+            <svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+              <path d="M7 1.5h13.2v13H7L1.2 8z"/><path d="M11 5.5l5 5M16 5.5l-5 5"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="pad">
+          <div class="s-xl"></div>
+          <div class="eyebrow">Category — saves on tap</div>
+          <div class="s-sm"></div>
+        </div>
+
+        <div class="grid-cat">
+          <span class="a a-lt">3</span>
+          <div class="gcell is-on">Food<span class="a a-rt">4</span></div>
+          <div class="gcell">Transport</div>
+          <div class="gcell">Home</div>
+          <div class="gcell">Leisure</div>
+          <div class="gcell">Health</div>
+          <div class="gcell">Other</div>
+        </div>
+
+        <div class="pad">
+          <div class="s-lg"></div>
+          <div class="t-caption c4">One surface. Amount, then one tap.</div>
+          <div class="s-lg"></div>
+        </div>
+      </div>
+
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Expense / income — the only mode switch on the screen.</span></li>
+      <li><b>2</b><span>Keypad stays mounted; the amount is never a separate step.</span></li>
+      <li><b>3</b><span>Category grid — six fixed cells, no scroll, thumb-reachable.</span></li>
+      <li><b>4</b><span>Tapping a cell <em>is</em> the save: record written, screen closes, Home returns. Food shown mid-tap.</span></li>
+      <li><b>5</b><span>Cancel discards. <em>Cost: no room for note or account without a second surface.</em></span></li>
+    </ol>
+  </div>
+
+  <!-- ============ E3 · INLINE LEDGER LINE ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">E3</span><span class="screen-title">Inline ledger line</span><span class="tag-exp">Exp</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="s-sm"></div>
+          <div class="serif t-title" style="letter-spacing:.1em">余韻</div>
+
+          <div class="s-2xl"></div>
+
+          <div class="eyebrow eyebrow-strong">August 22, 2026</div>
+          <div class="s-md"></div>
+          <div class="t-numeric num">Rp 4,281,500</div>
+          <div class="s-xs"></div>
+          <div class="t-caption c3">remaining</div>
+
+          <div class="s-xl"></div>
+          <hr class="rule">
+          <div class="s-lg"></div>
+
+          <div class="eyebrow">Today</div>
+          <div class="s-md"></div>
+
+          <div class="entry composing" style="padding-bottom:8px">
+            <span class="a a-l">1</span>
+            <div>
+              <div class="entry-name c3">New entry</div>
+              <div class="entry-meta">Cash · 09:41</div>
+            </div>
+            <div class="entry-amt num expense">−12,000<span class="caret sm"></span><span class="a a-r">2</span></div>
+          </div>
+
+          <div class="chips" style="padding-bottom:14px">
+            <span class="a a-r">3</span>
+            <div class="chip sm">Food</div>
+            <div class="chip sm">Transport</div>
+            <div class="chip sm">Home</div>
+            <div class="chip sm">Leisure</div>
+            <div class="chip sm">Health</div>
+            <div class="chip sm">Other</div>
+          </div>
+
+          <div class="entry" style="border-top:1px solid var(--l1)">
+            <div>
+              <div class="entry-name">Lunch</div>
+              <div class="entry-meta">Restaurant · 12:40</div>
+            </div>
+            <div class="entry-amt num expense">−35,000</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">Train</div>
+              <div class="entry-meta">Transport · 09:12</div>
+            </div>
+            <div class="entry-amt num expense">−8,000</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="keys compact">
+        <span class="a a-lt">4</span>
+        <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+        <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+        <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+        <div class="key dim">000</div>
+        <div class="key">0</div>
+        <div class="key dim">
+          <svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+            <path d="M7 1.5h13.2v13H7L1.2 8z"/><path d="M11 5.5l5 5M16 5.5l-5 5"/>
+          </svg>
+        </div>
+      </div>
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <div class="side-note">
+      <b>Gesture note</b>
+      Long-press <span style="color:#A65A4B">+</span> repeats the last transaction — same amount, same category, timestamped now. The line appears already filled and settles into the list; no screen, no confirm. Undo lives in the row itself for a few seconds.
+    </div>
+
+    <ol class="legend">
+      <li><b>1</b><span>A blank line is written straight into today's list; existing entries shift down. The accent rule marks the line that is still open.</span></li>
+      <li><b>2</b><span>Amount typed in place — caret sits in the row, not in a separate field.</span></li>
+      <li><b>3</b><span>Category tokens under the open line — tapping one closes the line and commits it.</span></li>
+      <li><b>4</b><span>Keypad docks where the navigation was, only while a line is open; dismissing it discards the line. <em>Cost: navigation is unreachable mid-entry.</em></span></li>
+    </ol>
+  </div>
+
+  <!-- ============ E4 · ACCOUNTS ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">E4</span><span class="screen-title">Accounts</span><span class="tag-exp">Exp</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="topbar">
+            <div class="topbar-act">‹ Settings<span class="a a-rt">1</span></div>
+            <div class="topbar-act c3">Edit</div>
+          </div>
+
+          <div class="s-md"></div>
+          <div class="t-heading serif">Accounts</div>
+          <div class="s-sm"></div>
+          <div class="t-caption c3">Where it sits on August 22, 2026.</div>
+
+          <div class="s-2xl"></div>
+
+          <div class="eyebrow">Spending</div>
+          <div class="s-sm"></div>
+
+          <div class="entry" style="padding-top:0">
+            <span class="a a-r">2</span>
+            <div>
+              <div class="entry-name">Cash</div>
+              <div class="entry-meta">On hand · last used 12:40</div>
+            </div>
+            <div class="entry-amt num">331,500</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">Bank</div>
+              <div class="entry-meta">Checking · ···4821</div>
+            </div>
+            <div class="entry-amt num">2,650,000</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">E-wallet</div>
+              <div class="entry-meta">Prepaid · auto top-up off</div>
+            </div>
+            <div class="entry-amt num">300,000</div>
+          </div>
+
+          <hr class="rule-sub">
+          <div class="summary" style="border-top:0">
+            <div class="t-label c3">Spending subtotal</div>
+            <div class="t-label num c2">3,281,500</div>
+          </div>
+
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Reserved</div>
+          <div class="s-sm"></div>
+
+          <div class="reserve">
+            <span class="a a-r">3</span>
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <div class="t-body">Savings</div>
+              <div class="t-body num">1,000,000</div>
+            </div>
+            <div class="s-xs"></div>
+            <div class="t-caption c3">Untouched since June · usable, warns when chosen</div>
+          </div>
+
+          <div class="s-xl"></div>
+          <hr class="rule-strong">
+          <div class="total-row">
+            <span class="a a-r">4</span>
+            <div class="t-title">Total</div>
+            <div class="t-title num">Rp 4,281,500</div>
+          </div>
+          <div class="s-xs"></div>
+          <div class="t-caption c3">Matches the balance shown on Home.</div>
+
+          <div class="s-xl"></div>
+          <hr class="rule">
+
+          <div class="set" style="border-bottom-color:transparent">
+            <span class="a a-r">5</span>
+            <div style="color:var(--accent)">Transfer between accounts</div>
+            <div class="set-val"><span class="chev">›</span></div>
+          </div>
+
+          <div class="s-sm"></div>
+          <div class="t-caption c4">A transfer moves value. It is never income or expense.</div>
+        </div>
+      </div>
+
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Back to Settings — Accounts is reached from the Accounts row there.</span></li>
+      <li><b>2</b><span>Account row — tap opens History filtered to that account; the type label carries the detail so the balance column stays clean.</span></li>
+      <li><b>3</b><span>Savings sits in a reserved block, not in the spending list — it is what remains, not what moves. Still reconciles into the total, and it stays usable: it is never pre-selected, and choosing it during a record surfaces a quiet warning — <em>reserved — emergency use</em> — never a block.</span></li>
+      <li><b>4</b><span>Total line — 3,281,500 spending + 1,000,000 reserved = 4,281,500, the same figure Home shows.</span></li>
+      <li><b>5</b><span>Transfer between accounts — the only accent on the screen; posts two sides at once and stays out of Insights.</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ E5 · ACCOUNTS — MULTI-BANK ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">E5</span><span class="screen-title">Accounts — Multi-bank</span><span class="tag-exp">Exp</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="topbar">
+            <div class="topbar-act">‹ Settings<span class="a a-rt">1</span></div>
+            <div class="topbar-act accent">Add<span class="a a-rt">2</span></div>
+          </div>
+
+          <div class="s-sm"></div>
+          <div class="t-heading serif">Accounts</div>
+          <div class="s-sm"></div>
+          <div class="t-caption c3">An account is a name and a role, not a type.</div>
+
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Spendable</div>
+          <div class="s-sm"></div>
+
+          <div class="entry" style="padding-top:0">
+            <div>
+              <div class="entry-name">Cash</div>
+              <div class="entry-meta">on hand</div>
+            </div>
+            <div class="entry-amt num">331,500</div>
+          </div>
+          <div class="entry">
+            <span class="a a-r">3</span>
+            <div>
+              <div class="entry-name">Bank — Salary In</div>
+              <div class="entry-meta">salary lands here<span class="a a-l">4</span></div>
+            </div>
+            <div class="entry-amt num">1,650,000</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">Bank — Daily</div>
+              <div class="entry-meta">daily spending</div>
+            </div>
+            <div class="entry-amt num">1,000,000</div>
+          </div>
+          <div class="entry">
+            <div>
+              <div class="entry-name">E-wallet</div>
+              <div class="entry-meta">small payments</div>
+            </div>
+            <div class="entry-amt num">300,000</div>
+          </div>
+
+          <hr class="rule-sub">
+          <div class="summary" style="border-top:0">
+            <div class="t-label c3">Spendable subtotal</div>
+            <div class="t-label num c2">3,281,500</div>
+          </div>
+
+          <div class="s-lg"></div>
+
+          <div class="eyebrow">Reserved</div>
+          <div class="s-sm"></div>
+
+          <div class="reserve">
+            <span class="a a-r">5</span>
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <div class="t-body">Bank — Savings</div>
+              <div class="t-body num">1,000,000</div>
+            </div>
+            <div class="s-xs"></div>
+            <div class="t-caption c3">reserved — emergency use · usable, not default</div>
+          </div>
+
+          <div class="s-lg"></div>
+          <hr class="rule-strong">
+          <div class="total-row">
+            <span class="a a-r">6</span>
+            <div class="t-title">Total</div>
+            <div class="t-title num">Rp 4,281,500</div>
+          </div>
+          <div class="s-xs"></div>
+          <div class="t-caption c3">3,281,500 spendable + 1,000,000 reserved. Same figure Home shows.</div>
+        </div>
+      </div>
+
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Back to Settings.</span></li>
+      <li><b>2</b><span>Add account — name and role are typed, nothing is picked from a type enum; two accounts at the same bank are ordinary.</span></li>
+      <li><b>3</b><span>Row tap — opens that account's detail: its own ledger, its own running balance, rename and archive.</span></li>
+      <li><b>4</b><span>Role line — plain lowercase, the quietest text on the screen. It is what the account is for, not what it is.</span></li>
+      <li><b>5</b><span>Savings keeps the reserved block from E4 — counted, but held apart from the spendable list. Warn-only: pick it while recording and the entry still saves, under the same quiet <em>reserved — emergency use</em> line.</span></li>
+      <li><b>6</b><span>Total reconciles: 331,500 + 1,650,000 + 1,000,000 + 300,000 + 1,000,000 = 4,281,500.</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ E6 · TRANSFER ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">E6</span><span class="screen-title">Transfer</span><span class="tag-exp">Exp</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body">
+        <div class="pad">
+          <div class="topbar">
+            <div class="topbar-act">Cancel</div>
+            <div class="topbar-act c3">Own accounts only</div>
+          </div>
+
+          <div class="s-sm"></div>
+          <div class="t-heading serif">Transfer</div>
+
+          <div class="s-xl"></div>
+
+          <div class="field">
+            <span class="a a-r">1</span>
+            <div class="field-label">From</div>
+            <div class="field-val">Bank — Salary In<span class="chev">›</span></div>
+          </div>
+          <div class="field">
+            <span class="a a-r">2</span>
+            <div class="field-label"><span class="mark">⇄</span>To</div>
+            <div class="field-val">Bank — Daily<span class="chev">›</span></div>
+          </div>
+          <div class="s-sm"></div>
+          <div class="t-caption c3 num">1,650,000 available → 1,000,000 now</div>
+
+          <div class="s-xl"></div>
+
+          <div class="eyebrow">Amount</div>
+          <div class="s-sm"></div>
+          <div class="amount-line">
+            <span class="a a-r">3</span>
+            <span class="amount-cur">Rp</span>
+            <span class="t-numeric num">500,000</span>
+            <span class="caret"></span>
+          </div>
+
+          <div class="s-lg"></div>
+
+          <div class="field">
+            <span class="a a-r">4</span>
+            <div class="field-label">Fee</div>
+            <div class="field-val num">Rp 2,500<span class="chev">›</span></div>
+          </div>
+
+          <div class="s-md"></div>
+          <div class="note" style="padding:0">
+            A transfer moves value. It is not income and not an expense — August stays at <b class="num">+8,500,000</b> / <b class="num">−3,218,500</b>. Only the fee leaves.
+          </div>
+
+          <div class="s-lg"></div>
+
+          <div class="eyebrow">How it lands in History</div>
+          <div class="s-sm"></div>
+
+          <div class="reserve">
+            <span class="a a-r">5</span>
+            <div class="entry">
+              <div>
+                <div class="entry-name"><span class="mark">⇄</span>Transfer</div>
+                <div class="entry-meta">Salary In → Daily · 12:41</div>
+              </div>
+              <div class="entry-amt num neutral">500,000</div>
+            </div>
+            <div class="entry" style="border-top:1px solid var(--l2)">
+              <div>
+                <div class="entry-name">Transfer fee</div>
+                <div class="entry-meta">Fee · 12:41</div>
+              </div>
+              <div class="entry-amt num expense">−2,500</div>
+            </div>
+          </div>
+
+          <div class="s-lg"></div>
+          <div class="btn-primary">Confirm transfer<span class="a a-ro">6</span></div>
+        </div>
+      </div>
+
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>From — picks among your own accounts only; reserved accounts appear here but never as a default.</span></li>
+      <li><b>2</b><span>To — the ⇄ mark is the only ornament; tapping it swaps the two sides.</span></li>
+      <li><b>3</b><span>Amount — same keypad as Record, opened on tap.</span></li>
+      <li><b>4</b><span>Fee — real money leaving, so it cannot ride inside the transfer. Left at 0 it writes nothing.</span></li>
+      <li><b>5</b><span>Preview of the two rows that will exist: the transfer line stays neutral stone and is skipped by Insights; the fee is written as an ordinary expense in its own Fee category (−2,500) and does count — fee waste stays visible in Insights instead of hiding inside Other.</span></li>
+      <li><b>6</b><span>Confirm — writes both sides plus the fee row in one commit. Balances move, month totals do not.</span></li>
+    </ol>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     BRAND — SPLASH & ICON
+     ============================================================ -->
+<div class="brand-band">
+  <span class="brand-kicker">Brand</span>
+  <div class="brand-title">Brand — Splash &amp; Icon</div>
+  <p class="brand-sub">The two surfaces seen before the ledger: the cold open, and the icon on a home screen. Both carry the identity with the same restraint as the app — paper, charcoal, one seal of vermillion. Nothing here animates, nothing here loads.</p>
+</div>
+
+<div class="row-label">Cold open <span>· B1–B2 · light and dark, one composition</span></div>
+<div class="row">
+
+  <!-- ============ B1 · SPLASH (light) ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">B1</span><span class="screen-title">Splash</span><span class="screen-state">paper / ink</span></div>
+    <div class="device"><div class="screen">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body splash">
+        <div style="position:relative">
+          <span class="a" style="left:-30px;top:18px">1</span>
+          <div class="serif splash-mark">余韻</div>
+          <div class="s-lg"></div>
+          <div class="splash-name">Yoin</div>
+          <span class="a" style="right:-30px;top:78px">2</span>
+        </div>
+
+        <div class="splash-foot t-caption c3">
+          Record. Reflect. Remain.
+          <span class="a" style="right:26px;top:-1px">3</span>
+        </div>
+      </div>
+
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <div class="side-note">
+      <b>Capacitor note</b>
+      The splash is one static frozen frame — a single image per scale, no spinner, no progress bar, no animation. It holds from launch until the first paint of Home, then cross-fades out over motion.normal (240ms). Anything that appears to load would be lying: the ledger is local.
+    </div>
+
+    <ol class="legend">
+      <li><b>1</b><span>余韻 — Noto Serif JP, the only place the serif runs at display size. Letter-spaced so the two characters read as a mark, not as text.</span></li>
+      <li><b>2</b><span>“Yoin” — Inter, caption size, wide tracking. It names the mark for anyone who cannot read it, and stays quieter than the mark it names.</span></li>
+      <li><b>3</b><span>The whisper line sits in content-muted at the foot, where a colophon would. It earns its place by being the product’s one sentence; it never becomes a tagline anywhere else in the app.</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ B2 · SPLASH (dark) ============ -->
+  <div class="col">
+    <div class="screen-name"><span class="screen-no">B2</span><span class="screen-title">Splash</span><span class="screen-state">ink / ash</span></div>
+    <div class="device"><div class="screen dark">
+      <div class="status">
+        <span class="num">9:41</span>
+        <span class="status-right">
+          <span class="sig"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <path d="M1.2 4.1a10 10 0 0 1 13.6 0"/>
+            <path d="M3.6 6.7a6.4 6.4 0 0 1 8.8 0"/>
+            <path d="M6.1 9.3a2.8 2.8 0 0 1 3.8 0"/>
+          </svg>
+          <span class="batt"></span>
+        </span>
+      </div>
+
+      <div class="body splash">
+        <div style="position:relative">
+          <span class="a" style="left:-30px;top:18px">1</span>
+          <div class="serif splash-mark">余韻</div>
+          <div class="s-lg"></div>
+          <div class="splash-name">Yoin</div>
+        </div>
+
+        <div class="splash-foot t-caption c3">
+          Record. Reflect. Remain.
+          <span class="a" style="right:26px;top:-1px">2</span>
+        </div>
+      </div>
+
+      <div class="home-bar"><i></i></div>
+    </div></div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Same composition, different material: warm white ink on #171716. The mark is not tinted and the accent never appears here — the splash has no interactive element, so it has nothing to anchor.</span></li>
+      <li><b>2</b><span>The whisper line drops to #716E68 so it stays a footnote rather than a second heading. Which variant ships is decided by the system theme at launch, not by the in-app setting.</span></li>
+    </ol>
+  </div>
+
+</div>
+
+<div class="row-label">App icon <span>· B3 · source artwork and the 60px home-screen read</span></div>
+<div class="brand-row">
+
+  <div>
+    <div class="screen-name"><span class="screen-no">B3</span><span class="screen-title">App icon</span><span class="screen-state">512 × 512 source artwork</span></div>
+    <div class="icon-art icon-big">
+      <span class="a" style="left:-24px;top:26px">1</span>
+      <span class="glyph">余</span>
+      <span class="a" style="left:-24px;top:243px">2</span>
+      <span class="seal"></span>
+      <span class="a" style="right:-24px;bottom:118px">3</span>
+    </div>
+    <p class="brand-cap">Warm paper field, charcoal 余, one vermillion seal at the lower right. Square and full-bleed at source; every platform mask is applied on top of this artwork, never baked into it.</p>
+  </div>
+
+  <div style="width:340px">
+    <div class="screen-name"><span class="screen-no">·</span><span class="screen-title">Home screen</span><span class="screen-state">60px, both masks, both wallpapers</span></div>
+
+    <p class="strip-cap">iOS · squircle</p>
+    <div class="strip" style="position:relative">
+      <span class="a" style="left:-24px;top:38px">4</span>
+      <div class="wall light">
+        <div class="icon-art icon-sm mask-ios"><span class="glyph">余</span><span class="seal"></span></div>
+        <div class="wall-label">Yoin</div>
+      </div>
+      <div class="wall dark">
+        <div class="icon-art icon-sm mask-ios"><span class="glyph">余</span><span class="seal"></span></div>
+        <div class="wall-label">Yoin</div>
+      </div>
+    </div>
+
+    <p class="strip-cap" style="margin-top:24px">Android · circle</p>
+    <div class="strip">
+      <div class="wall light">
+        <div class="icon-art icon-sm mask-round"><span class="glyph">余</span><span class="seal"></span></div>
+        <div class="wall-label">Yoin</div>
+      </div>
+      <div class="wall dark">
+        <div class="icon-art icon-sm mask-round"><span class="glyph">余</span><span class="seal"></span></div>
+        <div class="wall-label">Yoin</div>
+      </div>
+    </div>
+
+    <ol class="legend">
+      <li><b>1</b><span>Paper field — canvas settling to surface-muted across one raking diagonal. No gloss, no vignette, no border: the icon is a sheet, and it stays lighter than every wallpaper it will sit on.</span></li>
+      <li><b>2</b><span>余 alone, not 余韻. Two characters at 60px silt up; a single one at just under half the icon height stays open. It is the character that carries the meaning — <em>what remains</em>.</span></li>
+      <li><b>3</b><span>The seal — 12.5% of the icon, radius 1.4%, the accent’s only appearance in the identity. Read as an ink seal beside the character, not as a badge or a dot.</span></li>
+      <li><b>4</b><span>The 60px read is the test, not the 512. Charcoal on paper holds against both wallpapers, and the seal sits at 76% of the circle radius — inside the Android crop, clear of the squircle corner.</span></li>
+    </ol>
+  </div>
+
+</div>
+
+</body>
+</html>

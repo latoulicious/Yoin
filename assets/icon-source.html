@@ -1,0 +1,50 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Yoin icon source — 1024×1024</title>
+<script>
+  document.documentElement.className =
+    new URLSearchParams(location.search).get('layer') || 'full'
+</script>
+<style>
+  @font-face {
+    font-family: 'Noto Serif JP';
+    font-style: normal;
+    font-weight: 400;
+    src: url('../src/assets/noto-serif-jp-subset.woff2') format('woff2');
+  }
+  html, body { margin: 0; padding: 0; background: transparent; }
+  .icon {
+    font-size: 1024px;
+    width: 1em; height: 1em;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ground {
+    position: absolute; inset: 0;
+    background: #f5f0e3;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.014) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.011) 0 1px, transparent 1px 4px),
+      radial-gradient(130% 100% at 22% 0%, #fbf7ec, #f4efe1 58%, #eae2ce);
+  }
+  .hanko {
+    position: relative;
+    width: .54em; height: .54em;
+    border-radius: .055em;
+    background: #b0342a;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 0 0 .012em rgba(255,255,255,.22);
+  }
+  .hanko span {
+    font-family: 'Noto Serif JP', serif;
+    font-size: .34em; line-height: 1;
+    color: #f7f3e8;
+    margin-top: -.02em;
+  }
+  .foreground .ground { display: none; }
+  .background .hanko { display: none; }
+</style>
+<div class="icon">
+  <div class="ground"></div>
+  <span class="hanko"><span>余</span></span>
+</div>
