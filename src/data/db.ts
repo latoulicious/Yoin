@@ -26,6 +26,19 @@ export async function persist(): Promise<void> {
   if (isWeb) await sqlite.saveToStore(DB_NAME)
 }
 
+// ponytail: web-only, native backup lands in P8 (Filesystem plugin).
+export async function backupToDisk(): Promise<void> {
+  if (isWeb) await sqlite.saveToLocalDisk(DB_NAME)
+}
+
+// ponytail: web-only, native restore lands in P8 (Filesystem plugin).
+export async function restoreFromDisk(): Promise<void> {
+  if (!isWeb) return
+  await sqlite.getFromLocalDiskToStore(true)
+  // the open connection still holds the pre-swap in-memory db; reload is the only reset.
+  location.reload()
+}
+
 async function connect(): Promise<SQLiteDBConnection> {
   if (isWeb) await initWeb()
 

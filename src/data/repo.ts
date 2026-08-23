@@ -84,6 +84,18 @@ export interface CategoryTotal {
   total: number
 }
 
+// field names double as CSV column headers — see toCsv in ./csv.
+export interface ExportRow {
+  id: number
+  occurred_at: string
+  kind: TxnKind
+  amount: number
+  category: string | null
+  account: string
+  note: string
+  transfer_group_id: string | null
+}
+
 interface AccountRow {
   id: number
   name: string
@@ -154,6 +166,39 @@ export async function listCategories(db: SQLiteDBConnection): Promise<Category[]
     archived: r.archived !== 0,
     sort: r.sort,
   }))
+}
+
+function codeFrom(name: string): string {
+  return name.slice(0, 2).toUpperCase()
+}
+
+export async function createCategory(db: SQLiteDBConnection, name: string): Promise<number> {
+  const changes = await write(
+    db,
+    `INSERT INTO categories (name, code, system, archived, sort)
+     VALUES (?, ?, 0, 0, (SELECT COALESCE(MAX(sort), 0) + 1 FROM categories))`,
+    [name, codeFrom(name)],
+  )
+  return lastId(changes, 'createCategory')
+}
+
+export async function renameCategory(db: SQLiteDBConnection, id: number, name: string): Promise<void> {
+  await write(db, 'UPDATE categories SET name = ?, code = ? WHERE id = ? AND system = 0', [
+    name,
+    codeFrom(name),
+    id,
+  ])
+}
+
+export async function setCategoryArchived(
+  db: SQLiteDBConnection,
+  id: number,
+  archived: boolean,
+): Promise<void> {
+  await write(db, 'UPDATE categories SET archived = ? WHERE id = ? AND system = 0', [
+    archived ? 1 : 0,
+    id,
+  ])
 }
 
 export async function addTransaction(db: SQLiteDBConnection, input: TransactionInput): Promise<number> {
@@ -280,6 +325,18 @@ export async function categoryTotals(db: SQLiteDBConnection, month: string): Pro
      GROUP BY t.category_id
      ORDER BY total DESC`,
     [month],
+  )
+}
+
+export async function exportRows(db: SQLiteDBConnection): Promise<ExportRow[]> {
+  return query<ExportRow>(
+    db,
+    `SELECT t.id, t.occurred_at, t.kind, t.amount, c.name AS category, a.name AS account,
+            t.note, t.transfer_group_id
+     FROM transactions t
+     LEFT JOIN categories c ON c.id = t.category_id
+     JOIN accounts a ON a.id = t.account_id
+     ORDER BY t.occurred_at, t.id`,
   )
 }
 

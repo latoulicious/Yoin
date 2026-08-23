@@ -6,10 +6,11 @@ import History from './screens/History'
 import Home from './screens/Home'
 import Insights from './screens/Insights'
 import Record, { type SavedEntry } from './screens/Record'
+import Settings from './screens/Settings'
 import Transfer from './screens/Transfer'
-import { useTheme, type ThemePref } from './theme'
+import { useTheme } from './theme'
 
-type Screen = 'home' | 'history' | 'record' | 'insights' | 'accounts' | 'transfer' | 'settings'
+export type Screen = 'home' | 'history' | 'record' | 'insights' | 'accounts' | 'transfer' | 'settings'
 
 const SCREEN_LABEL: Record<Screen, string> = {
   home: 'Ledger',
@@ -19,66 +20,6 @@ const SCREEN_LABEL: Record<Screen, string> = {
   accounts: 'Accounts',
   transfer: 'Transfer',
   settings: 'Settings',
-}
-
-const THEME_OPTIONS: ThemePref[] = ['system', 'paper', 'carbon']
-
-const RULE_LEAD = 'mx-2.5 min-w-3.5 flex-1 -translate-y-1 border-b border-dotted border-rule'
-
-function Placeholder({ label }: { label: string }) {
-  return (
-    <div className="pt-5">
-      <div className="flex items-baseline text-[9.5px] tracking-[.2em] uppercase text-ink-3">
-        <span>{label}</span>
-        <span className={RULE_LEAD} />
-        <span>Placeholder</span>
-      </div>
-      <div className="mt-4 border-t border-dashed border-rule" />
-    </div>
-  )
-}
-
-function ThemeSetting({
-  pref,
-  setPref,
-  resolved,
-}: {
-  pref: ThemePref
-  setPref: (next: ThemePref) => void
-  resolved: string
-}) {
-  return (
-    <div className="pt-5">
-      <div className="flex h-[22px] items-end text-[9.5px] tracking-[.22em] uppercase text-ink-3">
-        Appearance
-      </div>
-      <div className="mt-2.5 flex h-10 border border-rule">
-        {THEME_OPTIONS.map((option) => {
-          const active = pref === option
-          return (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setPref(option)}
-              className={`flex flex-1 items-center justify-center border-l border-dashed border-rule text-[10.5px] tracking-[.2em] uppercase first:border-l-0 ${
-                active
-                  ? 'bg-hanko-soft font-semibold text-hanko shadow-[inset_0_0_0_1px_var(--red)]'
-                  : 'text-ink-3'
-              }`}
-            >
-              {option}
-            </button>
-          )
-        })}
-      </div>
-      <div className="mt-3 flex items-baseline text-[9.5px] tracking-[.2em] uppercase text-ink-3">
-        <span>Active</span>
-        <span className={RULE_LEAD} />
-        <span>{resolved}</span>
-      </div>
-    </div>
-  )
 }
 
 function NavTab({
@@ -153,7 +94,7 @@ export default function App() {
 
       <main className="flex-1 px-5">
         {screen === 'settings' ? (
-          <ThemeSetting pref={pref} setPref={setPref} resolved={resolved} />
+          <Settings onNavigate={setScreen} pref={pref} setPref={setPref} resolved={resolved} />
         ) : screen === 'record' ? (
           <Record onClose={() => setScreen('home')} onSaved={handleSaved} />
         ) : screen === 'home' ? (
@@ -164,10 +105,8 @@ export default function App() {
           <Insights key={dataVersion} />
         ) : screen === 'accounts' ? (
           <Accounts key={dataVersion} onTransfer={() => setScreen('transfer')} />
-        ) : screen === 'transfer' ? (
-          <Transfer onClose={() => setScreen('accounts')} onSaved={handleSaved} />
         ) : (
-          <Placeholder label={SCREEN_LABEL[screen]} />
+          <Transfer onClose={() => setScreen('accounts')} onSaved={handleSaved} />
         )}
       </main>
 
