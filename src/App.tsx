@@ -4,6 +4,7 @@ import { deleteTransaction, deleteTransferGroup } from './data/repo'
 import Accounts from './screens/Accounts'
 import History from './screens/History'
 import Home from './screens/Home'
+import Insights from './screens/Insights'
 import Record, { type SavedEntry } from './screens/Record'
 import Transfer from './screens/Transfer'
 import { useTheme, type ThemePref } from './theme'
@@ -159,6 +160,8 @@ export default function App() {
           <Home key={dataVersion} onNavigate={setScreen} />
         ) : screen === 'history' ? (
           <History key={dataVersion} />
+        ) : screen === 'insights' ? (
+          <Insights key={dataVersion} />
         ) : screen === 'accounts' ? (
           <Accounts key={dataVersion} onTransfer={() => setScreen('transfer')} />
         ) : screen === 'transfer' ? (

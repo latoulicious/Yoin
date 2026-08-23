@@ -77,6 +77,13 @@ export interface BalanceSummary {
   reserved: number
 }
 
+export interface CategoryTotal {
+  categoryId: number | null
+  name: string | null
+  count: number
+  total: number
+}
+
 interface AccountRow {
   id: number
   name: string
@@ -261,6 +268,19 @@ export async function monthTotals(db: SQLiteDBConnection, month: string): Promis
     [month],
   )
   return rows[0] ?? { income: 0, expense: 0 }
+}
+
+export async function categoryTotals(db: SQLiteDBConnection, month: string): Promise<CategoryTotal[]> {
+  return query<CategoryTotal>(
+    db,
+    `SELECT t.category_id AS categoryId, c.name AS name, COUNT(*) AS count, SUM(t.amount) AS total
+     FROM transactions t
+     LEFT JOIN categories c ON c.id = t.category_id
+     WHERE t.kind IN ('expense','fee') AND substr(t.occurred_at, 1, 7) = ?
+     GROUP BY t.category_id
+     ORDER BY total DESC`,
+    [month],
+  )
 }
 
 function toTransaction(row: TransactionRow): Transaction {
