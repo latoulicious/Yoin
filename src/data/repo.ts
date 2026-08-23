@@ -64,6 +64,11 @@ export interface MonthTotals {
   expense: number
 }
 
+export interface BalanceSummary {
+  spendable: number
+  reserved: number
+}
+
 interface AccountRow {
   id: number
   name: string
@@ -161,6 +166,16 @@ export async function accountBalances(db: SQLiteDBConnection): Promise<AccountBa
     `SELECT account_id AS accountId, SUM(${SIGNED_AMOUNT}) AS balance
      FROM transactions GROUP BY account_id`,
   )
+}
+
+export async function balanceSummary(db: SQLiteDBConnection): Promise<BalanceSummary> {
+  const rows = await query<BalanceSummary>(
+    db,
+    `SELECT COALESCE(SUM(CASE WHEN a.reserved = 0 THEN ${SIGNED_AMOUNT} ELSE 0 END), 0) AS spendable,
+            COALESCE(SUM(CASE WHEN a.reserved = 1 THEN ${SIGNED_AMOUNT} ELSE 0 END), 0) AS reserved
+     FROM transactions t JOIN accounts a ON a.id = t.account_id`,
+  )
+  return rows[0] ?? { spendable: 0, reserved: 0 }
 }
 
 export async function dayGroups(db: SQLiteDBConnection, month: string): Promise<DayGroup[]> {

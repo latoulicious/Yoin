@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { getDb } from './data/db'
 import { deleteTransaction } from './data/repo'
+import History from './screens/History'
+import Home from './screens/Home'
 import Record, { type SavedEntry } from './screens/Record'
 import { useTheme, type ThemePref } from './theme'
 
-type Screen = 'home' | 'history' | 'record' | 'insights' | 'settings'
+type Screen = 'home' | 'history' | 'record' | 'insights' | 'accounts' | 'settings'
 
 const SCREEN_LABEL: Record<Screen, string> = {
   home: 'Ledger',
   history: 'History',
   record: 'Record',
   insights: 'Insights',
+  accounts: 'Accounts',
   settings: 'Settings',
 }
 
@@ -105,6 +108,7 @@ const UNDO_WINDOW_MS = 5000
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [lastEntry, setLastEntry] = useState<SavedEntry | null>(null)
+  const [dataVersion, setDataVersion] = useState(0)
   const undoTimer = useRef<number | undefined>(undefined)
   const { pref, setPref, resolved } = useTheme()
 
@@ -113,6 +117,7 @@ export default function App() {
   function handleSaved(entry: SavedEntry) {
     clearTimeout(undoTimer.current)
     setLastEntry(entry)
+    setDataVersion((current) => current + 1)
     setScreen('home')
     undoTimer.current = window.setTimeout(() => setLastEntry(null), UNDO_WINDOW_MS)
   }
@@ -122,6 +127,7 @@ export default function App() {
     const db = await getDb()
     await deleteTransaction(db, entry.id)
     setLastEntry((current) => (current?.id === entry.id ? null : current))
+    setDataVersion((current) => current + 1)
   }
 
   return (
@@ -145,6 +151,10 @@ export default function App() {
           <ThemeSetting pref={pref} setPref={setPref} resolved={resolved} />
         ) : screen === 'record' ? (
           <Record onClose={() => setScreen('home')} onSaved={handleSaved} />
+        ) : screen === 'home' ? (
+          <Home key={dataVersion} onNavigate={setScreen} />
+        ) : screen === 'history' ? (
+          <History key={dataVersion} />
         ) : (
           <Placeholder label={SCREEN_LABEL[screen]} />
         )}
