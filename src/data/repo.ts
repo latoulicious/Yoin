@@ -8,12 +8,14 @@ export interface Account {
   name: string
   roleNote: string
   reserved: boolean
+  openingBalance: number
 }
 
 export interface AccountInput {
   name: string
   roleNote: string
   reserved: boolean
+  openingBalance: number
 }
 
 export interface Category {
@@ -101,6 +103,7 @@ interface AccountRow {
   name: string
   role_note: string
   reserved: number
+  opening_balance: number
 }
 
 interface CategoryRow {
@@ -127,30 +130,41 @@ interface TransactionRow {
 
 const SIGNED_AMOUNT = `CASE WHEN kind IN ('income','transfer_in') THEN amount ELSE -amount END`
 
+// left-joined from accounts so an account with no transactions still contributes its opening balance.
+const ACCOUNT_NET = `(SELECT account_id, SUM(${SIGNED_AMOUNT}) AS net FROM transactions GROUP BY account_id)`
+
 const INSERT_TXN = `INSERT INTO transactions (amount, kind, category_id, account_id, note, occurred_at, transfer_group_id)
    VALUES (?, ?, ?, ?, ?, ?, ?)`
 
 export async function listAccounts(db: SQLiteDBConnection): Promise<Account[]> {
-  const rows = await query<AccountRow>(db, 'SELECT id, name, role_note, reserved FROM accounts ORDER BY id')
-  return rows.map((r) => ({ id: r.id, name: r.name, roleNote: r.role_note, reserved: r.reserved !== 0 }))
+  const rows = await query<AccountRow>(
+    db,
+    'SELECT id, name, role_note, reserved, opening_balance FROM accounts ORDER BY id',
+  )
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    roleNote: r.role_note,
+    reserved: r.reserved !== 0,
+    openingBalance: r.opening_balance,
+  }))
 }
 
 export async function createAccount(db: SQLiteDBConnection, input: AccountInput): Promise<number> {
-  const changes = await write(db, 'INSERT INTO accounts (name, role_note, reserved) VALUES (?, ?, ?)', [
-    input.name,
-    input.roleNote,
-    input.reserved ? 1 : 0,
-  ])
+  const changes = await write(
+    db,
+    'INSERT INTO accounts (name, role_note, reserved, opening_balance) VALUES (?, ?, ?, ?)',
+    [input.name, input.roleNote, input.reserved ? 1 : 0, Math.trunc(input.openingBalance)],
+  )
   return lastId(changes, 'createAccount')
 }
 
 export async function updateAccount(db: SQLiteDBConnection, id: number, input: AccountInput): Promise<void> {
-  await write(db, 'UPDATE accounts SET name = ?, role_note = ?, reserved = ? WHERE id = ?', [
-    input.name,
-    input.roleNote,
-    input.reserved ? 1 : 0,
-    id,
-  ])
+  await write(
+    db,
+    'UPDATE accounts SET name = ?, role_note = ?, reserved = ?, opening_balance = ? WHERE id = ?',
+    [input.name, input.roleNote, input.reserved ? 1 : 0, Math.trunc(input.openingBalance), id],
+  )
 }
 
 export async function listCategories(db: SQLiteDBConnection): Promise<Category[]> {
@@ -263,17 +277,17 @@ export async function deleteTransferGroup(db: SQLiteDBConnection, groupId: strin
 export async function accountBalances(db: SQLiteDBConnection): Promise<AccountBalance[]> {
   return query<AccountBalance>(
     db,
-    `SELECT account_id AS accountId, SUM(${SIGNED_AMOUNT}) AS balance
-     FROM transactions GROUP BY account_id`,
+    `SELECT a.id AS accountId, a.opening_balance + COALESCE(tx.net, 0) AS balance
+     FROM accounts a LEFT JOIN ${ACCOUNT_NET} tx ON tx.account_id = a.id`,
   )
 }
 
 export async function balanceSummary(db: SQLiteDBConnection): Promise<BalanceSummary> {
   const rows = await query<BalanceSummary>(
     db,
-    `SELECT COALESCE(SUM(CASE WHEN a.reserved = 0 THEN ${SIGNED_AMOUNT} ELSE 0 END), 0) AS spendable,
-            COALESCE(SUM(CASE WHEN a.reserved = 1 THEN ${SIGNED_AMOUNT} ELSE 0 END), 0) AS reserved
-     FROM transactions t JOIN accounts a ON a.id = t.account_id`,
+    `SELECT COALESCE(SUM(CASE WHEN a.reserved = 0 THEN a.opening_balance + COALESCE(tx.net, 0) ELSE 0 END), 0) AS spendable,
+            COALESCE(SUM(CASE WHEN a.reserved = 1 THEN a.opening_balance + COALESCE(tx.net, 0) ELSE 0 END), 0) AS reserved
+     FROM accounts a LEFT JOIN ${ACCOUNT_NET} tx ON tx.account_id = a.id`,
   )
   return rows[0] ?? { spendable: 0, reserved: 0 }
 }

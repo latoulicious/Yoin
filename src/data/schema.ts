@@ -46,4 +46,8 @@ export const upgrades: capSQLiteVersionUpgrade[] = [
     toVersion: 2,
     statements: [`INSERT INTO accounts (name, role_note, reserved) VALUES ('Cash','',0);`],
   },
+  {
+    toVersion: 3,
+    statements: [`ALTER TABLE accounts ADD COLUMN opening_balance INTEGER NOT NULL DEFAULT 0;`],
+  },
 ]

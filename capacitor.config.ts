@@ -8,6 +8,12 @@ const config: CapacitorConfig = {
     CapacitorSQLite: {
       androidIsEncryption: false,
     },
+    SplashScreen: {
+      backgroundColor: '#F5F0E3',
+      launchShowDuration: 1000,
+      launchAutoHide: true,
+      showSpinner: false,
+    },
   },
 }
 
