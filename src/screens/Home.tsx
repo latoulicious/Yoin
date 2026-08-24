@@ -144,7 +144,7 @@ export default function Home({ onNavigate }: { onNavigate: (screen: NavTarget) =
       <button
         type="button"
         onClick={() => onNavigate('insights')}
-        className="-mx-5 mt-3 block bg-paper-2 px-5 pt-4 pb-3.5 text-left"
+        className="-mx-5 mt-3 block w-[calc(100%+2.5rem)] bg-paper-2 px-5 pt-4 pb-3.5 text-left"
       >
         <span className="block text-[9.5px] tracking-[.2em] uppercase text-ink-3">
           {`This month · ${now.toLocaleDateString('en-US', { month: 'long' })}`}

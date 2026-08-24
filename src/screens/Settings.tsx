@@ -246,11 +246,11 @@ function Data() {
         <div className={`flex items-baseline ${LABEL}`}>
           <span>Data</span>
           <span className={RULE_LEAD} />
-          <span>Native — P8</span>
+          <span>Coming soon</span>
         </div>
         <div className="mt-1.5 border-t border-ink opacity-75" />
         <div className={`flex h-[46px] items-center ${LABEL}`}>
-          Export and backup are web-only for now
+          Export and backup arrive in a later update
         </div>
       </div>
     )

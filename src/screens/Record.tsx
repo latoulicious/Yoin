@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { getDb } from '../data/db'
-import { addTransaction, listAccounts, listCategories, type Category } from '../data/repo'
+import {
+  addTransaction,
+  listAccounts,
+  listCategories,
+  type Account,
+  type Category,
+} from '../data/repo'
 
 type Kind = 'expense' | 'income'
 
@@ -53,6 +59,7 @@ export default function Record({
   const [kind, setKind] = useState<Kind>('expense')
   const [digits, setDigits] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
+  const [accounts, setAccounts] = useState<Account[]>([])
   const [accountId, setAccountId] = useState<number | null>(null)
   const [stamp] = useState(() => stampOf(new Date()))
   const saving = useRef(false)
@@ -61,10 +68,11 @@ export default function Record({
     let live = true
     void (async () => {
       const db = await getDb()
-      const [cats, accounts] = await Promise.all([listCategories(db), listAccounts(db)])
+      const [cats, accountRows] = await Promise.all([listCategories(db), listAccounts(db)])
       if (!live) return
       setCategories(cats.filter((c) => !c.system && !c.archived))
-      setAccountId(accounts[0]?.id ?? null)
+      setAccounts(accountRows)
+      setAccountId(accountRows[0]?.id ?? null)
     })()
     return () => {
       live = false
@@ -136,7 +144,19 @@ export default function Record({
         </div>
         <div className="mt-2 flex text-[9.5px] tracking-[.2em] uppercase text-ink-3">
           <span>{stamp}</span>
-          <span className="ml-auto">Cash</span>
+          <span className="ml-auto flex gap-2.5">
+            {accounts.map((account) => (
+              <button
+                key={account.id}
+                type="button"
+                aria-pressed={accountId === account.id}
+                onClick={() => setAccountId(account.id)}
+                className={accountId === account.id ? 'font-semibold text-hanko' : 'text-ink-3'}
+              >
+                {account.name}
+              </button>
+            ))}
+          </span>
         </div>
       </div>
       <div className="border-t border-dashed border-rule" />

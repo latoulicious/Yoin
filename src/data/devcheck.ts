@@ -40,7 +40,12 @@ async function devcheck(): Promise<void> {
   assert(fee.system, 'Fee category is not marked system')
   const food = categories[0]
 
-  const accountId = await createAccount(db, { name: ACCOUNT_NAME, roleNote: 'temporary', reserved: false })
+  const accountId = await createAccount(db, {
+    name: ACCOUNT_NAME,
+    roleNote: 'temporary',
+    reserved: false,
+    openingBalance: 0,
+  })
   const accounts = await listAccounts(db)
   const account = accounts.find((a) => a.id === accountId)
   assert(account !== undefined, `created account ${accountId} not returned by listAccounts`)
@@ -85,7 +90,12 @@ async function devcheck(): Promise<void> {
   await deleteTransaction(db, incomeId)
   await assertTotals(db, { income: 0, expense: 0 })
 
-  const destId = await createAccount(db, { name: DEST_NAME, roleNote: 'temporary', reserved: false })
+  const destId = await createAccount(db, {
+    name: DEST_NAME,
+    roleNote: 'temporary',
+    reserved: false,
+    openingBalance: 0,
+  })
   const groupId = await addTransferGroup(db, {
     fromId: accountId,
     toId: destId,

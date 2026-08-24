@@ -22,6 +22,8 @@ const AMOUNT = 'text-right font-mono tabular-nums whitespace-nowrap'
 const FIELD =
   'mt-1.5 h-9 w-full border-b border-rule bg-transparent font-sans text-[14px] outline-none'
 
+const MAX_DIGITS = 11
+
 const ROLES: { value: boolean; label: string }[] = [
   { value: false, label: 'Spendable' },
   { value: true, label: 'Reserved' },
@@ -43,6 +45,9 @@ function Editor({
   const [name, setName] = useState(account?.name ?? '')
   const [roleNote, setRoleNote] = useState(account?.roleNote ?? '')
   const [reserved, setReserved] = useState(account?.reserved ?? false)
+  const [opening, setOpening] = useState(
+    account?.openingBalance ? String(account.openingBalance) : '',
+  )
   const trimmed = name.trim()
 
   return (
@@ -76,6 +81,17 @@ function Editor({
               className={FIELD}
             />
           </label>
+          <label className="mt-3 block text-[9.5px] tracking-[.2em] uppercase text-ink-3">
+            Initial balance
+            <input
+              value={opening}
+              inputMode="numeric"
+              onChange={(event) =>
+                setOpening(event.target.value.replace(/\D/g, '').slice(0, MAX_DIGITS))
+              }
+              className={FIELD}
+            />
+          </label>
         </div>
 
         <div className="mt-4 flex h-9 border border-rule">
@@ -102,7 +118,14 @@ function Editor({
         <button
           type="button"
           disabled={trimmed === ''}
-          onClick={() => onSave({ name: trimmed, roleNote: roleNote.trim(), reserved })}
+          onClick={() =>
+            onSave({
+              name: trimmed,
+              roleNote: roleNote.trim(),
+              reserved,
+              openingBalance: Number(opening || 0),
+            })
+          }
           className="mt-4 flex h-10 w-full items-center justify-center border border-hanko text-[10.5px] font-semibold tracking-[.2em] uppercase text-hanko disabled:border-rule disabled:text-ink-3"
         >
           Save
