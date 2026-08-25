@@ -4,13 +4,14 @@ const config: CapacitorConfig = {
   appId: 'com.latoulicious.yoin',
   appName: 'Yoin',
   webDir: 'dist',
+  backgroundColor: '#F5F0E3',
   plugins: {
     CapacitorSQLite: {
       androidIsEncryption: false,
     },
     SplashScreen: {
       backgroundColor: '#F5F0E3',
-      launchShowDuration: 1000,
+      launchShowDuration: 200,
       launchAutoHide: true,
       showSpinner: false,
     },
