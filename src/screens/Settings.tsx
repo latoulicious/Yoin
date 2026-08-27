@@ -332,7 +332,7 @@ export default function Settings({
         <div className={`flex items-baseline ${LABEL}`}>
           <span>About</span>
           <span className={RULE_LEAD} />
-          <span className="font-mono tabular-nums">{VERSION}</span>
+          <span className="font-mono tabular-nums">{`${VERSION} · ${__COMMIT__}`}</span>
         </div>
         <div className="mt-3.5 flex items-start gap-3.5 border border-dashed border-rule bg-paper-2 p-[18px]">
           <span className={SEAL}>余韻</span>
