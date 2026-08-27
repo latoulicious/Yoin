@@ -231,6 +231,18 @@ export async function addTransaction(db: SQLiteDBConnection, input: TransactionI
   return lastId(changes, 'addTransaction')
 }
 
+export async function updateTransaction(
+  db: SQLiteDBConnection,
+  id: number,
+  input: { amount: number; note: string },
+): Promise<void> {
+  await write(db, 'UPDATE transactions SET amount = ?, note = ? WHERE id = ?', [
+    input.amount,
+    input.note,
+    id,
+  ])
+}
+
 export async function deleteTransaction(db: SQLiteDBConnection, id: number): Promise<void> {
   await write(db, 'DELETE FROM transactions WHERE id = ?', [id])
 }

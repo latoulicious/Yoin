@@ -11,6 +11,7 @@ import {
   listAccounts,
   listCategories,
   monthTotals,
+  updateTransaction,
   type DayGroup,
   type Transaction,
 } from './repo'
@@ -84,6 +85,15 @@ async function devcheck(): Promise<void> {
   assert(
     groups[0].rows[0].categoryCode === 'FD',
     `expected joined category code FD, got ${String(groups[0].rows[0].categoryCode)}`,
+  )
+
+  await updateTransaction(db, expenseId, { amount: 2500, note: 'devcheck edited' })
+  await assertBalance(db, accountId, 2500)
+  await assertTotals(db, { income: 5000, expense: 2500 })
+  const edited = (await dayGroups(db, MONTH))[0].rows[0]
+  assert(
+    edited.amount === 2500 && edited.note === 'devcheck edited',
+    `edited txn did not round-trip: ${edited.amount} / ${edited.note}`,
   )
 
   await deleteTransaction(db, expenseId)
