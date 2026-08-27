@@ -66,6 +66,7 @@ function signedOf(txn: Transaction): number {
 function rowLabel(txn: Transaction): string {
   if (txn.categoryName !== null) return txn.categoryName
   if (txn.kind === 'transfer_out' || txn.kind === 'transfer_in') return KIND_LABEL[txn.kind]
+  if (txn.kind === 'income') return 'Income'
   return 'Uncategorized'
 }
 
