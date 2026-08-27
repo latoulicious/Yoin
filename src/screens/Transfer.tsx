@@ -42,48 +42,44 @@ function plainText(value: number): string {
   return `${value < 0 ? '−' : ''}${Math.abs(value).toLocaleString('en-US')}`
 }
 
-function Picker({
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+function dateLabel(date: Date): string {
+  return `${MONTHS[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}`
+}
+
+function PickRow({
   label,
-  accounts,
-  balanceOf,
-  selectedId,
-  onSelect,
+  account,
+  before,
+  after,
+  onClick,
 }: {
   label: string
-  accounts: Account[]
-  balanceOf: (id: number) => number
-  selectedId: number | null
-  onSelect: (id: number) => void
+  account: Account | null
+  before: number
+  after: number
+  onClick: () => void
 }) {
   return (
-    <div className="mt-3.5">
-      <div className="text-[9.5px] tracking-[.2em] uppercase text-ink-3">{label}</div>
-      <div className="mt-1.5 border-t border-dashed border-rule">
-        {accounts.map((account) => {
-          const active = account.id === selectedId
-          return (
-            <button
-              key={account.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onSelect(account.id)}
-              className={`flex h-[38px] w-full items-center border-b border-dotted border-rule-2 px-2 text-left ${
-                active ? 'bg-hanko-soft shadow-[inset_0_0_0_1px_var(--red)]' : ''
-              }`}
-            >
-              <span
-                className={`min-w-0 flex-1 truncate font-sans text-[13px] ${active ? 'font-semibold text-hanko' : 'text-ink-2'}`}
-              >
-                {account.name}
-              </span>
-              <span className={`${AMOUNT} text-[12px] text-ink-3`}>
-                {plainText(balanceOf(account.id))}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-[54px] w-full items-center border border-rule bg-paper-2 px-3.5 text-left"
+    >
+      <span className="w-11 shrink-0 text-[9px] tracking-[.22em] uppercase text-ink-3">{label}</span>
+      <span className="min-w-0 flex-1 border-l border-dotted border-rule pl-3.5">
+        <span className="block truncate font-sans text-[13.5px] font-medium">
+          {account?.name ?? '—'}
+        </span>
+        <span className="mt-[3px] block truncate font-mono text-[9.5px] tracking-[.12em] text-ink-3">
+          {account === null
+            ? 'CHOOSE ACCOUNT'
+            : `BALANCE ${plainText(before)} → ${plainText(after)}`}
+        </span>
+      </span>
+      <span className="ml-2.5 shrink-0 text-[13px] text-rule">›</span>
+    </button>
   )
 }
 
@@ -101,6 +97,8 @@ export default function Transfer({
   const [amountDigits, setAmountDigits] = useState('')
   const [feeDigits, setFeeDigits] = useState('')
   const [target, setTarget] = useState<Target>('amount')
+  const [picking, setPicking] = useState<Side | null>(null)
+  const [stamp] = useState(() => dateLabel(new Date()))
   const saving = useRef(false)
 
   useEffect(() => {
@@ -159,6 +157,7 @@ export default function Transfer({
 
   const fromBalance = from === null ? 0 : balanceOf(from.id)
   const toBalance = to === null ? 0 : balanceOf(to.id)
+  const pickerOptions = picking === 'to' ? accounts.filter((a) => a.id !== fromId) : accounts
 
   return (
     <div className="pt-4 pb-6">
@@ -171,22 +170,40 @@ export default function Transfer({
         >
           ×
         </button>
+        <span className="ml-auto text-[9.5px] tracking-[.2em] uppercase text-ink-3">{stamp}</span>
       </div>
 
-      <Picker
-        label="From"
-        accounts={accounts}
-        balanceOf={balanceOf}
-        selectedId={fromId}
-        onSelect={(id) => select('from', id)}
-      />
-      <Picker
-        label="To"
-        accounts={accounts}
-        balanceOf={balanceOf}
-        selectedId={toId}
-        onSelect={(id) => select('to', id)}
-      />
+      <div className="mt-3.5">
+        <PickRow
+          label="From"
+          account={from}
+          before={fromBalance}
+          after={fromBalance - amount - fee}
+          onClick={() => setPicking('from')}
+        />
+        <div className="flex h-7 items-center">
+          <span className="flex-1 border-t border-dashed border-rule" />
+          <button
+            type="button"
+            aria-label="Swap accounts"
+            onClick={() => {
+              setFromId(toId)
+              setToId(fromId)
+            }}
+            className="mx-3 flex h-7 w-7 items-center justify-center border border-hanko bg-paper text-[13px] text-hanko"
+          >
+            ⇄
+          </button>
+          <span className="flex-1 border-t border-dashed border-rule" />
+        </div>
+        <PickRow
+          label="To"
+          account={to}
+          before={toBalance}
+          after={toBalance + amount}
+          onClick={() => setPicking('to')}
+        />
+      </div>
 
       {from?.reserved === true && (
         <div className="mt-2.5 text-[9.5px] tracking-[.2em] uppercase text-hanko">
@@ -222,21 +239,6 @@ export default function Transfer({
       </div>
       <div className="border-t border-dashed border-rule" />
 
-      <div className="mt-3 flex items-baseline text-[9.5px] tracking-[.2em] uppercase text-ink-3">
-        <span className="truncate">{from?.name ?? '—'}</span>
-        <span className={RULE_LEAD} />
-        <span className="font-mono tabular-nums">
-          {`${plainText(fromBalance)} → ${plainText(fromBalance - amount - fee)}`}
-        </span>
-      </div>
-      <div className="mt-1.5 flex items-baseline text-[9.5px] tracking-[.2em] uppercase text-ink-3">
-        <span className="truncate">{to?.name ?? '—'}</span>
-        <span className={RULE_LEAD} />
-        <span className="font-mono tabular-nums">
-          {`${plainText(toBalance)} → ${plainText(toBalance + amount)}`}
-        </span>
-      </div>
-
       <div className="mt-4 grid grid-cols-3 border-t border-l border-dashed border-rule">
         {KEYS.map((key) => (
           <button
@@ -260,10 +262,59 @@ export default function Transfer({
         type="button"
         disabled={!ready}
         onClick={() => void confirm()}
-        className="mt-4 flex h-10 w-full items-center justify-center border border-hanko text-[10.5px] font-semibold tracking-[.2em] uppercase text-hanko disabled:border-rule disabled:text-ink-3"
+        className="mt-5 flex h-[52px] w-full items-center justify-center border-[1.5px] border-hanko bg-hanko-soft text-[11.5px] font-semibold tracking-[.26em] uppercase text-hanko shadow-[0_0_0_3px_var(--paper),0_0_0_4.5px_color-mix(in_srgb,var(--red)_35%,transparent)] disabled:border-rule disabled:bg-transparent disabled:text-ink-3 disabled:shadow-none"
       >
         Confirm transfer
       </button>
+
+      {picking && (
+        <div
+          className="fixed inset-0 z-10 flex items-end bg-ink/25 px-5"
+          onClick={() => setPicking(null)}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            className="mb-5 w-full border border-ink bg-paper px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+18px)]"
+          >
+            <div className="flex items-baseline text-[9.5px] tracking-[.2em] uppercase text-ink-3">
+              <span>{picking === 'from' ? 'From account' : 'To account'}</span>
+              <span className={RULE_LEAD} />
+              <button
+                type="button"
+                onClick={() => setPicking(null)}
+                className="tracking-[.2em] text-ink-2"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-3 border-t border-dashed border-rule">
+              {pickerOptions.map((account) => (
+                <button
+                  key={account.id}
+                  type="button"
+                  onClick={() => {
+                    select(picking, account.id)
+                    setPicking(null)
+                  }}
+                  className="flex h-12 w-full items-center gap-2.5 border-b border-dotted border-rule-2 text-left"
+                >
+                  <span className="min-w-0 flex-1 truncate font-sans text-[13.5px] font-medium">
+                    {account.name}
+                  </span>
+                  {account.reserved && (
+                    <span className="shrink-0 border border-hanko px-1 text-[8.5px] tracking-[.18em] text-hanko">
+                      RESERVED
+                    </span>
+                  )}
+                  <span className={`${AMOUNT} text-[12.5px] text-ink-3`}>
+                    {plainText(balanceOf(account.id))}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

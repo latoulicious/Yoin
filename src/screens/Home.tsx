@@ -3,7 +3,9 @@ import { getDb } from '../data/db'
 import {
   balanceSummary,
   dayGroups,
+  listAccounts,
   monthTotals,
+  type Account,
   type BalanceSummary,
   type DayGroup,
   type MonthTotals,
@@ -63,21 +65,25 @@ function rowLabel(txn: Transaction): string {
   return 'Uncategorized'
 }
 
-function Row({ txn }: { txn: Transaction }) {
+function Row({ txn, transferLabel }: { txn: Transaction; transferLabel?: string }) {
+  const transfer = transferLabel !== undefined
   const value = signedOf(txn)
+  const time = txn.occurredAt.slice(11, 16)
   return (
     <div className="flex h-[52px] items-center border-b border-dotted border-rule-2">
       <span className="min-w-0 flex-1">
-        <span className="block font-sans text-[14.5px] font-medium">{rowLabel(txn)}</span>
+        <span className="block truncate font-sans text-[14.5px] font-medium">
+          {transfer ? transferLabel : rowLabel(txn)}
+        </span>
         <span className="mt-[3px] block text-[10px] tracking-[.09em] uppercase text-ink-3">
           <span className="mr-[7px] inline-block border border-rule px-1 py-px align-[1px] text-[9px] tracking-[.1em]">
-            {txn.categoryCode ?? '··'}
+            {transfer ? '⇄' : (txn.categoryCode ?? '··')}
           </span>
-          {txn.occurredAt.slice(11, 16)}
+          {transfer ? `Transfer · ${time}` : time}
         </span>
       </span>
-      <span className={`${AMOUNT} text-[14.5px] ${value < 0 ? '' : 'font-semibold'}`}>
-        {signedText(value)}
+      <span className={`${AMOUNT} text-[14.5px] ${transfer ? 'text-ink-2' : value < 0 ? '' : 'font-semibold'}`}>
+        {transfer ? grouped(txn.amount) : signedText(value)}
       </span>
     </div>
   )
@@ -88,6 +94,7 @@ export default function Home({ onNavigate }: { onNavigate: (screen: NavTarget) =
   const [balance, setBalance] = useState<BalanceSummary>({ spendable: 0, reserved: 0 })
   const [totals, setTotals] = useState<MonthTotals>({ income: 0, expense: 0 })
   const [today, setToday] = useState<DayGroup | null>(null)
+  const [accounts, setAccounts] = useState<Account[]>([])
 
   const month = monthKey(now)
   const day = dayKey(now)
@@ -96,15 +103,17 @@ export default function Home({ onNavigate }: { onNavigate: (screen: NavTarget) =
     let live = true
     void (async () => {
       const db = await getDb()
-      const [summary, monthly, groups] = await Promise.all([
+      const [summary, monthly, groups, accountRows] = await Promise.all([
         balanceSummary(db),
         monthTotals(db, month),
         dayGroups(db, month),
+        listAccounts(db),
       ])
       if (!live) return
       setBalance(summary)
       setTotals(monthly)
       setToday(groups.find((group) => group.date === day) ?? null)
+      setAccounts(accountRows)
     })()
     return () => {
       live = false
@@ -178,7 +187,20 @@ export default function Home({ onNavigate }: { onNavigate: (screen: NavTarget) =
           No entries
         </div>
       ) : (
-        rows.map((txn) => <Row key={txn.id} txn={txn} />)
+        rows.map((txn) => {
+          if (txn.kind === 'transfer_in') return null
+          const accountName = (id: number | undefined) =>
+            accounts.find((a) => a.id === id)?.name ?? '—'
+          const transferLabel =
+            txn.kind === 'transfer_out'
+              ? `${accountName(txn.accountId)} → ${accountName(
+                  rows.find(
+                    (r) => r.transferGroupId === txn.transferGroupId && r.kind === 'transfer_in',
+                  )?.accountId,
+                )}`
+              : undefined
+          return <Row key={txn.id} txn={txn} transferLabel={transferLabel} />
+        })
       )}
 
       <button

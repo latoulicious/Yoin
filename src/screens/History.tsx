@@ -60,6 +60,10 @@ function signedText(value: number): string {
   return `${value < 0 ? '−' : '+'}${Math.abs(value).toLocaleString('en-US')}`
 }
 
+function plainText(value: number): string {
+  return value.toLocaleString('en-US')
+}
+
 function signedOf(txn: Transaction): number {
   return txn.kind === 'income' || txn.kind === 'transfer_in' ? txn.amount : -txn.amount
 }
@@ -301,7 +305,16 @@ export default function History() {
             </div>
             <div className="border-t border-ink opacity-75" />
             {group.rows.map((txn) => {
+              if (txn.kind === 'transfer_in') return null
               const value = signedOf(txn)
+              const time = txn.occurredAt.slice(11, 16)
+              const transfer = txn.kind === 'transfer_out'
+              const partner = transfer
+                ? group.rows.find(
+                    (r) => r.transferGroupId === txn.transferGroupId && r.kind === 'transfer_in',
+                  )
+                : undefined
+              const accountName = (id: number) => accounts.find((a) => a.id === id)?.name ?? '—'
               return (
                 <button
                   key={txn.id}
@@ -310,18 +323,24 @@ export default function History() {
                   className="flex h-[52px] w-full items-center border-b border-dotted border-rule-2 text-left"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block font-sans text-[14.5px] font-medium">
-                      {rowLabel(txn)}
+                    <span className="block truncate font-sans text-[14.5px] font-medium">
+                      {transfer
+                        ? `${accountName(txn.accountId)} → ${partner ? accountName(partner.accountId) : '—'}`
+                        : rowLabel(txn)}
                     </span>
                     <span className="mt-[3px] block text-[10px] tracking-[.09em] uppercase text-ink-3">
                       <span className="mr-[7px] inline-block border border-rule px-1 py-px align-[1px] text-[9px] tracking-[.1em]">
-                        {txn.categoryCode ?? '··'}
+                        {transfer ? '⇄' : (txn.categoryCode ?? '··')}
                       </span>
-                      {txn.occurredAt.slice(11, 16)}
+                      {transfer ? `Transfer · ${time}` : time}
                     </span>
                   </span>
-                  <span className={`${AMOUNT} text-[14.5px] ${value < 0 ? '' : 'font-semibold'}`}>
-                    {signedText(value)}
+                  <span
+                    className={`${AMOUNT} text-[14.5px] ${
+                      transfer ? 'text-ink-2' : value < 0 ? '' : 'font-semibold'
+                    }`}
+                  >
+                    {transfer ? plainText(txn.amount) : signedText(value)}
                   </span>
                 </button>
               )
