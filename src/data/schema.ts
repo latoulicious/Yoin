@@ -55,6 +55,14 @@ export const upgrades: capSQLiteVersionUpgrade[] = [
     statements: [
       `ALTER TABLE categories ADD COLUMN kind TEXT NOT NULL DEFAULT 'expense' CHECK (kind IN ('expense','income'));`,
       `INSERT INTO categories (name, code, system, sort, kind)
+       VALUES ('Bills','BI',0,(SELECT COALESCE(MAX(sort),0)+1 FROM categories),'expense');`,
+      `INSERT INTO categories (name, code, system, sort, kind)
+       VALUES ('Shopping','SH',0,(SELECT COALESCE(MAX(sort),0)+1 FROM categories),'expense');`,
+      `INSERT INTO categories (name, code, system, sort, kind)
+       VALUES ('Groceries','GR',0,(SELECT COALESCE(MAX(sort),0)+1 FROM categories),'expense');`,
+      `UPDATE categories SET sort = (SELECT MAX(sort)+1 FROM categories)
+       WHERE code = 'OT' AND kind = 'expense';`,
+      `INSERT INTO categories (name, code, system, sort, kind)
        VALUES ('Salary','SA',0,(SELECT COALESCE(MAX(sort),0)+1 FROM categories),'income');`,
       `INSERT INTO categories (name, code, system, sort, kind)
        VALUES ('Bonus','BN',0,(SELECT COALESCE(MAX(sort),0)+1 FROM categories),'income');`,
