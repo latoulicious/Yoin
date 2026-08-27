@@ -52,9 +52,11 @@ function nextDigits(current: string, key: string): string {
 export default function Record({
   onClose,
   onSaved,
+  onTransfer,
 }: {
   onClose: () => void
   onSaved: (entry: SavedEntry) => void
+  onTransfer: () => void
 }) {
   const [kind, setKind] = useState<Kind>('expense')
   const [digits, setDigits] = useState('')
@@ -132,6 +134,13 @@ export default function Record({
             </button>
           )
         })}
+        <button
+          type="button"
+          onClick={onTransfer}
+          className="flex flex-1 items-center justify-center border-l border-dashed border-rule text-[10.5px] tracking-[.2em] uppercase text-ink-3"
+        >
+          Transfer
+        </button>
       </div>
 
       <div className="mt-4 border-t border-ink pt-3.5 pb-3">

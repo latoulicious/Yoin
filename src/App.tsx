@@ -111,7 +111,11 @@ export default function App() {
         ) : screen === 'categories' ? (
           <Categories />
         ) : screen === 'record' ? (
-          <Record onClose={() => setScreen('home')} onSaved={handleSaved} />
+          <Record
+            onClose={() => setScreen('home')}
+            onSaved={handleSaved}
+            onTransfer={() => setScreen('transfer')}
+          />
         ) : screen === 'home' ? (
           <Home key={dataVersion} onNavigate={setScreen} />
         ) : screen === 'history' ? (
