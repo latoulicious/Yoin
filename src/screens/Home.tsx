@@ -59,6 +59,7 @@ function rowLabel(txn: Transaction): string {
   if (txn.categoryName !== null) return txn.categoryName
   if (txn.kind === 'transfer_out') return 'Transfer out'
   if (txn.kind === 'transfer_in') return 'Transfer in'
+  if (txn.kind === 'income') return 'Income'
   return 'Uncategorized'
 }
 
