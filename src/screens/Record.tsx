@@ -81,7 +81,7 @@ export default function Record({
 
   const amount = digits === '' ? 0 : Number(digits)
 
-  async function save(category: Category | null) {
+  async function save(category: Category) {
     if (amount <= 0 || accountId === null || saving.current) return
     saving.current = true
     try {
@@ -89,12 +89,12 @@ export default function Record({
       const id = await addTransaction(db, {
         amount,
         kind,
-        categoryId: category?.id ?? null,
+        categoryId: category.id,
         accountId,
         note: '',
         occurredAt: localIso(new Date()),
       })
-      onSaved({ id, label: category?.name ?? 'Income', amount, kind })
+      onSaved({ id, label: category.name, amount, kind })
     } finally {
       saving.current = false
     }
@@ -177,22 +177,15 @@ export default function Record({
       </div>
 
       <div className="mt-3.5 flex items-baseline text-[9.5px] tracking-[.2em] uppercase text-ink-3">
-        <span>{kind === 'income' ? 'Tap to save' : 'Tap a category to save'}</span>
+        <span>Tap a category to save</span>
         <span className={RULE_LEAD} />
         <span>1 tap</span>
       </div>
 
-      {kind === 'income' ? (
-        <button
-          type="button"
-          onClick={() => void save(null)}
-          className="mt-1.5 flex h-[70px] w-full items-center justify-center border border-dashed border-rule text-[12.5px] font-medium tracking-[.14em] uppercase text-ink-2"
-        >
-          Save income
-        </button>
-      ) : (
-        <div className="mt-1.5 grid grid-cols-3 border-t border-l border-dashed border-rule">
-          {categories.map((category) => (
+      <div className="mt-1.5 grid grid-cols-3 border-t border-l border-dashed border-rule">
+        {categories
+          .filter((category) => category.kind === kind)
+          .map((category) => (
             <button
               key={category.id}
               type="button"
@@ -205,8 +198,7 @@ export default function Record({
               <span className="font-sans text-[12.5px] font-medium text-ink-2">{category.name}</span>
             </button>
           ))}
-        </div>
-      )}
+      </div>
     </div>
   )
 }

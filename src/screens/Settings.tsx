@@ -13,6 +13,7 @@ import {
   type Category,
 } from '../data/repo'
 import type { ThemePref } from '../theme'
+import { version } from '../../package.json'
 
 const THEME_OPTIONS: ThemePref[] = ['system', 'paper', 'carbon']
 
@@ -30,7 +31,7 @@ const ACTION =
 const SEAL =
   'flex h-[34px] w-[34px] shrink-0 rotate-[-3.5deg] items-center justify-center rounded-[3px] border-[1.4px] border-hanko font-serif text-[13px] leading-[1.05] text-hanko shadow-[0_0_0_2.5px_var(--paper),0_0_0_3.5px_color-mix(in_srgb,var(--red)_18%,transparent)] [writing-mode:vertical-rl]'
 
-const VERSION = '0.1.0'
+const VERSION = version
 
 const isWeb = Capacitor.getPlatform() === 'web'
 
@@ -331,7 +332,7 @@ export default function Settings({
         <div className={`flex items-baseline ${LABEL}`}>
           <span>About</span>
           <span className={RULE_LEAD} />
-          <span className="font-mono tabular-nums">{VERSION}</span>
+          <span className="font-mono tabular-nums">{`${VERSION} · ${__COMMIT__}`}</span>
         </div>
         <div className="mt-3.5 flex items-start gap-3.5 border border-dashed border-rule bg-paper-2 p-[18px]">
           <span className={SEAL}>余韻</span>

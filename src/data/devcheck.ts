@@ -31,13 +31,18 @@ async function devcheck(): Promise<void> {
   await purge(db)
 
   const categories = await listCategories(db)
-  assert(categories.length === 7, `expected 7 seeded categories, got ${categories.length}`)
+  assert(categories.length === 13, `expected 13 seeded categories, got ${categories.length}`)
   assert(
-    categories.map((c) => c.code).join(',') === 'FD,TR,HM,LS,HL,OT,FE',
+    categories.map((c) => c.code).join(',') === 'FD,TR,HM,LS,HL,FE,BI,SH,GR,OT,SA,BN,OT',
     `unexpected category order: ${categories.map((c) => c.code).join(',')}`,
   )
-  const fee = categories[6]
+  const fee = categories[5]
   assert(fee.system, 'Fee category is not marked system')
+  assert(
+    categories.map((c) => c.kind).join(',') ===
+      'expense,expense,expense,expense,expense,expense,expense,expense,expense,expense,income,income,income',
+    `unexpected category kinds: ${categories.map((c) => c.kind).join(',')}`,
+  )
   const food = categories[0]
 
   const accountId = await createAccount(db, {

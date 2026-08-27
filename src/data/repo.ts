@@ -25,6 +25,7 @@ export interface Category {
   system: boolean
   archived: boolean
   sort: number
+  kind: 'expense' | 'income'
 }
 
 export interface TransactionInput {
@@ -113,6 +114,7 @@ interface CategoryRow {
   system: number
   archived: number
   sort: number
+  kind: 'expense' | 'income'
 }
 
 interface TransactionRow {
@@ -170,7 +172,7 @@ export async function updateAccount(db: SQLiteDBConnection, id: number, input: A
 export async function listCategories(db: SQLiteDBConnection): Promise<Category[]> {
   const rows = await query<CategoryRow>(
     db,
-    'SELECT id, name, code, system, archived, sort FROM categories ORDER BY sort',
+    'SELECT id, name, code, system, archived, sort, kind FROM categories ORDER BY sort',
   )
   return rows.map((r) => ({
     id: r.id,
@@ -179,6 +181,7 @@ export async function listCategories(db: SQLiteDBConnection): Promise<Category[]
     system: r.system !== 0,
     archived: r.archived !== 0,
     sort: r.sort,
+    kind: r.kind,
   }))
 }
 

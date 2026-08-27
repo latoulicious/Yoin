@@ -62,9 +62,9 @@ jobs:
           git tag -f latest "$GITHUB_SHA"
           git push -f origin latest
           gh release view latest >/dev/null 2>&1 || \
-            gh release create latest --title "Yoin APK (rolling)" --notes "Always the newest APK built from main." --prerelease
+            gh release create latest --title "Yoin APK (rolling)" --notes "Always the newest APK built from main." --latest
           gh release upload latest yoin.apk --clobber
-          gh release edit latest --notes "Built from \`${GITHUB_SHA::7}\` on $(date -u +%Y-%m-%d)."
+          gh release edit latest --prerelease=false --latest --notes "Built from \`${GITHUB_SHA::7}\` on $(date -u +%Y-%m-%d)."
 
       # Non-main runs (workflow_dispatch on branches) still get an artifact.
       - uses: actions/upload-artifact@v4
