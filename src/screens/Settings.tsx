@@ -3,7 +3,7 @@ import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import { useEffect, useState } from 'react'
 import type { Screen } from '../App'
 import { toCsv } from '../data/csv'
-import { backupToDisk, getDb, restoreFromDisk } from '../data/db'
+import { backupToDisk, getDb, restoreFromDisk, shareFile } from '../data/db'
 import {
   createCategory,
   exportRows,
@@ -45,7 +45,7 @@ function download(csv: string) {
   setTimeout(() => URL.revokeObjectURL(url))
 }
 
-function Appearance({
+export function Appearance({
   pref,
   setPref,
   resolved,
@@ -152,7 +152,7 @@ function CategoryRow({
   )
 }
 
-function Categories() {
+export function Categories() {
   const [categories, setCategories] = useState<Category[]>([])
   const [draft, setDraft] = useState('')
   const [version, setVersion] = useState(0)
@@ -235,26 +235,12 @@ function Data() {
       setStatus('')
       try {
         await action()
-      } catch {
+      } catch (err) {
+        // dismissing the share sheet or file picker rejects; that's not a failure.
+        if (err instanceof Error && /cancel/i.test(err.message)) return
         setStatus(`${label} failed`)
       }
     })()
-  }
-
-  if (!isWeb) {
-    return (
-      <div className="pt-6">
-        <div className={`flex items-baseline ${LABEL}`}>
-          <span>Data</span>
-          <span className={RULE_LEAD} />
-          <span>Coming soon</span>
-        </div>
-        <div className="mt-1.5 border-t border-ink opacity-75" />
-        <div className={`flex h-[46px] items-center ${LABEL}`}>
-          Export and backup arrive in a later update
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -271,7 +257,9 @@ function Data() {
           type="button"
           onClick={() =>
             run('Export', async () => {
-              download(toCsv(await exportRows(await getDb())))
+              const csv = toCsv(await exportRows(await getDb()))
+              if (isWeb) download(csv)
+              else await shareFile('yoin-export.csv', csv)
             })
           }
           className={ACTION}
@@ -296,35 +284,27 @@ function Data() {
   )
 }
 
-export default function Settings({
-  onNavigate,
-  pref,
-  setPref,
-  resolved,
-}: {
-  onNavigate: (screen: Screen) => void
-  pref: ThemePref
-  setPref: (next: ThemePref) => void
-  resolved: string
-}) {
+function NavRow({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <div className="pt-6">
+      <button type="button" onClick={onClick} className={`flex w-full items-baseline ${LABEL}`}>
+        <span>{label}</span>
+        <span className={RULE_LEAD} />
+        <span className="text-hanko">Manage →</span>
+      </button>
+      <div className="mt-1.5 border-t border-ink opacity-75" />
+    </div>
+  )
+}
+
+export default function Settings({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   return (
     <div className="pb-6">
-      <Appearance pref={pref} setPref={setPref} resolved={resolved} />
+      <NavRow label="Appearance" onClick={() => onNavigate('appearance')} />
 
-      <Categories />
+      <NavRow label="Categories" onClick={() => onNavigate('categories')} />
 
-      <div className="pt-6">
-        <button
-          type="button"
-          onClick={() => onNavigate('accounts')}
-          className={`flex w-full items-baseline ${LABEL}`}
-        >
-          <span>Accounts</span>
-          <span className={RULE_LEAD} />
-          <span className="text-hanko">Manage →</span>
-        </button>
-        <div className="mt-1.5 border-t border-ink opacity-75" />
-      </div>
+      <NavRow label="Accounts" onClick={() => onNavigate('accounts')} />
 
       <Data />
 

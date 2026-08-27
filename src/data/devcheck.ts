@@ -11,6 +11,7 @@ import {
   listAccounts,
   listCategories,
   monthTotals,
+  updateTransaction,
   type DayGroup,
   type Transaction,
 } from './repo'
@@ -33,14 +34,14 @@ async function devcheck(): Promise<void> {
   const categories = await listCategories(db)
   assert(categories.length === 13, `expected 13 seeded categories, got ${categories.length}`)
   assert(
-    categories.map((c) => c.code).join(',') === 'FD,TR,HM,LS,HL,FE,BI,SH,GR,OT,SA,BN,OT',
+    categories.map((c) => c.code).join(',') === 'FD,TR,HM,LS,HL,BI,SH,GR,OT,SA,BN,OT,FE',
     `unexpected category order: ${categories.map((c) => c.code).join(',')}`,
   )
-  const fee = categories[5]
+  const fee = categories[12]
   assert(fee.system, 'Fee category is not marked system')
   assert(
     categories.map((c) => c.kind).join(',') ===
-      'expense,expense,expense,expense,expense,expense,expense,expense,expense,expense,income,income,income',
+      'expense,expense,expense,expense,expense,expense,expense,expense,expense,income,income,income,expense',
     `unexpected category kinds: ${categories.map((c) => c.kind).join(',')}`,
   )
   const food = categories[0]
@@ -84,6 +85,15 @@ async function devcheck(): Promise<void> {
   assert(
     groups[0].rows[0].categoryCode === 'FD',
     `expected joined category code FD, got ${String(groups[0].rows[0].categoryCode)}`,
+  )
+
+  await updateTransaction(db, expenseId, { amount: 2500, note: 'devcheck edited' })
+  await assertBalance(db, accountId, 2500)
+  await assertTotals(db, { income: 5000, expense: 2500 })
+  const edited = (await dayGroups(db, MONTH))[0].rows[0]
+  assert(
+    edited.amount === 2500 && edited.note === 'devcheck edited',
+    `edited txn did not round-trip: ${edited.amount} / ${edited.note}`,
   )
 
   await deleteTransaction(db, expenseId)

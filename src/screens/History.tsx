@@ -6,6 +6,7 @@ import {
   deleteTransferGroup,
   listAccounts,
   monthTotals,
+  updateTransaction,
   type Account,
   type DayGroup,
   type MonthTotals,
@@ -59,6 +60,10 @@ function signedText(value: number): string {
   return `${value < 0 ? '−' : '+'}${Math.abs(value).toLocaleString('en-US')}`
 }
 
+function plainText(value: number): string {
+  return value.toLocaleString('en-US')
+}
+
 function signedOf(txn: Transaction): number {
   return txn.kind === 'income' || txn.kind === 'transfer_in' ? txn.amount : -txn.amount
 }
@@ -85,12 +90,19 @@ function Detail({
   accountName,
   onClose,
   onDelete,
+  onSave,
 }: {
   txn: Transaction
   accountName: string
   onClose: () => void
   onDelete: () => void
+  onSave: (amount: number, note: string) => void
 }) {
+  const [editing, setEditing] = useState(false)
+  const [amountDraft, setAmountDraft] = useState(() => String(txn.amount))
+  const [noteDraft, setNoteDraft] = useState(txn.note)
+  const draftAmount = Number(amountDraft)
+  const valid = amountDraft !== '' && draftAmount > 0
   const value = signedOf(txn)
   return (
     <div className="fixed inset-0 z-10 flex items-end bg-ink/25 px-5" onClick={onClose}>
@@ -120,15 +132,66 @@ function Detail({
           label="When"
           value={`${dayLabel(txn.occurredAt.slice(0, 10))} · ${txn.occurredAt.slice(11, 16)}`}
         />
-        {txn.note !== '' && <Field label="Note" value={txn.note} />}
+        {!editing && txn.note !== '' && <Field label="Note" value={txn.note} />}
 
-        <button
-          type="button"
-          onClick={onDelete}
-          className="mt-4 flex h-10 w-full items-center justify-center border border-hanko text-[10.5px] font-semibold tracking-[.2em] uppercase text-hanko"
-        >
-          {txn.transferGroupId === null ? 'Delete' : 'Delete transfer'}
-        </button>
+        {editing ? (
+          <>
+            <input
+              inputMode="numeric"
+              aria-label="Amount"
+              value={amountDraft}
+              onChange={(event) => setAmountDraft(event.target.value.replace(/\D/g, ''))}
+              className="mt-3.5 h-9 w-full border-b border-rule bg-transparent font-mono text-[16px] tabular-nums outline-none"
+            />
+            <input
+              aria-label="Note"
+              placeholder="Note"
+              value={noteDraft}
+              onChange={(event) => setNoteDraft(event.target.value)}
+              className="mt-2 h-9 w-full border-b border-rule bg-transparent font-sans text-[14px] outline-none"
+            />
+            <div className="mt-4 flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(false)
+                  setAmountDraft(String(txn.amount))
+                  setNoteDraft(txn.note)
+                }}
+                className="flex h-10 flex-1 items-center justify-center border border-dashed border-rule text-[10.5px] tracking-[.2em] uppercase text-ink-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!valid}
+                onClick={() => onSave(draftAmount, noteDraft.trim())}
+                className="flex h-10 flex-1 items-center justify-center border border-hanko text-[10.5px] font-semibold tracking-[.2em] uppercase text-hanko disabled:border-rule disabled:text-ink-3"
+              >
+                Save
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="mt-4 flex gap-2.5">
+            {txn.transferGroupId === null && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="flex h-10 flex-1 items-center justify-center border border-dashed border-rule text-[10.5px] tracking-[.2em] uppercase text-ink-2"
+              >
+                Edit
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onDelete}
+              className="flex h-10 flex-1 items-center justify-center border border-hanko text-[10.5px] font-semibold tracking-[.2em] uppercase text-hanko"
+            >
+              {txn.transferGroupId === null ? 'Delete' : 'Delete transfer'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -165,6 +228,13 @@ export default function History() {
     const db = await getDb()
     if (txn.transferGroupId !== null) await deleteTransferGroup(db, txn.transferGroupId)
     else await deleteTransaction(db, txn.id)
+    setSelected(null)
+    setVersion((current) => current + 1)
+  }
+
+  async function saveEdit(txn: Transaction, amount: number, note: string) {
+    const db = await getDb()
+    await updateTransaction(db, txn.id, { amount, note })
     setSelected(null)
     setVersion((current) => current + 1)
   }
@@ -235,7 +305,16 @@ export default function History() {
             </div>
             <div className="border-t border-ink opacity-75" />
             {group.rows.map((txn) => {
+              if (txn.kind === 'transfer_in') return null
               const value = signedOf(txn)
+              const time = txn.occurredAt.slice(11, 16)
+              const transfer = txn.kind === 'transfer_out'
+              const partner = transfer
+                ? group.rows.find(
+                    (r) => r.transferGroupId === txn.transferGroupId && r.kind === 'transfer_in',
+                  )
+                : undefined
+              const accountName = (id: number) => accounts.find((a) => a.id === id)?.name ?? '—'
               return (
                 <button
                   key={txn.id}
@@ -244,18 +323,24 @@ export default function History() {
                   className="flex h-[52px] w-full items-center border-b border-dotted border-rule-2 text-left"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block font-sans text-[14.5px] font-medium">
-                      {rowLabel(txn)}
+                    <span className="block truncate font-sans text-[14.5px] font-medium">
+                      {transfer
+                        ? `${accountName(txn.accountId)} → ${partner ? accountName(partner.accountId) : '—'}`
+                        : rowLabel(txn)}
                     </span>
                     <span className="mt-[3px] block text-[10px] tracking-[.09em] uppercase text-ink-3">
                       <span className="mr-[7px] inline-block border border-rule px-1 py-px align-[1px] text-[9px] tracking-[.1em]">
-                        {txn.categoryCode ?? '··'}
+                        {transfer ? '⇄' : (txn.categoryCode ?? '··')}
                       </span>
-                      {txn.occurredAt.slice(11, 16)}
+                      {transfer ? `Transfer · ${time}` : time}
                     </span>
                   </span>
-                  <span className={`${AMOUNT} text-[14.5px] ${value < 0 ? '' : 'font-semibold'}`}>
-                    {signedText(value)}
+                  <span
+                    className={`${AMOUNT} text-[14.5px] ${
+                      transfer ? 'text-ink-2' : value < 0 ? '' : 'font-semibold'
+                    }`}
+                  >
+                    {transfer ? plainText(txn.amount) : signedText(value)}
                   </span>
                 </button>
               )
@@ -266,10 +351,12 @@ export default function History() {
 
       {selected && (
         <Detail
+          key={selected.id}
           txn={selected}
           accountName={accounts.find((a) => a.id === selected.accountId)?.name ?? '—'}
           onClose={() => setSelected(null)}
           onDelete={() => void remove(selected)}
+          onSave={(amount, note) => void saveEdit(selected, amount, note)}
         />
       )}
     </div>

@@ -172,7 +172,7 @@ export async function updateAccount(db: SQLiteDBConnection, id: number, input: A
 export async function listCategories(db: SQLiteDBConnection): Promise<Category[]> {
   const rows = await query<CategoryRow>(
     db,
-    'SELECT id, name, code, system, archived, sort, kind FROM categories ORDER BY sort',
+    'SELECT id, name, code, system, archived, sort, kind FROM categories ORDER BY system, sort',
   )
   return rows.map((r) => ({
     id: r.id,
@@ -229,6 +229,18 @@ export async function addTransaction(db: SQLiteDBConnection, input: TransactionI
     input.transferGroupId ?? null,
   ])
   return lastId(changes, 'addTransaction')
+}
+
+export async function updateTransaction(
+  db: SQLiteDBConnection,
+  id: number,
+  input: { amount: number; note: string },
+): Promise<void> {
+  await write(db, 'UPDATE transactions SET amount = ?, note = ? WHERE id = ?', [
+    input.amount,
+    input.note,
+    id,
+  ])
 }
 
 export async function deleteTransaction(db: SQLiteDBConnection, id: number): Promise<void> {

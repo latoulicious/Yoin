@@ -4,6 +4,9 @@ import {
   SQLiteConnection,
   type SQLiteDBConnection,
 } from '@capacitor-community/sqlite'
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem'
+import { Share } from '@capacitor/share'
+import { FilePicker } from '@capawesome/capacitor-file-picker'
 import { upgrades } from './schema'
 
 const DB_NAME = 'yoin'
@@ -26,16 +29,45 @@ export async function persist(): Promise<void> {
   if (isWeb) await sqlite.saveToStore(DB_NAME)
 }
 
-// ponytail: web-only, native backup lands in P8 (Filesystem plugin).
-export async function backupToDisk(): Promise<void> {
-  if (isWeb) await sqlite.saveToLocalDisk(DB_NAME)
+// native downloads are inert in the WebView, so files leave via the share sheet.
+export async function shareFile(path: string, data: string): Promise<void> {
+  const file = await Filesystem.writeFile({
+    path,
+    data,
+    directory: Directory.Cache,
+    encoding: Encoding.UTF8,
+  })
+  await Share.share({ files: [file.uri] })
 }
 
-// ponytail: web-only, native restore lands in P8 (Filesystem plugin).
+export async function backupToDisk(): Promise<void> {
+  if (isWeb) {
+    await sqlite.saveToLocalDisk(DB_NAME)
+    return
+  }
+  const db = await getDb()
+  const json = await db.exportToJson('full')
+  await shareFile('yoin-backup.json', JSON.stringify(json.export))
+}
+
 export async function restoreFromDisk(): Promise<void> {
-  if (!isWeb) return
-  await sqlite.getFromLocalDiskToStore(true)
-  // the open connection still holds the pre-swap in-memory db; reload is the only reset.
+  if (isWeb) {
+    await sqlite.getFromLocalDiskToStore(true)
+    // the open connection still holds the pre-swap in-memory db; reload is the only reset.
+    location.reload()
+    return
+  }
+  const picked = await FilePicker.pickFiles({ limit: 1, readData: true })
+  const encoded = picked.files[0]?.data
+  if (encoded === undefined) return
+  // atob yields a byte string; decode as UTF-8 so non-ASCII notes survive.
+  const jsonstring = new TextDecoder().decode(Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)))
+  const parsed = JSON.parse(jsonstring) as { database?: string }
+  if (parsed.database !== DB_NAME) throw new Error('not a yoin backup')
+  const existing = await sqlite.isConnection(DB_NAME, false)
+  if (existing.result) await sqlite.closeConnection(DB_NAME, false)
+  dbPromise = undefined
+  await sqlite.importFromJson(jsonstring)
   location.reload()
 }
 
