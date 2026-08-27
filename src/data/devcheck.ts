@@ -33,14 +33,14 @@ async function devcheck(): Promise<void> {
   const categories = await listCategories(db)
   assert(categories.length === 13, `expected 13 seeded categories, got ${categories.length}`)
   assert(
-    categories.map((c) => c.code).join(',') === 'FD,TR,HM,LS,HL,FE,BI,SH,GR,OT,SA,BN,OT',
+    categories.map((c) => c.code).join(',') === 'FD,TR,HM,LS,HL,BI,SH,GR,OT,SA,BN,OT,FE',
     `unexpected category order: ${categories.map((c) => c.code).join(',')}`,
   )
-  const fee = categories[5]
+  const fee = categories[12]
   assert(fee.system, 'Fee category is not marked system')
   assert(
     categories.map((c) => c.kind).join(',') ===
-      'expense,expense,expense,expense,expense,expense,expense,expense,expense,expense,income,income,income',
+      'expense,expense,expense,expense,expense,expense,expense,expense,expense,income,income,income,expense',
     `unexpected category kinds: ${categories.map((c) => c.kind).join(',')}`,
   )
   const food = categories[0]

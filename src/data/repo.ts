@@ -172,7 +172,7 @@ export async function updateAccount(db: SQLiteDBConnection, id: number, input: A
 export async function listCategories(db: SQLiteDBConnection): Promise<Category[]> {
   const rows = await query<CategoryRow>(
     db,
-    'SELECT id, name, code, system, archived, sort, kind FROM categories ORDER BY sort',
+    'SELECT id, name, code, system, archived, sort, kind FROM categories ORDER BY system, sort',
   )
   return rows.map((r) => ({
     id: r.id,
