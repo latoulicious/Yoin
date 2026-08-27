@@ -50,4 +50,16 @@ export const upgrades: capSQLiteVersionUpgrade[] = [
     toVersion: 3,
     statements: [`ALTER TABLE accounts ADD COLUMN opening_balance INTEGER NOT NULL DEFAULT 0;`],
   },
+  {
+    toVersion: 4,
+    statements: [
+      `ALTER TABLE categories ADD COLUMN kind TEXT NOT NULL DEFAULT 'expense' CHECK (kind IN ('expense','income'));`,
+      `INSERT INTO categories (name, code, system, sort, kind)
+       VALUES ('Salary','SA',0,(SELECT COALESCE(MAX(sort),0)+1 FROM categories),'income');`,
+      `INSERT INTO categories (name, code, system, sort, kind)
+       VALUES ('Bonus','BN',0,(SELECT COALESCE(MAX(sort),0)+1 FROM categories),'income');`,
+      `INSERT INTO categories (name, code, system, sort, kind)
+       VALUES ('Others','OT',0,(SELECT COALESCE(MAX(sort),0)+1 FROM categories),'income');`,
+    ],
+  },
 ]
