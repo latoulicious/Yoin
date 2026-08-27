@@ -3,7 +3,7 @@ import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import { useEffect, useState } from 'react'
 import type { Screen } from '../App'
 import { toCsv } from '../data/csv'
-import { backupToDisk, getDb, restoreFromDisk } from '../data/db'
+import { backupToDisk, getDb, restoreFromDisk, shareFile } from '../data/db'
 import {
   createCategory,
   exportRows,
@@ -235,26 +235,12 @@ function Data() {
       setStatus('')
       try {
         await action()
-      } catch {
+      } catch (err) {
+        // dismissing the share sheet or file picker rejects; that's not a failure.
+        if (err instanceof Error && /cancel/i.test(err.message)) return
         setStatus(`${label} failed`)
       }
     })()
-  }
-
-  if (!isWeb) {
-    return (
-      <div className="pt-6">
-        <div className={`flex items-baseline ${LABEL}`}>
-          <span>Data</span>
-          <span className={RULE_LEAD} />
-          <span>Coming soon</span>
-        </div>
-        <div className="mt-1.5 border-t border-ink opacity-75" />
-        <div className={`flex h-[46px] items-center ${LABEL}`}>
-          Export and backup arrive in a later update
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -271,7 +257,9 @@ function Data() {
           type="button"
           onClick={() =>
             run('Export', async () => {
-              download(toCsv(await exportRows(await getDb())))
+              const csv = toCsv(await exportRows(await getDb()))
+              if (isWeb) download(csv)
+              else await shareFile('yoin-export.csv', csv)
             })
           }
           className={ACTION}
