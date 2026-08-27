@@ -6,11 +6,20 @@ import History from './screens/History'
 import Home from './screens/Home'
 import Insights from './screens/Insights'
 import Record, { type SavedEntry } from './screens/Record'
-import Settings from './screens/Settings'
+import Settings, { Appearance, Categories } from './screens/Settings'
 import Transfer from './screens/Transfer'
 import { useTheme } from './theme'
 
-export type Screen = 'home' | 'history' | 'record' | 'insights' | 'accounts' | 'transfer' | 'settings'
+export type Screen =
+  | 'home'
+  | 'history'
+  | 'record'
+  | 'insights'
+  | 'accounts'
+  | 'transfer'
+  | 'settings'
+  | 'appearance'
+  | 'categories'
 
 const SCREEN_LABEL: Record<Screen, string> = {
   home: 'Ledger',
@@ -20,6 +29,8 @@ const SCREEN_LABEL: Record<Screen, string> = {
   accounts: 'Accounts',
   transfer: 'Transfer',
   settings: 'Settings',
+  appearance: 'Appearance',
+  categories: 'Categories',
 }
 
 function NavTab({
@@ -94,7 +105,11 @@ export default function App() {
 
       <main className="flex-1 px-5">
         {screen === 'settings' ? (
-          <Settings onNavigate={setScreen} pref={pref} setPref={setPref} resolved={resolved} />
+          <Settings onNavigate={setScreen} />
+        ) : screen === 'appearance' ? (
+          <Appearance pref={pref} setPref={setPref} resolved={resolved} />
+        ) : screen === 'categories' ? (
+          <Categories />
         ) : screen === 'record' ? (
           <Record onClose={() => setScreen('home')} onSaved={handleSaved} />
         ) : screen === 'home' ? (

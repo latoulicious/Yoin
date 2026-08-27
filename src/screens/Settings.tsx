@@ -45,7 +45,7 @@ function download(csv: string) {
   setTimeout(() => URL.revokeObjectURL(url))
 }
 
-function Appearance({
+export function Appearance({
   pref,
   setPref,
   resolved,
@@ -152,7 +152,7 @@ function CategoryRow({
   )
 }
 
-function Categories() {
+export function Categories() {
   const [categories, setCategories] = useState<Category[]>([])
   const [draft, setDraft] = useState('')
   const [version, setVersion] = useState(0)
@@ -284,35 +284,27 @@ function Data() {
   )
 }
 
-export default function Settings({
-  onNavigate,
-  pref,
-  setPref,
-  resolved,
-}: {
-  onNavigate: (screen: Screen) => void
-  pref: ThemePref
-  setPref: (next: ThemePref) => void
-  resolved: string
-}) {
+function NavRow({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <div className="pt-6">
+      <button type="button" onClick={onClick} className={`flex w-full items-baseline ${LABEL}`}>
+        <span>{label}</span>
+        <span className={RULE_LEAD} />
+        <span className="text-hanko">Manage →</span>
+      </button>
+      <div className="mt-1.5 border-t border-ink opacity-75" />
+    </div>
+  )
+}
+
+export default function Settings({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   return (
     <div className="pb-6">
-      <Appearance pref={pref} setPref={setPref} resolved={resolved} />
+      <NavRow label="Appearance" onClick={() => onNavigate('appearance')} />
 
-      <Categories />
+      <NavRow label="Categories" onClick={() => onNavigate('categories')} />
 
-      <div className="pt-6">
-        <button
-          type="button"
-          onClick={() => onNavigate('accounts')}
-          className={`flex w-full items-baseline ${LABEL}`}
-        >
-          <span>Accounts</span>
-          <span className={RULE_LEAD} />
-          <span className="text-hanko">Manage →</span>
-        </button>
-        <div className="mt-1.5 border-t border-ink opacity-75" />
-      </div>
+      <NavRow label="Accounts" onClick={() => onNavigate('accounts')} />
 
       <Data />
 
