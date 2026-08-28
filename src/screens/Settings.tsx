@@ -5,8 +5,10 @@ import type { Screen } from '../App'
 import { toCsv } from '../data/csv'
 import { backupToDisk, getDb, restoreFromDisk, shareFile } from '../data/db'
 import {
+  countTransactions,
   createCategory,
   exportRows,
+  listAccounts,
   listCategories,
   renameCategory,
   setCategoryArchived,
@@ -24,9 +26,6 @@ const LABEL = 'text-[9.5px] tracking-[.2em] uppercase text-ink-3'
 const ROW = 'flex h-[46px] items-center border-b border-dotted border-rule-2'
 
 const FIELD = 'h-9 w-full border-b border-rule bg-transparent font-sans text-[14px] outline-none'
-
-const ACTION =
-  'flex h-10 flex-1 items-center justify-center border border-hanko text-[10.5px] font-semibold tracking-[.2em] uppercase text-hanko disabled:border-rule disabled:text-ink-3'
 
 const SEAL =
   'flex h-[34px] w-[34px] shrink-0 rotate-[-3.5deg] items-center justify-center rounded-[3px] border-[1.4px] border-hanko font-serif text-[13px] leading-[1.05] text-hanko shadow-[0_0_0_2.5px_var(--paper),0_0_0_3.5px_color-mix(in_srgb,var(--red)_18%,transparent)] [writing-mode:vertical-rl]'
@@ -227,8 +226,80 @@ export function Categories() {
   )
 }
 
-function Data() {
+const LAST_BACKUP_KEY = 'yoin-last-backup'
+
+function backupStamp(iso: string | null): string {
+  if (iso === null) return 'Never'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return 'Never'
+  return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+function Section({ label, status }: { label: string; status?: string }) {
+  return (
+    <>
+      <div className={`flex items-baseline pt-6 ${LABEL}`}>
+        <span>{label}</span>
+        {status !== undefined && status !== '' && (
+          <>
+            <span className={RULE_LEAD} />
+            <span className="text-hanko">{status}</span>
+          </>
+        )}
+      </div>
+      <div className="mt-1.5 border-t border-ink opacity-75" />
+    </>
+  )
+}
+
+function Row({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-[46px] w-full items-center border-b border-dotted border-rule-2 text-left"
+    >
+      <span className="flex-1 truncate font-sans text-[13.5px] font-medium">{label}</span>
+      <span className={`shrink-0 ${LABEL}`}>{value}</span>
+      <span className="ml-2.5 shrink-0 text-[14px] text-ink-3">›</span>
+    </button>
+  )
+}
+
+export default function Settings({
+  onNavigate,
+  themePref,
+}: {
+  onNavigate: (screen: Screen) => void
+  themePref: ThemePref
+}) {
+  const [counts, setCounts] = useState({ manual: 0, system: 0, accounts: 0, entries: 0 })
+  const [lastBackup, setLastBackup] = useState<string | null>(() =>
+    localStorage.getItem(LAST_BACKUP_KEY),
+  )
   const [status, setStatus] = useState('')
+
+  useEffect(() => {
+    let live = true
+    void (async () => {
+      const db = await getDb()
+      const [categories, accounts, entries] = await Promise.all([
+        listCategories(db),
+        listAccounts(db),
+        countTransactions(db),
+      ])
+      if (!live) return
+      setCounts({
+        manual: categories.filter((c) => !c.system).length,
+        system: categories.filter((c) => c.system).length,
+        accounts: accounts.length,
+        entries,
+      })
+    })()
+    return () => {
+      live = false
+    }
+  }, [])
 
   function run(label: string, action: () => Promise<void>) {
     void (async () => {
@@ -244,69 +315,54 @@ function Data() {
   }
 
   return (
-    <div className="pt-6">
-      <div className={`flex items-baseline ${LABEL}`}>
-        <span>Data</span>
-        <span className={RULE_LEAD} />
-        <span>{status === '' ? 'Local only' : status}</span>
-      </div>
-      <div className="mt-1.5 border-t border-ink opacity-75" />
+    <div className="pb-6">
+      <Section label="Ledger" />
+      <Row
+        label="Categories"
+        value={`${counts.manual} + ${counts.system} system`}
+        onClick={() => onNavigate('categories')}
+      />
+      <Row
+        label="Accounts"
+        value={`${counts.accounts} ${counts.accounts === 1 ? 'account' : 'accounts'}`}
+        onClick={() => onNavigate('accounts')}
+      />
 
-      <div className="mt-3.5 flex gap-2.5">
-        <button
-          type="button"
-          onClick={() =>
-            run('Export', async () => {
-              const csv = toCsv(await exportRows(await getDb()))
-              if (isWeb) download(csv)
-              else await shareFile('yoin-export.csv', csv)
-            })
-          }
-          className={ACTION}
-        >
-          Export CSV
-        </button>
-        <button type="button" onClick={() => run('Backup', backupToDisk)} className={ACTION}>
-          Backup
-        </button>
-      </div>
-      <button
-        type="button"
+      <Section label="Data" status={status} />
+      <Row
+        label="Export CSV"
+        value={`${counts.entries} ${counts.entries === 1 ? 'entry' : 'entries'}`}
+        onClick={() =>
+          run('Export', async () => {
+            const csv = toCsv(await exportRows(await getDb()))
+            if (isWeb) download(csv)
+            else await shareFile('yoin-export.csv', csv)
+          })
+        }
+      />
+      <Row
+        label="Backup"
+        value={backupStamp(lastBackup)}
+        onClick={() =>
+          run('Backup', async () => {
+            await backupToDisk()
+            const iso = new Date().toISOString()
+            localStorage.setItem(LAST_BACKUP_KEY, iso)
+            setLastBackup(iso)
+          })
+        }
+      />
+      <Row
+        label="Restore"
+        value="From file"
         onClick={() => {
           if (!window.confirm('Restore replaces all current data in this app. Continue?')) return
           run('Restore', restoreFromDisk)
         }}
-        className="mt-2.5 flex h-10 w-full items-center justify-center border border-dashed border-rule text-[10.5px] tracking-[.2em] uppercase text-ink-2"
-      >
-        Restore from file
-      </button>
-    </div>
-  )
-}
+      />
 
-function NavRow({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <div className="pt-6">
-      <button type="button" onClick={onClick} className={`flex w-full items-baseline ${LABEL}`}>
-        <span>{label}</span>
-        <span className={RULE_LEAD} />
-        <span className="text-hanko">Manage →</span>
-      </button>
-      <div className="mt-1.5 border-t border-ink opacity-75" />
-    </div>
-  )
-}
-
-export default function Settings({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
-  return (
-    <div className="pb-6">
-      <NavRow label="Appearance" onClick={() => onNavigate('appearance')} />
-
-      <NavRow label="Categories" onClick={() => onNavigate('categories')} />
-
-      <NavRow label="Accounts" onClick={() => onNavigate('accounts')} />
-
-      <Data />
+      <Section label="Appearance" />
+      <Row label="Theme" value={themePref} onClick={() => onNavigate('appearance')} />
 
       <div className="pt-6">
         <div className={`flex items-baseline ${LABEL}`}>

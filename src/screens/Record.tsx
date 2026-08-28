@@ -151,24 +151,30 @@ export default function Record({
           </span>
           <span className="mb-1 inline-block h-7 w-[2px] bg-hanko" />
         </div>
-        <div className="mt-2 flex text-[9.5px] tracking-[.2em] uppercase text-ink-3">
-          <span>{stamp}</span>
-          <span className="ml-auto flex gap-2.5">
-            {accounts.map((account) => (
-              <button
-                key={account.id}
-                type="button"
-                aria-pressed={accountId === account.id}
-                onClick={() => setAccountId(account.id)}
-                className={accountId === account.id ? 'font-semibold text-hanko' : 'text-ink-3'}
-              >
-                {account.name}
-              </button>
-            ))}
-          </span>
-        </div>
+        <div className="mt-2 text-[9.5px] tracking-[.2em] uppercase text-ink-3">{stamp}</div>
       </div>
       <div className="border-t border-dashed border-rule" />
+
+      <div className="mt-3 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {accounts.map((account) => {
+          const active = accountId === account.id
+          return (
+            <button
+              key={account.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setAccountId(account.id)}
+              className={`h-10 min-w-[86px] flex-[1_0_auto] px-3.5 text-[10.5px] tracking-[.16em] uppercase ${
+                active
+                  ? 'border border-hanko bg-hanko-soft font-semibold text-hanko'
+                  : 'border border-dashed border-rule text-ink-2'
+              }`}
+            >
+              {account.name}
+            </button>
+          )
+        })}
+      </div>
 
       <div className="mt-4 grid grid-cols-3 border-t border-l border-dashed border-rule">
         {KEYS.map((key) => (

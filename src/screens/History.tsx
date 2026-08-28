@@ -326,13 +326,19 @@ export default function History() {
                     <span className="block truncate font-sans text-[14.5px] font-medium">
                       {transfer
                         ? `${accountName(txn.accountId)} → ${partner ? accountName(partner.accountId) : '—'}`
-                        : rowLabel(txn)}
+                        : txn.note !== ''
+                          ? txn.note
+                          : rowLabel(txn)}
                     </span>
                     <span className="mt-[3px] block text-[10px] tracking-[.09em] uppercase text-ink-3">
                       <span className="mr-[7px] inline-block border border-rule px-1 py-px align-[1px] text-[9px] tracking-[.1em]">
                         {transfer ? '⇄' : (txn.categoryCode ?? '··')}
                       </span>
-                      {transfer ? `Transfer · ${time}` : time}
+                      {transfer
+                        ? `Transfer · ${time}`
+                        : txn.note !== ''
+                          ? `${rowLabel(txn)} · ${time}`
+                          : time}
                     </span>
                   </span>
                   <span
