@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yoin — Record account picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f5f0e3;--paper-2:#efe8d6;--ink:#25221e;--ink-2:#57524a;--ink-3:#8d8578;
+  --rule:#cec5b0;--rule-2:#ddd4bf;--red:#b0342a;--red-soft:rgba(176,52,42,.09);
+  --board:#1c1916;--board-ink:#c9c2b2;--board-ink-2:#8d8578;
+  --mono:'IBM Plex Mono',Menlo,monospace;--sans:'IBM Plex Sans',Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--board);font-family:var(--mono);color:var(--board-ink);padding:40px 32px 64px}
+h1{font-size:15px;font-weight:600;letter-spacing:.06em}
+.sub{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--board-ink-2);margin-top:8px}
+.row{display:flex;gap:44px;flex-wrap:wrap;margin-top:36px}
+.slot{width:390px}
+.slot-label{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.slot-no{font-size:11px;letter-spacing:.14em;color:var(--red);border:1px solid rgba(176,52,42,.55);padding:2px 7px}
+.slot-name{font-family:var(--sans);font-size:14px;font-weight:600;color:#e9e2d3}
+.slot-sub{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--board-ink-2)}
+
+.screen{background:var(--paper);color:var(--ink);border:1px solid #000;border-radius:28px;
+  padding:24px 20px 20px;height:760px;display:flex;flex-direction:column;overflow:hidden;
+  font-variant-numeric:tabular-nums}
+.x{font-size:20px;color:var(--ink-2);line-height:1}
+.micro{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+
+.seg{display:flex;height:36px;border:1px solid var(--rule);margin-top:14px}
+.seg div{flex:1;display:flex;align-items:center;justify-content:center;font-size:10.5px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);border-left:1px dashed var(--rule)}
+.seg div:first-child{border-left:none}
+.seg .on{background:var(--red-soft);color:var(--red);font-weight:600;box-shadow:inset 0 0 0 1px var(--red)}
+
+.amtblock{margin-top:16px;border-top:1px solid var(--ink);padding:14px 0 12px}
+.amtrow{display:flex;align-items:flex-end;justify-content:flex-end;gap:8px}
+.cur{margin-right:auto;font-size:18px;color:var(--ink-3)}
+.amt{font-size:38px;font-weight:500;letter-spacing:-.02em}
+.caret{display:inline-block;width:2px;height:28px;background:var(--red);margin-bottom:4px}
+.stamp{display:flex;justify-content:space-between;margin-top:8px}
+.dashrule{border-top:1px dashed var(--rule)}
+
+.chips{display:flex;gap:8px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:1 0 auto;min-width:86px;display:flex;align-items:center;justify-content:center;height:40px;
+  padding:0 14px;border:1px dashed var(--rule);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2)}
+.chip.on{border:1px solid var(--red);border-style:solid;background:var(--red-soft);color:var(--red);font-weight:600}
+
+.keys{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px dashed var(--rule);
+  border-left:1px dashed var(--rule);margin-top:14px}
+.keys div{height:52px;display:flex;align-items:center;justify-content:center;font-size:21px;
+  border-right:1px dashed var(--rule);border-bottom:1px dashed var(--rule)}
+.keys .sm{font-size:12px;letter-spacing:.14em;color:var(--ink-2)}
+
+.hint{display:flex;align-items:baseline;margin-top:12px}
+.lead{flex:1;margin:0 10px;border-bottom:1px dotted var(--rule);transform:translateY(-3px)}
+
+.cgrid{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px dashed var(--rule);
+  border-left:1px dashed var(--rule);margin-top:6px}
+.cgrid div{height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;border-right:1px dashed var(--rule);border-bottom:1px dashed var(--rule)}
+.cbox{width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--rule);font-size:9px;letter-spacing:.06em;color:var(--ink-3)}
+.g-n{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink-2)}
+
+.legend{list-style:none;margin-top:14px;font-size:11px;line-height:1.7;color:var(--board-ink-2)}
+.legend b{color:var(--board-ink)}
+.legend .n{color:var(--red);margin-right:8px}
+.verdict{margin-top:40px;max-width:760px;border:1px dashed #4b453c;padding:16px 18px;font-size:11.5px;line-height:1.8}
+.verdict b{color:#e9e2d3}
+</style>
+</head>
+<body>
+
+<h1>Record — account picker</h1>
+<div class="sub">Feedback: current picker (9.5px text in stamp row) too small to tap · 3 options · 390 × 844</div>
+
+<div class="row">
+
+<!-- A · chip row under amount -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">A</span><span class="slot-name">Chip row</span><span class="slot-sub">Under amount · 40px</span></div>
+  <div class="screen">
+    <span class="x">×</span>
+    <div class="seg"><div class="on">Expense</div><div>Income</div><div>Transfer</div></div>
+    <div class="amtblock">
+      <div class="amtrow"><span class="cur">Rp</span><span class="amt">35,000</span><span class="caret"></span></div>
+      <div class="stamp"><span class="micro">Aug 28 2026 · 14:05</span></div>
+    </div>
+    <div class="dashrule"></div>
+    <div class="chips">
+      <div class="chip on">Cash</div>
+      <div class="chip">Bank</div>
+      <div class="chip">GoPay</div>
+      <div class="chip">OVO</div>
+      <div class="chip">Jago</div>
+    </div>
+    <div class="keys">
+      <div>1</div><div>2</div><div>3</div>
+      <div>4</div><div>5</div><div>6</div>
+      <div>7</div><div>8</div><div>9</div>
+      <div class="sm">000</div><div>0</div><div class="sm">DEL</div>
+    </div>
+    <div class="hint micro"><span>Tap a category to save</span><span class="lead"></span><span>1 tap</span></div>
+    <div class="cgrid">
+      <div><span class="cbox">FD</span><span class="g-n">Food</span></div>
+      <div><span class="cbox">TR</span><span class="g-n">Transport</span></div>
+      <div><span class="cbox">HM</span><span class="g-n">Home</span></div>
+      <div><span class="cbox">LS</span><span class="g-n">Leisure</span></div>
+      <div><span class="cbox">HL</span><span class="g-n">Health</span></div>
+      <div><span class="cbox">OT</span><span class="g-n">Other</span></div>
+    </div>
+  </div>
+  <ul class="legend">
+    <li><span class="n">1</span><b>Full-width chips</b>, 40px tall — same dashed-border language as keypad and category grid.</li>
+    <li><span class="n">2</span>Stamp row keeps date only. 4+ accounts → row swipes horizontally; cut-off chip at the edge is the scroll tell. Selected chip scrolled into view on open.</li>
+  </ul>
+</section>
+
+<!-- B · second segment row -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">B</span><span class="slot-name">Double segment</span><span class="slot-sub">Stacked under kind bar</span></div>
+  <div class="screen">
+    <span class="x">×</span>
+    <div class="seg"><div class="on">Expense</div><div>Income</div><div>Transfer</div></div>
+    <div class="seg" style="margin-top:-1px;height:34px">
+      <div class="on" style="box-shadow:none;background:none;border-bottom:2px solid var(--red)">Cash</div>
+      <div>Bank</div><div>GoPay</div>
+    </div>
+    <div class="amtblock">
+      <div class="amtrow"><span class="cur">Rp</span><span class="amt">35,000</span><span class="caret"></span></div>
+      <div class="stamp"><span class="micro">Aug 28 2026 · 14:05</span></div>
+    </div>
+    <div class="dashrule"></div>
+    <div class="keys">
+      <div>1</div><div>2</div><div>3</div>
+      <div>4</div><div>5</div><div>6</div>
+      <div>7</div><div>8</div><div>9</div>
+      <div class="sm">000</div><div>0</div><div class="sm">DEL</div>
+    </div>
+    <div class="hint micro"><span>Tap a category to save</span><span class="lead"></span><span>1 tap</span></div>
+    <div class="cgrid">
+      <div><span class="cbox">FD</span><span class="g-n">Food</span></div>
+      <div><span class="cbox">TR</span><span class="g-n">Transport</span></div>
+      <div><span class="cbox">HM</span><span class="g-n">Home</span></div>
+      <div><span class="cbox">LS</span><span class="g-n">Leisure</span></div>
+      <div><span class="cbox">HL</span><span class="g-n">Health</span></div>
+      <div><span class="cbox">OT</span><span class="g-n">Other</span></div>
+    </div>
+  </div>
+  <ul class="legend">
+    <li><span class="n">1</span><b>Second segmented bar</b> glued under kind switch — kind and account become one control block.</li>
+    <li><span class="n">2</span>Active mark = red underline, so the two rows read differently at a glance.</li>
+  </ul>
+</section>
+
+<!-- C · enlarged in place -->
+<section class="slot">
+  <div class="slot-label"><span class="slot-no">C</span><span class="slot-name">Bigger in place</span><span class="slot-sub">Stamp row, padded chips</span></div>
+  <div class="screen">
+    <span class="x">×</span>
+    <div class="seg"><div class="on">Expense</div><div>Income</div><div>Transfer</div></div>
+    <div class="amtblock">
+      <div class="amtrow"><span class="cur">Rp</span><span class="amt">35,000</span><span class="caret"></span></div>
+      <div class="stamp" style="align-items:center;margin-top:10px">
+        <span class="micro">Aug 28 2026 · 14:05</span>
+        <span style="display:flex;gap:6px">
+          <span class="chip on" style="flex:none;height:30px;padding:0 14px">Cash</span>
+          <span class="chip" style="flex:none;height:30px;padding:0 14px">Bank</span>
+          <span class="chip" style="flex:none;height:30px;padding:0 14px">GoPay</span>
+        </span>
+      </div>
+    </div>
+    <div class="dashrule"></div>
+    <div class="keys">
+      <div>1</div><div>2</div><div>3</div>
+      <div>4</div><div>5</div><div>6</div>
+      <div>7</div><div>8</div><div>9</div>
+      <div class="sm">000</div><div>0</div><div class="sm">DEL</div>
+    </div>
+    <div class="hint micro"><span>Tap a category to save</span><span class="lead"></span><span>1 tap</span></div>
+    <div class="cgrid">
+      <div><span class="cbox">FD</span><span class="g-n">Food</span></div>
+      <div><span class="cbox">TR</span><span class="g-n">Transport</span></div>
+      <div><span class="cbox">HM</span><span class="g-n">Home</span></div>
+      <div><span class="cbox">LS</span><span class="g-n">Leisure</span></div>
+      <div><span class="cbox">HL</span><span class="g-n">Health</span></div>
+      <div><span class="cbox">OT</span><span class="g-n">Other</span></div>
+    </div>
+  </div>
+  <ul class="legend">
+    <li><span class="n">1</span><b>Same position</b>, chips get 30px height + padding. Smallest diff.</li>
+    <li><span class="n">2</span>Still under 44px target, and 3+ accounts crowd against the date.</li>
+  </ul>
+</section>
+
+</div>
+
+<div class="verdict">
+<b>Recommendation — A.</b> Real 40px touch target, full width, scales past 3 accounts by scrolling, and reuses the existing dashed-chip language so nothing new is invented. B couples account to the kind bar — reads as one decision when it is two. C is the smallest diff but stays under Apple/Android minimum target and collides with the date past 2 accounts.
+</div>
+
+</body>
+</html>
