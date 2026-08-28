@@ -357,6 +357,11 @@ export async function categoryTotals(db: SQLiteDBConnection, month: string): Pro
   )
 }
 
+export async function countTransactions(db: SQLiteDBConnection): Promise<number> {
+  const rows = await query<{ n: number }>(db, 'SELECT COUNT(*) AS n FROM transactions')
+  return rows[0]?.n ?? 0
+}
+
 export async function exportRows(db: SQLiteDBConnection): Promise<ExportRow[]> {
   return query<ExportRow>(
     db,

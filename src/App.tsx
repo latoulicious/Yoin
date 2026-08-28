@@ -105,7 +105,7 @@ export default function App() {
 
       <main className="flex-1 px-5">
         {screen === 'settings' ? (
-          <Settings onNavigate={setScreen} />
+          <Settings onNavigate={setScreen} themePref={pref} />
         ) : screen === 'appearance' ? (
           <Appearance pref={pref} setPref={setPref} resolved={resolved} />
         ) : screen === 'categories' ? (
