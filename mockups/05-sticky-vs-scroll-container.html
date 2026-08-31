@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sticky vs Scroll Container</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   YOIN — STICKY vs SCROLL CONTAINER
+   Two live phone frames. Scroll each one. Same indigo board
+   as mockups 01–04. Single-theme by design.
+   ========================================================== */
+
+:root{
+  --ind-900:#0F2437;
+  --ind-800:#173350;
+  --ind-700:#1B3A5C;
+  --ind-600:#27506F;
+  --ind-ink:#E7DECB;
+  --ind-mut:#9DAEBF;
+
+  --washi:#F6F1E6;
+  --washi-2:#EFE7D6;
+  --sumi:#1F1D1A;
+  --sumi-2:#5D584C;
+  --sumi-3:#8C8577;
+  --hair:#D9D0BA;
+
+  --verm:#C3432B;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+
+body{
+  background:var(--ind-900);
+  color:var(--ind-ink);
+  font-family:"Zen Kaku Gothic New","Inter","Hiragino Sans",system-ui,sans-serif;
+  padding:56px 40px 96px;
+  min-height:100vh;
+}
+
+.n{
+  font-family:"Inter",system-ui,sans-serif;
+  font-variant-numeric:tabular-nums lining-nums;
+}
+
+.board{max-width:1120px;margin:0 auto}
+
+.board-head{margin-bottom:44px}
+.board-head .kicker{
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:10px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ind-mut);margin-bottom:12px;
+}
+.board-head h1{
+  font-size:30px;font-weight:700;letter-spacing:.01em;
+  text-wrap:balance;max-width:24em;
+}
+.board-head p{
+  margin-top:10px;max-width:52em;font-size:14px;line-height:1.7;color:var(--ind-mut);
+}
+.board-head p b{color:var(--ind-ink);font-weight:600}
+
+/* ---- two columns ---- */
+.pair{
+  display:grid;grid-template-columns:1fr 1fr;gap:56px;
+  align-items:start;
+}
+@media (max-width:900px){.pair{grid-template-columns:1fr}}
+
+.col-head{
+  display:flex;align-items:baseline;gap:10px;margin-bottom:14px;
+  border-bottom:1px solid var(--ind-600);padding-bottom:10px;
+}
+.col-head .name{font-size:16px;font-weight:700}
+.col-head .tag{
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ind-mut);
+}
+.col-head .shipped{
+  margin-left:auto;
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--verm);border:1px solid var(--verm);
+  padding:3px 8px;border-radius:2px;transform:rotate(-2deg);
+}
+
+.col-sub{font-size:12.5px;line-height:1.65;color:var(--ind-mut);margin-bottom:22px;min-height:3.4em}
+.col-sub code{
+  font-family:"Inter",monospace;font-size:11px;color:var(--ind-ink);
+  background:var(--ind-800);padding:1px 5px;border-radius:2px;
+}
+
+/* ---- phone + bracket ---- */
+.stage{display:flex;gap:14px;justify-content:center}
+
+.phone{
+  width:340px;height:600px;flex:none;
+  background:var(--washi);color:var(--sumi);
+  border-radius:14px;
+  border:1px solid var(--ind-800);
+  box-shadow:0 24px 60px rgba(0,0,0,.45), 0 0 0 6px var(--ind-800);
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+
+/* A: whole viewport scrolls, chrome is sticky inside it */
+.vp-page{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.vp-page .hd{position:sticky;top:0;z-index:10}
+.vp-page .ft{position:sticky;bottom:0;z-index:10;margin-top:auto}
+
+/* B: chrome static, only main scrolls */
+.vp-split{flex:1;display:flex;flex-direction:column;min-height:0}
+.vp-split .mn{flex:1;overflow-y:auto;min-height:0}
+
+/* shared chrome */
+.hd{
+  background:var(--washi);
+  border-bottom:1px dashed var(--hair);
+  padding:14px 18px;display:flex;align-items:center;gap:10px;flex:none;
+}
+.hd .logo{font-family:"Inter",system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:.24em}
+.hd .sub{font-family:"Inter",system-ui,sans-serif;font-size:9px;letter-spacing:.16em;color:var(--sumi-3);text-transform:uppercase}
+.hd .seal{
+  margin-left:auto;width:26px;height:26px;
+  border:1.3px solid var(--verm);border-radius:3px;color:var(--verm);
+  font-size:9px;line-height:1.05;display:flex;align-items:center;justify-content:center;
+  writing-mode:vertical-rl;transform:rotate(-3.5deg);
+}
+
+.mn{padding:0 18px}
+
+.row{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 0;border-bottom:1px dashed var(--hair);
+}
+.row .cat{font-size:13.5px;font-weight:500}
+.row .time{font-family:"Inter",system-ui,sans-serif;font-size:10px;color:var(--sumi-3)}
+.row .amt{margin-left:auto;font-size:13.5px}
+.row .amt.neg{color:var(--sumi)}
+.row .amt.pos{font-weight:600}
+.day{
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--sumi-2);
+  padding:18px 0 8px;border-bottom:1px solid var(--sumi-2);
+}
+
+.ft{
+  background:var(--washi);
+  border-top:1px dashed var(--hair);
+  padding:12px 14px 16px;display:flex;align-items:center;flex:none;
+}
+.ft .tab{
+  flex:1;text-align:center;
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--sumi-3);
+}
+.ft .tab.on{color:var(--sumi)}
+.ft .tab.on::after{content:"";display:block;margin:5px auto 0;width:22px;height:1.5px;background:var(--verm)}
+.ft .plus{
+  flex:none;width:40px;height:40px;border-radius:50%;
+  border:1.5px solid var(--verm);color:var(--verm);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;padding-bottom:2px;margin:0 6px;
+  box-shadow:0 0 0 3px var(--washi),0 0 0 4px rgba(195,67,43,.3);
+}
+
+/* washi scrollbars */
+.vp-page::-webkit-scrollbar,.vp-split .mn::-webkit-scrollbar{width:10px}
+.vp-page::-webkit-scrollbar-track,.vp-split .mn::-webkit-scrollbar-track{background:var(--washi-2)}
+.vp-page::-webkit-scrollbar-thumb,.vp-split .mn::-webkit-scrollbar-thumb{
+  background:var(--verm);border:3px solid var(--washi-2);border-radius:6px;
+}
+.vp-page,.vp-split .mn{scrollbar-width:thin;scrollbar-color:var(--verm) var(--washi-2)}
+
+/* ---- scroll-context bracket, right of each phone ---- */
+.bracket{
+  flex:none;width:46px;height:600px;position:relative;
+  display:flex;align-items:center;
+}
+.bracket .line{
+  position:absolute;left:8px;width:10px;
+  border:1.5px solid var(--verm);border-left:none;
+  border-radius:0 4px 4px 0;
+}
+.bracket.full .line{top:6px;bottom:6px}
+.bracket.mid .line{top:64px;bottom:78px}
+.bracket .lbl{
+  position:absolute;left:26px;top:50%;
+  transform:translateY(-50%) rotate(180deg);
+  writing-mode:vertical-rl;
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--verm);white-space:nowrap;
+}
+
+/* ---- code strips ---- */
+.code{
+  margin-top:22px;
+  background:var(--ind-800);
+  border:1px solid var(--ind-700);
+  border-radius:6px;
+  padding:16px 18px;
+  font-family:"Inter",ui-monospace,monospace;
+  font-size:11.5px;line-height:1.85;
+  color:var(--ind-mut);
+  overflow-x:auto;
+}
+.code .t{color:var(--ind-ink)}
+.code .k{color:var(--verm);font-weight:600}
+.code .c{color:var(--ind-mut);opacity:.75}
+
+/* ---- difference table ---- */
+.diff{margin-top:64px}
+.diff h2{
+  font-size:13px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ind-mut);margin-bottom:18px;
+}
+.diff table{
+  width:100%;border-collapse:collapse;font-size:13px;line-height:1.55;
+}
+.diff th,.diff td{
+  text-align:left;padding:12px 18px 12px 0;vertical-align:top;
+  border-bottom:1px solid var(--ind-700);
+}
+.diff th{
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ind-mut);font-weight:600;padding-top:0;
+}
+.diff td:first-child{color:var(--ind-mut);width:26%}
+.diff td b{color:var(--ind-ink);font-weight:600}
+.diff .verm{color:var(--verm);font-weight:600}
+
+.foot{
+  margin-top:56px;font-size:12.5px;line-height:1.7;color:var(--ind-mut);max-width:56em;
+}
+.foot b{color:var(--ind-ink);font-weight:600}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="board-head">
+    <div class="kicker">Yoin · Mockup 05 · Layout Study</div>
+    <h1>Sticky chrome vs isolated scroll container</h1>
+    <p>Both frames below are <b>live — scroll each one</b>. Same content, same chrome.
+       The difference is <b>who owns the scroll</b>: the whole page (left) or only the
+       main region (right). Watch where the vermillion scrollbar lives.</p>
+  </div>
+
+  <div class="pair">
+
+    <!-- ============ A: STICKY ============ -->
+    <section>
+      <div class="col-head">
+        <span class="name">A · Sticky</span>
+        <span class="tag">position: sticky</span>
+        <span class="shipped">Shipped in Yoin</span>
+      </div>
+      <p class="col-sub">
+        One scroll context: the whole viewport. Header and nav travel <em>inside</em> it
+        but pin to its edges with <code>sticky</code>. Scrollbar spans the full frame —
+        chrome included.
+      </p>
+
+      <div class="stage">
+        <div class="phone">
+          <div class="vp-page" id="vpA">
+            <header class="hd">
+              <span class="logo">YOIN</span><span class="sub">Ledger</span>
+              <span class="seal">余韻</span>
+            </header>
+            <main class="mn" data-fill></main>
+            <footer class="ft">
+              <span class="tab on">Home</span><span class="tab">History</span>
+              <span class="plus">+</span>
+              <span class="tab">Insights</span><span class="tab">Settings</span>
+            </footer>
+          </div>
+        </div>
+        <div class="bracket full">
+          <span class="line"></span>
+          <span class="lbl">Scroll context — entire page</span>
+        </div>
+      </div>
+
+      <pre class="code"><span class="t">&lt;div class="<span class="k">min-h-dvh</span> flex flex-col"&gt;</span>   <span class="c">← page itself scrolls</span>
+  <span class="t">&lt;header class="<span class="k">sticky top-0</span>"&gt;</span>       <span class="c">← pinned, needs bg + z</span>
+  <span class="t">&lt;main class="flex-1"&gt;</span>
+  <span class="t">&lt;nav class="<span class="k">sticky bottom-0</span>"&gt;</span>       <span class="c">← pinned, needs bg + z</span>
+<span class="t">&lt;/div&gt;</span></pre>
+    </section>
+
+    <!-- ============ B: SCROLL CONTAINER ============ -->
+    <section>
+      <div class="col-head">
+        <span class="name">B · Scroll container</span>
+        <span class="tag">overflow-y: auto</span>
+      </div>
+      <p class="col-sub">
+        Chrome sits outside the scroll context entirely. Layout is a fixed-height column;
+        only <code>main</code> overflows. Scrollbar starts under the header and stops
+        above the nav.
+      </p>
+
+      <div class="stage">
+        <div class="phone">
+          <div class="vp-split">
+            <header class="hd">
+              <span class="logo">YOIN</span><span class="sub">Ledger</span>
+              <span class="seal">余韻</span>
+            </header>
+            <main class="mn" data-fill></main>
+            <footer class="ft">
+              <span class="tab on">Home</span><span class="tab">History</span>
+              <span class="plus">+</span>
+              <span class="tab">Insights</span><span class="tab">Settings</span>
+            </footer>
+          </div>
+        </div>
+        <div class="bracket mid">
+          <span class="line"></span>
+          <span class="lbl">Scroll context — main only</span>
+        </div>
+      </div>
+
+      <pre class="code"><span class="t">&lt;div class="<span class="k">h-dvh</span> flex flex-col"&gt;</span>       <span class="c">← fixed height, no scroll</span>
+  <span class="t">&lt;header&gt;</span>                            <span class="c">← plain flow</span>
+  <span class="t">&lt;main class="flex-1 <span class="k">overflow-y-auto</span>"&gt;</span> <span class="c">← the only scroller</span>
+  <span class="t">&lt;nav&gt;</span>
+<span class="t">&lt;/div&gt;</span></pre>
+    </section>
+
+  </div>
+
+  <!-- ============ DIFFERENCES ============ -->
+  <div class="diff">
+    <h2>What actually differs</h2>
+    <table>
+      <thead>
+        <tr><th></th><th>A · Sticky</th><th>B · Scroll container</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Scrollbar belongs to</td>
+          <td><b>Whole page</b> — runs behind the pinned chrome, edge to edge</td>
+          <td><b>Main only</b> — starts under header, ends above nav</td>
+        </tr>
+        <tr>
+          <td>Rubber-band on touch</td>
+          <td>Overscroll drags <b>everything</b>, header and nav included</td>
+          <td>Chrome <b>never moves</b>; only content bounces</td>
+        </tr>
+        <tr>
+          <td>Mobile browser URL bar</td>
+          <td>Page scroll <b>collapses it</b> — more room for content (browser only, moot in Capacitor)</td>
+          <td>Inner scroll doesn't trigger collapse — bar stays</td>
+        </tr>
+        <tr>
+          <td>Chrome styling cost</td>
+          <td>Needs <b>bg + z-index</b> or content bleeds through while pinned</td>
+          <td>None — chrome is never overlapped</td>
+        </tr>
+        <tr>
+          <td>Layout constraint</td>
+          <td>None — natural document flow, <code class="n">min-h-dvh</code></td>
+          <td>Requires <b>fixed height</b> + <code class="n">min-h-0</code> on the flex chain, classic footgun</td>
+        </tr>
+        <tr>
+          <td>Scroll position across screens</td>
+          <td>One shared scroll — switching tabs keeps page offset unless reset</td>
+          <td>Scroller can live <b>per screen</b> — each tab remembers or resets its own</td>
+        </tr>
+        <tr>
+          <td>Yoin today</td>
+          <td class="verm">← this one</td>
+          <td>Switch only if rubber-band moving the chrome bothers you</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="foot">
+    Both are legitimate. <b>A</b> is the standard mobile-web pattern: least layout code,
+    degrades gracefully. <b>B</b> is the "app-like" pattern: chrome is architecture, content
+    is a window. The visible tell on desktop is the scrollbar span; the felt tell on a phone
+    is whether the header stretches when you over-pull.
+  </p>
+
+</div>
+
+<script>
+const CATS=[["Groceries","GR","−70,000"],["Other","OT","−30,000"],["Food","FD","−28,000"],
+["Fee","FE","−2,500"],["Leisure","LS","−89,000"],["Food","FD","−18,000"],
+["Other","OT","−23,500"],["Food","FD","−6,000"],["Transport","TR","−14,000"],
+["Food","FD","−23,000"]];
+function fill(el){
+  let h='<div class="day">Aug 28 · Fri <span class="n" style="float:right">+4,695,660</span></div>';
+  for(let d=0;d<4;d++){
+    if(d>0)h+=`<div class="day">Aug ${27-d} · ${["Thu","Wed","Tue"][d-1]}</div>`;
+    for(let i=0;i<8;i++){
+      const c=CATS[(d*8+i)%CATS.length];
+      h+=`<div class="row"><span class="cat">${c[0]}</span>
+          <span class="time n">${8+i*2}:${(11+i*7)%60<10?"0":""}${(11+i*7)%60}</span>
+          <span class="amt neg n">${c[2]}</span></div>`;
+    }
+  }
+  h+='<div class="row"><span class="cat">Income</span><span class="time n">08:05</span><span class="amt pos n">+4,867,660</span></div>';
+  el.innerHTML=h;
+}
+document.querySelectorAll("[data-fill]").forEach(fill);
+</script>
+</body>
+</html>
