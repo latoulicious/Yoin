@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yoin — Backlog Studies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Serif+JP:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   YOIN — BACKLOG STUDIES
+   A · Restore recovery   B · Insights → History tap-through
+   C · Home month-card inset hairline
+   Same board grammar as promoted/yoin-design.html.
+   ========================================================== */
+
+:root{
+  --board:#332f2a;
+  --board-line:rgba(255,255,255,.045);
+  --board-ink:#cfc7b6;
+  --board-ink-2:#8d8676;
+
+  --paper:#f5f0e3;
+  --paper-2:#efe8d6;
+  --paper-3:#e8e0cb;
+  --ink:#25221e;
+  --ink-2:#57524a;
+  --ink-3:#8d8578;
+  --rule:#cec5b0;
+  --rule-2:#ddd4bf;
+  --red:#b0342a;
+  --red-soft:rgba(176,52,42,.09);
+
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sans:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  --serif:'Noto Serif JP',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--board);
+  background-image:
+    repeating-linear-gradient(0deg,var(--board-line) 0 1px,transparent 1px 40px),
+    repeating-linear-gradient(90deg,var(--board-line) 0 1px,transparent 1px 40px),
+    radial-gradient(120% 90% at 50% -10%,#403b34,#332f2a 70%);
+  color:var(--board-ink);
+  font-family:var(--mono);
+  font-variant-numeric:tabular-nums;
+  padding:56px 48px 96px;
+}
+
+.board-head{max-width:1400px;margin:0 auto 56px;display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap;border-bottom:1px dashed rgba(255,255,255,.14);padding-bottom:22px}
+.board-title{font-family:var(--sans);font-weight:600;font-size:26px;letter-spacing:.02em;color:#efe9db}
+.board-title span{color:var(--red);font-family:var(--serif);font-size:22px;margin-left:10px}
+.board-meta{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--board-ink-2);margin-left:auto;text-align:right;line-height:1.9}
+.slot-sub{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--board-ink-2)}
+
+.study{max-width:1400px;margin:0 auto 96px}
+.study-head{display:flex;align-items:baseline;gap:12px;margin-bottom:34px;border-bottom:1px dashed rgba(255,255,255,.14);padding-bottom:14px}
+.study-no{font-size:11px;letter-spacing:.14em;color:var(--red);border:1px solid rgba(176,52,42,.55);padding:2px 7px}
+.study-name{font-family:var(--sans);font-size:17px;font-weight:600;letter-spacing:.04em;color:#e9e2d3}
+
+.rail{display:grid;grid-template-columns:repeat(auto-fill,414px);justify-content:center;gap:80px 110px}
+.slot{width:414px}
+.slot-label{display:flex;align-items:baseline;gap:10px;margin:0 0 16px 2px}
+.slot-no{font-size:11px;letter-spacing:.14em;color:var(--red);border:1px solid rgba(176,52,42,.55);padding:2px 7px}
+.slot-name{font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:.04em;color:#e9e2d3}
+
+.wrap{position:relative;width:414px}
+.device{
+  position:relative;width:414px;height:868px;padding:12px;
+  background:linear-gradient(160deg,#4a453d,#211f1c 42%,#3a352e);
+  border-radius:52px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.06) inset,0 2px 0 rgba(255,255,255,.08) inset,
+    0 34px 60px -18px rgba(0,0,0,.65),0 4px 12px rgba(0,0,0,.4);
+}
+.screen{
+  position:relative;width:390px;height:844px;border-radius:41px;overflow:hidden;
+  background:var(--paper);
+  background-image:
+    repeating-linear-gradient(0deg,rgba(0,0,0,.014) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.011) 0 1px,transparent 1px 4px),
+    radial-gradient(130% 70% at 15% 0%,#fbf7ec,#f4efe1 55%,#ece5d3);
+  color:var(--ink);
+  display:flex;flex-direction:column;
+  box-shadow:0 0 0 1px rgba(0,0,0,.35);
+}
+
+.sbar{height:44px;flex:0 0 44px;display:flex;align-items:center;padding:0 30px;position:relative}
+.sbar-time{font-family:var(--sans);font-weight:600;font-size:14px}
+.island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:104px;height:26px;border-radius:14px;background:#1b1917}
+
+.appbar{height:52px;flex:0 0 52px;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px dashed var(--rule)}
+.appbar-t{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+.appbar-s{font-size:10px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase}
+.push{margin-left:auto}
+.icobtn{font-family:var(--mono);font-size:17px;color:var(--ink-2);width:24px;text-align:center}
+.seal{
+  width:34px;height:34px;border:1.4px solid var(--red);border-radius:3px;color:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:13px;line-height:1.05;
+  writing-mode:vertical-rl;transform:rotate(-3.5deg);opacity:.92;
+  box-shadow:0 0 0 2.5px var(--paper),0 0 0 3.5px rgba(176,52,42,.18);
+}
+
+.body{flex:1;overflow:hidden;position:relative}
+.pad{padding:0 20px}
+.lbl{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.rule-solid{border-top:1px solid var(--ink);opacity:.75}
+.rule-dbl{border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);height:3px;opacity:.8}
+.perf{height:9px;margin:0 -20px;
+  background:radial-gradient(circle at 5px 4.5px,rgba(53,49,43,.55) 0 2.1px,transparent 2.4px) repeat-x;
+  background-size:10px 9px;opacity:.5}
+.tear{height:9px;margin:0 -20px;background:var(--paper-2);
+  -webkit-mask:radial-gradient(circle at 6px -1px,transparent 0 6px,#000 6.4px) repeat-x;
+  mask:radial-gradient(circle at 6px -1px,transparent 0 6px,#000 6.4px) repeat-x;
+  -webkit-mask-size:12px 9px;mask-size:12px 9px}
+.receipt{background:var(--paper-2);margin:0 -20px;padding:16px 20px 0}
+.receipt.inset-line{box-shadow:0 1px 0 rgba(0,0,0,.05) inset}
+
+.reg{display:flex;align-items:baseline}
+.reg .lead{flex:1;border-bottom:1px dotted var(--rule);transform:translateY(-4px);margin:0 9px;min-width:14px}
+.amt{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.amt.big{font-size:32px;font-weight:500;letter-spacing:-.02em}
+.cur{color:var(--ink-3);font-size:.58em;margin-right:.4em;vertical-align:.12em}
+.pos{font-weight:600}
+.neg{font-weight:400}
+
+.txn{display:flex;align-items:center;height:52px;border-bottom:1px dotted var(--rule-2)}
+.txn .t-main{flex:1;min-width:0}
+.txn .t-name{font-family:var(--sans);font-size:14.5px;font-weight:500}
+.txn .t-meta{font-size:10px;letter-spacing:.09em;color:var(--ink-3);text-transform:uppercase;margin-top:3px;display:block}
+.txn .amt{font-size:14.5px;min-width:112px}
+.code{display:inline-block;border:1px solid var(--rule);color:var(--ink-3);font-size:9px;letter-spacing:.1em;padding:1px 4px;margin-right:7px;vertical-align:1px}
+.dayhead{display:flex;align-items:baseline;height:22px;margin-top:14px}
+.dayhead .d{font-size:10px;letter-spacing:.2em;color:var(--ink-2)}
+.dayhead .s{margin-left:auto;font-size:10px;letter-spacing:.1em;color:var(--ink-3)}
+
+.mnav{display:flex;align-items:center;height:44px;border-bottom:1px dashed var(--rule)}
+.mnav .m{flex:1;text-align:center;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.24em}
+.mnav .a{color:var(--ink-2);font-size:15px;width:26px;text-align:center}
+
+.sub{display:flex;align-items:center;height:46px;border-bottom:1px dotted var(--rule-2)}
+.sub .s-name{font-family:var(--sans);font-size:13.5px;font-weight:500;width:88px}
+.sub .s-n{font-size:9.5px;color:var(--ink-3);letter-spacing:.1em;width:46px}
+.sub .s-bar{flex:1;height:3px;background:rgba(37,34,30,.09);margin-right:12px;position:relative}
+.sub .s-bar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink);opacity:.45}
+.sub .amt{font-size:13px;min-width:96px}
+.sub.hot{background:var(--red-soft);box-shadow:0 0 0 1.5px var(--red) inset;margin:0 -8px;padding:0 8px}
+.total{display:flex;align-items:baseline;margin-top:6px;padding-top:14px}
+.total .t{font-size:10px;letter-spacing:.2em;color:var(--red)}
+.total .amt{font-size:19px;font-weight:600;color:var(--red)}
+.total .lead{flex:1;border-bottom:1px dotted var(--rule);margin:0 9px;transform:translateY(-4px)}
+
+.chip{
+  display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 4px 0 10px;
+  border:1px solid var(--red);background:var(--red-soft);color:var(--red);
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
+}
+.chip .x{width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  border-left:1px dashed rgba(176,52,42,.5);font-size:12px;font-weight:400}
+
+.sec{font-size:9.5px;letter-spacing:.22em;color:var(--ink-3);text-transform:uppercase;height:22px;display:flex;align-items:flex-end;margin-top:18px}
+.opt{display:flex;align-items:center;height:52px;border-bottom:1px dotted var(--rule-2)}
+.opt .o-name{font-family:var(--sans);font-size:14.5px;font-weight:500}
+.opt .o-val{margin-left:auto;font-size:11px;letter-spacing:.08em;color:var(--ink-3)}
+.opt .o-arw{margin-left:12px;color:var(--rule);font-size:13px}
+
+.inset{margin-top:20px;border:1px solid var(--rule);background:var(--paper-2)}
+.inset-h{display:flex;align-items:center;height:26px;padding:0 12px;border-bottom:1px solid var(--rule);font-size:9px;letter-spacing:.2em;color:var(--ink-3);text-transform:uppercase}
+.inset-h span:last-child{margin-left:auto}
+.iline{display:flex;align-items:center;height:40px;padding:0 12px;border-bottom:1px dotted var(--rule-2)}
+.iline:last-child{border-bottom:none}
+.iline .i-l{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.iline .i-v{margin-left:auto;font-size:12px}
+.inset.bad{border-color:var(--red)}
+.inset.bad .inset-h{border-color:var(--red);color:var(--red)}
+
+.tape-note{margin-top:16px;padding:14px 16px;border:1px dashed var(--rule);background:var(--paper-2)}
+.tape-note p{font-size:11.5px;line-height:1.85;color:var(--ink-2)}
+.tape-note b{color:var(--red);font-weight:600}
+
+.stamp{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  height:56px;margin-top:20px;color:var(--red);
+  font-size:11.5px;letter-spacing:.26em;font-weight:600;
+  border:1.5px solid var(--red);box-shadow:0 0 0 3px var(--paper),0 0 0 4.5px rgba(176,52,42,.35);
+  background:var(--red-soft);
+}
+.stamp.mute{color:var(--ink-2);border-color:var(--rule);background:transparent;
+  box-shadow:none;border-style:dashed;height:44px;font-size:10px}
+
+.toast{
+  position:absolute;left:20px;right:20px;bottom:16px;
+  display:flex;align-items:center;height:44px;padding:0 14px;
+  background:var(--ink);color:var(--paper);
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+}
+.toast b{margin-left:auto;color:#e8a49c;font-weight:600;letter-spacing:.2em}
+
+.nav{height:78px;flex:0 0 78px;display:flex;align-items:center;padding:0 14px 12px;
+  border-top:1px dashed var(--rule);background:linear-gradient(180deg,rgba(232,224,203,0),rgba(232,224,203,.55))}
+.nav a{flex:1;text-align:center;font-size:9px;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase;text-decoration:none;padding-top:6px}
+.nav a.on{color:var(--ink)}
+.nav a.on::after{content:"";display:block;width:24px;height:1.5px;background:var(--red);margin:6px auto 0}
+.nav .plus{flex:0 0 52px;height:52px;border-radius:50%;border:1.5px solid var(--red);color:var(--red);
+  display:flex;align-items:center;justify-content:center;font-size:24px;padding-bottom:3px;
+  box-shadow:0 0 0 3px var(--paper),0 0 0 4.5px rgba(176,52,42,.3)}
+
+.dot{position:absolute;z-index:5;width:24px;height:24px;border-radius:50%;
+  background:var(--paper);border:1.5px solid var(--red);color:var(--red);
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.dot::after{content:"";position:absolute;top:50%;height:1px;background:rgba(176,52,42,.7)}
+.dot.l::after{left:24px;width:20px}
+.dot.r::after{right:24px;width:20px}
+
+.legend{margin-top:26px;border-top:1px dashed rgba(255,255,255,.16);padding-top:16px}
+.legend li{list-style:none;display:flex;gap:10px;font-size:11.5px;line-height:1.65;color:var(--board-ink);margin-bottom:7px}
+.legend .n{flex:0 0 19px;height:19px;border-radius:50%;border:1px solid rgba(176,52,42,.75);color:#e08a80;display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:1px}
+.legend em{font-style:normal;color:var(--board-ink-2)}
+.legend b{color:#efe9db;font-weight:500}
+
+/* study C zoom panels */
+.zoom-pair{display:flex;gap:56px;justify-content:center;flex-wrap:wrap}
+.zoom{width:414px}
+.zoom .panel{
+  background:var(--paper);color:var(--ink);padding:26px 24px 20px;
+  border-radius:8px;box-shadow:0 18px 44px -14px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.3);
+  background-image:
+    repeating-linear-gradient(0deg,rgba(0,0,0,.014) 0 1px,transparent 1px 3px),
+    radial-gradient(130% 70% at 15% 0%,#fbf7ec,#f4efe1 55%,#ece5d3);
+}
+.zoom .panel .receipt{margin:0 -24px;padding:16px 24px 0}
+.zoom-code{margin-top:18px;background:#2a2622;border:1px solid rgba(255,255,255,.09);border-radius:6px;
+  padding:14px 16px;font-size:11.5px;line-height:1.8;color:var(--board-ink);overflow-x:auto}
+.zoom-code .k{color:#e08a80}
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <div>
+    <div class="board-title">Yoin — Backlog Studies <span>余韻</span></div>
+    <div class="slot-sub" style="margin-top:8px">Three open backlog items · proposal board · not yet approved</div>
+  </div>
+  <div class="board-meta">
+    A · Restore recovery<br>
+    B · Insights → History tap-through<br>
+    C · Month-card inset hairline
+  </div>
+</header>
+
+<!-- ══════════════ A · RESTORE RECOVERY ══════════════ -->
+<section class="study">
+  <div class="study-head">
+    <span class="study-no">A</span>
+    <span class="study-name">Restore recovery</span>
+    <span class="slot-sub">Validate before destroy · preview before replace · rollback on failure</span>
+  </div>
+
+  <div class="rail">
+
+    <!-- A1 preview -->
+    <div class="slot">
+      <div class="slot-label"><span class="slot-no">A1</span><span class="slot-name">Preview</span><span class="slot-sub">Valid backup picked</span></div>
+      <div class="wrap">
+        <div class="device"><div class="screen">
+          <div class="sbar"><span class="sbar-time">9:41</span><span class="island"></span></div>
+          <div class="appbar"><span class="appbar-t">Restore</span><span class="push"></span><span class="appbar-s">Data</span></div>
+          <div class="body pad">
+            <div class="inset">
+              <div class="inset-h"><span>Backup file</span><span>Valid · v4</span></div>
+              <div class="iline"><span class="i-l">File</span><span class="i-v">yoin-backup.json</span></div>
+              <div class="iline"><span class="i-l">Written</span><span class="i-v">Aug 29, 23:04</span></div>
+              <div class="iline"><span class="i-l">Entries</span><span class="i-v">312</span></div>
+              <div class="iline"><span class="i-l">Accounts</span><span class="i-v">5</span></div>
+              <div class="iline"><span class="i-l">Range</span><span class="i-v">Sep 2025 — Aug 2026</span></div>
+            </div>
+
+            <div class="inset">
+              <div class="inset-h"><span>Current ledger</span><span>Will be replaced</span></div>
+              <div class="iline"><span class="i-l">Entries</span><span class="i-v">56</span></div>
+              <div class="iline"><span class="i-l">Last change</span><span class="i-v">Today, 21:41</span></div>
+            </div>
+
+            <div class="tape-note">
+              <p>Restore <b>replaces</b> the current ledger. A safety copy is kept
+              until the restore succeeds — if it fails, the ledger you see now
+              comes back untouched.</p>
+            </div>
+
+            <div class="stamp">押印 · RESTORE 312 ENTRIES</div>
+            <div class="stamp mute">KEEP CURRENT LEDGER</div>
+          </div>
+          <nav class="nav">
+            <a href="#">Home</a><a href="#">History</a><span class="plus">+</span>
+            <a href="#">Insights</a><a href="#" class="on">Settings</a>
+          </nav>
+        </div></div>
+        <span class="dot r" style="top:140px;right:-42px">1</span>
+        <span class="dot l" style="top:420px;left:-42px">2</span>
+        <span class="dot r" style="top:555px;right:-42px">3</span>
+      </div>
+      <ul class="legend">
+        <li><span class="n">1</span><span>File is parsed and checked <b>before</b> anything is touched: database name, schema version, entry counts. Both web and native paths run the same check.</span></li>
+        <li><span class="n">2</span><span>The screen states the cost plainly — what replaces what. No generic "are you sure".</span></li>
+        <li><span class="n">3</span><span>Confirm is the stamp; declining is the quiet dashed row. Destructive action never gets the quiet style.</span></li>
+      </ul>
+    </div>
+
+    <!-- A2 bad file -->
+    <div class="slot">
+      <div class="slot-label"><span class="slot-no">A2</span><span class="slot-name">Bad file</span><span class="slot-sub">Validation failed</span></div>
+      <div class="wrap">
+        <div class="device"><div class="screen">
+          <div class="sbar"><span class="sbar-time">9:41</span><span class="island"></span></div>
+          <div class="appbar"><span class="appbar-t">Restore</span><span class="push"></span><span class="appbar-s">Data</span></div>
+          <div class="body pad">
+            <div class="inset bad">
+              <div class="inset-h"><span>Backup file</span><span>Not a Yoin backup</span></div>
+              <div class="iline"><span class="i-l">File</span><span class="i-v">IMG_2041.json</span></div>
+              <div class="iline"><span class="i-l">Problem</span><span class="i-v">No ledger data inside</span></div>
+            </div>
+
+            <div class="tape-note">
+              <p>Nothing was changed. Your ledger is exactly as it was —
+              <b>56 entries, last change today at 21:41</b>. Pick the file
+              exported from Settings → Backup.</p>
+            </div>
+
+            <div class="stamp mute">PICK ANOTHER FILE</div>
+            <div class="stamp mute">BACK TO SETTINGS</div>
+          </div>
+          <nav class="nav">
+            <a href="#">Home</a><a href="#">History</a><span class="plus">+</span>
+            <a href="#">Insights</a><a href="#" class="on">Settings</a>
+          </nav>
+        </div></div>
+        <span class="dot r" style="top:150px;right:-42px">4</span>
+        <span class="dot l" style="top:300px;left:-42px">5</span>
+      </div>
+      <ul class="legend">
+        <li><span class="n">4</span><span>Wrong pick is a dead end, not a crash — today the web path swallows any file and reloads into a broken store. This state exists so that never happens.</span></li>
+        <li><span class="n">5</span><span>Error copy answers the two questions that matter: <em>did I lose anything</em> (no) and <em>what do I do</em> (pick the exported file).</span></li>
+      </ul>
+    </div>
+
+    <!-- A3 rollback -->
+    <div class="slot">
+      <div class="slot-label"><span class="slot-no">A3</span><span class="slot-name">Rollback</span><span class="slot-sub">Import failed mid-restore</span></div>
+      <div class="wrap">
+        <div class="device"><div class="screen">
+          <div class="sbar"><span class="sbar-time">9:41</span><span class="island"></span></div>
+          <div class="appbar"><span class="appbar-t">Settings</span><span class="push"></span><span class="appbar-s">v1.4</span></div>
+          <div class="body pad">
+            <div class="sec">Ledger</div>
+            <div class="rule-solid" style="margin-top:6px"></div>
+            <div class="opt"><span class="o-name">Categories</span><span class="o-val">6 + 1 system</span><span class="o-arw">›</span></div>
+            <div class="opt"><span class="o-name">Accounts</span><span class="o-val">5 tapes</span><span class="o-arw">›</span></div>
+            <div class="sec">Data</div>
+            <div class="rule-solid" style="margin-top:6px"></div>
+            <div class="opt"><span class="o-name">Export CSV</span><span class="o-val">56 entries</span><span class="o-arw">›</span></div>
+            <div class="opt"><span class="o-name">Backup</span><span class="o-val">Aug 29, 23:04</span><span class="o-arw">›</span></div>
+            <div class="opt"><span class="o-name">Restore</span><span class="o-val">From backup file</span><span class="o-arw">›</span></div>
+            <div class="toast"><span>Restore failed — previous ledger kept</span><b>DETAILS</b></div>
+          </div>
+          <nav class="nav">
+            <a href="#">Home</a><a href="#">History</a><span class="plus">+</span>
+            <a href="#">Insights</a><a href="#" class="on">Settings</a>
+          </nav>
+        </div></div>
+        <span class="dot l" style="top:700px;left:-42px">6</span>
+      </div>
+      <ul class="legend">
+        <li><span class="n">6</span><span>Import blew up after confirm → the safety copy from A1 is restored automatically and the app lands back on Settings, ledger intact. The toast states the outcome; <em>DETAILS</em> shows the raw error.</span></li>
+        <li><span class="n">—</span><span><b>Rule:</b> there is no state where the old ledger is gone and the new one didn't load. Snapshot first, swap last.</span></li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ B · INSIGHTS → HISTORY ══════════════ -->
+<section class="study">
+  <div class="study-head">
+    <span class="study-no">B</span>
+    <span class="study-name">Insights → filtered History</span>
+    <span class="slot-sub">Spec-board legend 15 · one tap from subtotal to its lines</span>
+  </div>
+
+  <div class="rail">
+
+    <!-- B1 insights -->
+    <div class="slot">
+      <div class="slot-label"><span class="slot-no">B1</span><span class="slot-name">Insights</span><span class="slot-sub">Tap a subtotal row</span></div>
+      <div class="wrap">
+        <div class="device"><div class="screen">
+          <div class="sbar"><span class="sbar-time">9:41</span><span class="island"></span></div>
+          <div class="appbar"><span class="appbar-t">Insights</span><span class="push"></span><span class="appbar-s">Register</span></div>
+          <div class="body pad">
+            <div class="mnav"><span class="a">‹</span><span class="m">AUGUST 2026</span><span class="a">›</span></div>
+            <div style="height:16px"></div>
+            <div class="lbl">Remaining after August</div>
+            <div class="amt big" style="text-align:left;margin-top:2px"><span class="cur">Rp</span>4,281,500</div>
+            <div style="height:16px"></div>
+            <div class="perf"></div>
+            <div class="reg lbl" style="margin-top:10px"><span>Expenses by category</span><span class="lead"></span><span>56 entries</span></div>
+            <div class="rule-solid" style="margin-top:6px"></div>
+            <div class="sub"><span class="s-name">Home</span><span class="s-n">2×</span><span class="s-bar"><i style="width:100%"></i></span><span class="amt">1,200,000</span></div>
+            <div class="sub hot"><span class="s-name">Food</span><span class="s-n">18×</span><span class="s-bar"><i style="width:96%"></i></span><span class="amt">1,146,500</span></div>
+            <div class="sub"><span class="s-name">Leisure</span><span class="s-n">5×</span><span class="s-bar"><i style="width:29%"></i></span><span class="amt">350,000</span></div>
+            <div class="sub"><span class="s-name">Transport</span><span class="s-n">22×</span><span class="s-bar"><i style="width:24%"></i></span><span class="amt">284,000</span></div>
+            <div class="sub"><span class="s-name">Other</span><span class="s-n">5×</span><span class="s-bar"><i style="width:9%"></i></span><span class="amt">102,500</span></div>
+            <div class="sub"><span class="s-name">Fee</span><span class="s-n">3×</span><span class="s-bar"><i style="width:1%"></i></span><span class="amt">7,500</span></div>
+            <div class="rule-dbl" style="margin-top:10px"></div>
+            <div class="total"><span class="t">TOTAL EXPENSES</span><span class="lead"></span><span class="amt">−3,090,500</span></div>
+          </div>
+          <nav class="nav">
+            <a href="#">Home</a><a href="#">History</a><span class="plus">+</span>
+            <a href="#" class="on">Insights</a><a href="#">Settings</a>
+          </nav>
+        </div></div>
+        <span class="dot r" style="top:352px;right:-42px">7</span>
+      </div>
+      <ul class="legend">
+        <li><span class="n">7</span><span>Tap the <b>Food</b> row — pressed state shown — opens History filtered to Food, same month. The whole row is the target, not the name.</span></li>
+      </ul>
+    </div>
+
+    <!-- B2 filtered history -->
+    <div class="slot">
+      <div class="slot-label"><span class="slot-no">B2</span><span class="slot-name">History — filtered</span><span class="slot-sub">Landed from Insights</span></div>
+      <div class="wrap">
+        <div class="device"><div class="screen">
+          <div class="sbar"><span class="sbar-time">9:41</span><span class="island"></span></div>
+          <div class="appbar"><span class="appbar-t">History</span><span class="push"></span><span class="appbar-s">Filter</span><span class="icobtn">≡</span></div>
+          <div class="body pad">
+            <div class="mnav"><span class="a">‹</span><span class="m">AUGUST 2026</span><span class="a">›</span></div>
+            <div style="height:14px"></div>
+            <span class="chip"><span class="code" style="color:var(--red);border-color:var(--red);margin:0">FD</span> Food · 18 entries <span class="x">×</span></span>
+            <div style="height:14px"></div>
+            <div class="perf"></div>
+
+            <div class="dayhead"><span class="d">AUG 27 · THU</span><span class="s">−46,000</span></div>
+            <div class="rule-solid"></div>
+            <div class="txn"><span class="t-main"><span class="t-name">Dinner</span>
+              <span class="t-meta"><span class="code">FD</span>20:38</span></span><span class="amt neg">−28,000</span></div>
+            <div class="txn"><span class="t-main"><span class="t-name">Lunch</span>
+              <span class="t-meta"><span class="code">FD</span>12:39</span></span><span class="amt neg">−18,000</span></div>
+
+            <div class="dayhead"><span class="d">AUG 26 · WED</span><span class="s">−29,000</span></div>
+            <div class="rule-solid"></div>
+            <div class="txn"><span class="t-main"><span class="t-name">Food</span>
+              <span class="t-meta"><span class="code">FD</span>19:18</span></span><span class="amt neg">−23,000</span></div>
+            <div class="txn"><span class="t-main"><span class="t-name">Coffee</span>
+              <span class="t-meta"><span class="code">FD</span>07:48</span></span><span class="amt neg">−6,000</span></div>
+
+            <div class="dayhead"><span class="d">AUG 21 · FRI</span><span class="s">−98,500</span></div>
+            <div class="rule-solid"></div>
+            <div class="txn"><span class="t-main"><span class="t-name">Groceries</span>
+              <span class="t-meta"><span class="code">FD</span>Market · 18:20</span></span><span class="amt neg">−86,500</span></div>
+            <div class="txn"><span class="t-main"><span class="t-name">Coffee</span>
+              <span class="t-meta"><span class="code">FD</span>Kiosk · 08:05</span></span><span class="amt neg">−12,000</span></div>
+
+            <div class="rule-dbl" style="margin-top:14px"></div>
+            <div class="total"><span class="t">FOOD · AUGUST</span><span class="lead"></span><span class="amt">−1,146,500</span></div>
+          </div>
+          <nav class="nav">
+            <a href="#">Home</a><a href="#" class="on">History</a><span class="plus">+</span>
+            <a href="#">Insights</a><a href="#">Settings</a>
+          </nav>
+        </div></div>
+        <span class="dot l" style="top:212px;left:-42px">8</span>
+        <span class="dot r" style="top:158px;right:-42px">9</span>
+      </div>
+      <ul class="legend">
+        <li><span class="n">8</span><span>The filter is a visible, dismissable <b>chip</b> — × returns to full History in place. Deep link lands here; the same chip is what the ≡ filter control produces, so the affordance is shared, not tap-through-only.</span></li>
+        <li><span class="n">9</span><span><b>‹ ›</b> keeps the filter while stepping months. The month strip is replaced by the filtered total at the bottom — it must reconcile with the Insights subtotal that was tapped.</span></li>
+        <li><span class="n">—</span><span><b>Rule:</b> list stays chronological. Filtering narrows, never reorders.</span></li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ C · MONTH-CARD HAIRLINE ══════════════ -->
+<section class="study">
+  <div class="study-head">
+    <span class="study-no">C</span>
+    <span class="study-name">Home month-card inset hairline</span>
+    <span class="slot-sub">Cosmetic drift from the spec · one box-shadow line</span>
+  </div>
+
+  <div class="zoom-pair">
+
+    <div class="zoom">
+      <div class="slot-label"><span class="slot-no">C1</span><span class="slot-name">Shipped</span><span class="slot-sub">Flat edge — card floats</span></div>
+      <div class="panel">
+        <div class="lbl">Remaining</div>
+        <div class="amt big" style="text-align:left;margin-top:2px"><span class="cur">Rp</span>6,251,563</div>
+        <div style="height:12px"></div>
+        <div class="receipt">
+          <div class="lbl" style="margin-bottom:10px">This month · August</div>
+          <div class="reg" style="font-size:12.5px"><span>Income</span><span class="lead"></span><span class="amt pos">+4,867,660</span></div>
+          <div style="height:8px"></div>
+          <div class="reg" style="font-size:12.5px"><span>Expenses</span><span class="lead"></span><span class="amt neg">−172,000</span></div>
+          <div style="height:14px"></div>
+          <div class="tear"></div>
+        </div>
+      </div>
+      <div class="zoom-code">box-shadow: <span class="k">none</span>;</div>
+    </div>
+
+    <div class="zoom">
+      <div class="slot-label"><span class="slot-no">C2</span><span class="slot-name">Spec</span><span class="slot-sub">Inset hairline — card sits in the page</span></div>
+      <div class="panel">
+        <div class="lbl">Remaining</div>
+        <div class="amt big" style="text-align:left;margin-top:2px"><span class="cur">Rp</span>6,251,563</div>
+        <div style="height:12px"></div>
+        <div class="receipt inset-line">
+          <div class="lbl" style="margin-bottom:10px">This month · August</div>
+          <div class="reg" style="font-size:12.5px"><span>Income</span><span class="lead"></span><span class="amt pos">+4,867,660</span></div>
+          <div style="height:8px"></div>
+          <div class="reg" style="font-size:12.5px"><span>Expenses</span><span class="lead"></span><span class="amt neg">−172,000</span></div>
+          <div style="height:14px"></div>
+          <div class="tear"></div>
+        </div>
+      </div>
+      <div class="zoom-code">box-shadow: <span class="k">inset 0 1px 0 rgba(0,0,0,.05)</span>;<br>/* carbon: inset 0 1px 0 rgba(255,255,255,.035) */</div>
+    </div>
+
+  </div>
+
+  <ul class="legend" style="max-width:900px;margin-left:auto;margin-right:auto">
+    <li><span class="n">—</span><span>The hairline shades the card's top edge so the receipt block reads as pressed <em>into</em> the paper instead of laid on top. Subtle at 1×, visible on device. Tailwind: <b>shadow-[inset_0_1px_0_rgba(0,0,0,.05)]</b> on the month card; carbon variant per spec line 322.</span></li>
+  </ul>
+</section>
+
+</body>
+</html>
