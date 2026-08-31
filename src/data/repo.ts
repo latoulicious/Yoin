@@ -83,6 +83,7 @@ export interface BalanceSummary {
 export interface CategoryTotal {
   categoryId: number | null
   name: string | null
+  code: string | null
   count: number
   total: number
 }
@@ -307,16 +308,28 @@ export async function balanceSummary(db: SQLiteDBConnection): Promise<BalanceSum
   return rows[0] ?? { spendable: 0, reserved: 0 }
 }
 
-export async function dayGroups(db: SQLiteDBConnection, month: string): Promise<DayGroup[]> {
+export async function dayGroups(
+  db: SQLiteDBConnection,
+  month: string,
+  categoryId?: number | null,
+): Promise<DayGroup[]> {
+  // null categoryId means the Uncategorized expense bucket, so the kind guard is
+  // required to keep legacy income and transfer legs (also null-category) out.
+  const categoryClause =
+    categoryId === undefined
+      ? ''
+      : categoryId === null
+        ? ` AND t.kind IN ('expense','fee') AND t.category_id IS NULL`
+        : ` AND t.kind IN ('expense','fee') AND t.category_id = ?`
   const rows = await query<TransactionRow>(
     db,
     `SELECT t.id, t.amount, t.kind, t.category_id, t.account_id, t.note, t.occurred_at, t.transfer_group_id,
             c.name AS category_name, c.code AS category_code
      FROM transactions t
      LEFT JOIN categories c ON c.id = t.category_id
-     WHERE substr(t.occurred_at, 1, 7) = ?
+     WHERE substr(t.occurred_at, 1, 7) = ?${categoryClause}
      ORDER BY t.occurred_at DESC, t.id DESC`,
-    [month],
+    typeof categoryId === 'number' ? [month, categoryId] : [month],
   )
 
   const groups = new Map<string, DayGroup>()
@@ -347,7 +360,7 @@ export async function monthTotals(db: SQLiteDBConnection, month: string): Promis
 export async function categoryTotals(db: SQLiteDBConnection, month: string): Promise<CategoryTotal[]> {
   return query<CategoryTotal>(
     db,
-    `SELECT t.category_id AS categoryId, c.name AS name, COUNT(*) AS count, SUM(t.amount) AS total
+    `SELECT t.category_id AS categoryId, c.name AS name, c.code AS code, COUNT(*) AS count, SUM(t.amount) AS total
      FROM transactions t
      LEFT JOIN categories c ON c.id = t.category_id
      WHERE t.kind IN ('expense','fee') AND substr(t.occurred_at, 1, 7) = ?

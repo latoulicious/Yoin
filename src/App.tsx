@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getDb } from './data/db'
 import { deleteTransaction, deleteTransferGroup } from './data/repo'
 import Accounts from './screens/Accounts'
-import History from './screens/History'
+import History, { type HistoryFilter } from './screens/History'
 import Home from './screens/Home'
 import Insights from './screens/Insights'
 import Record, { type SavedEntry } from './screens/Record'
@@ -63,12 +63,23 @@ const UNDO_WINDOW_MS = 5000
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter | null>(null)
   const [lastEntry, setLastEntry] = useState<SavedEntry | null>(null)
   const [dataVersion, setDataVersion] = useState(0)
   const undoTimer = useRef<number | undefined>(undefined)
   const { pref, setPref, resolved } = useTheme()
 
   useEffect(() => () => clearTimeout(undoTimer.current), [])
+
+  function navigate(next: Screen) {
+    if (next === 'history') setHistoryFilter(null)
+    setScreen(next)
+  }
+
+  function openFilteredHistory(filter: HistoryFilter) {
+    setHistoryFilter(filter)
+    setScreen('history')
+  }
 
   function handleSaved(entry: SavedEntry) {
     clearTimeout(undoTimer.current)
@@ -89,7 +100,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-paper text-ink">
-      <header className="border-b border-dashed border-rule pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-10 border-b border-dashed border-rule bg-paper pt-[env(safe-area-inset-top)]">
         <div className="flex h-[52px] items-center gap-3 px-5">
           <span className="font-sans text-[12px] font-semibold tracking-[.22em] uppercase">
             Yoin
@@ -105,7 +116,7 @@ export default function App() {
 
       <main className="flex-1 px-5">
         {screen === 'settings' ? (
-          <Settings onNavigate={setScreen} themePref={pref} />
+          <Settings onNavigate={navigate} themePref={pref} />
         ) : screen === 'appearance' ? (
           <Appearance pref={pref} setPref={setPref} resolved={resolved} />
         ) : screen === 'categories' ? (
@@ -117,11 +128,11 @@ export default function App() {
             onTransfer={() => setScreen('transfer')}
           />
         ) : screen === 'home' ? (
-          <Home key={dataVersion} onNavigate={setScreen} />
+          <Home key={dataVersion} onNavigate={navigate} />
         ) : screen === 'history' ? (
-          <History key={dataVersion} />
+          <History key={dataVersion} initialFilter={historyFilter} />
         ) : screen === 'insights' ? (
-          <Insights key={dataVersion} />
+          <Insights key={dataVersion} onCategoryTap={openFilteredHistory} />
         ) : screen === 'accounts' ? (
           <Accounts key={dataVersion} onTransfer={() => setScreen('transfer')} />
         ) : (
@@ -129,6 +140,7 @@ export default function App() {
         )}
       </main>
 
+      <footer className="sticky bottom-0 z-10 bg-paper">
       {lastEntry && (
         <div className="mx-5 flex h-[38px] items-center border-t border-dashed border-rule pt-2.5 text-[10px] tracking-[.12em] uppercase text-ink-3">
           <span>
@@ -150,7 +162,7 @@ export default function App() {
           <NavTab
             label="History"
             active={screen === 'history'}
-            onClick={() => setScreen('history')}
+            onClick={() => navigate('history')}
           />
           <button
             type="button"
@@ -173,6 +185,7 @@ export default function App() {
           />
         </div>
       </nav>
+      </footer>
     </div>
   )
 }
