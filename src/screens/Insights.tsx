@@ -6,6 +6,7 @@ import {
   type CategoryTotal,
   type MonthTotals,
 } from '../data/repo'
+import type { HistoryFilter } from './History'
 
 const RULE_LEAD = 'mx-2.5 min-w-3.5 flex-1 -translate-y-1 border-b border-dotted border-rule'
 
@@ -58,7 +59,11 @@ function patternNote(rows: CategoryTotal[]): string {
   return `${rowName(top)} appears ${times} this month.`
 }
 
-export default function Insights() {
+export default function Insights({
+  onCategoryTap,
+}: {
+  onCategoryTap: (filter: HistoryFilter) => void
+}) {
   const [month, setMonth] = useState(() => monthKey(new Date()))
   const [totals, setTotals] = useState<MonthTotals>({ income: 0, expense: 0 })
   const [rows, setRows] = useState<CategoryTotal[]>([])
@@ -136,9 +141,18 @@ export default function Insights() {
           <div className="mt-1.5 border-t border-ink opacity-75" />
 
           {rows.map((row) => (
-            <div
+            <button
               key={row.categoryId ?? 'none'}
-              className="flex h-[46px] items-center border-b border-dotted border-rule-2"
+              type="button"
+              onClick={() =>
+                onCategoryTap({
+                  categoryId: row.categoryId,
+                  name: rowName(row),
+                  code: row.code,
+                  month,
+                })
+              }
+              className="flex h-[46px] w-full items-center border-b border-dotted border-rule-2 text-left"
             >
               <span className="w-[88px] font-sans text-[13.5px] font-medium">{rowName(row)}</span>
               <span className="w-[46px] text-[9.5px] tracking-[.1em] text-ink-3">{`${row.count}×`}</span>
@@ -151,7 +165,7 @@ export default function Insights() {
               <span className={`${AMOUNT} min-w-[96px] text-[13px]`}>
                 {row.total.toLocaleString('en-US')}
               </span>
-            </div>
+            </button>
           ))}
 
           <div className="mt-2.5 h-[3px] border-y border-ink opacity-80" />

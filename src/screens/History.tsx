@@ -50,6 +50,10 @@ function monthLabel(month: string): string {
   return `${date.toLocaleDateString('en-US', { month: 'long' })} ${date.getFullYear()}`
 }
 
+function monthName(month: string): string {
+  return dateOf(`${month}-01`).toLocaleDateString('en-US', { month: 'long' })
+}
+
 function dayLabel(day: string): string {
   const date = dateOf(day)
   return `${date.toLocaleDateString('en-US', { month: 'short' })} ${date.getDate()} · ${date.toLocaleDateString('en-US', { weekday: 'short' })}`
@@ -197,8 +201,16 @@ function Detail({
   )
 }
 
-export default function History() {
-  const [month, setMonth] = useState(() => monthKey(new Date()))
+export interface HistoryFilter {
+  categoryId: number | null
+  name: string
+  code: string | null
+  month: string
+}
+
+export default function History({ initialFilter }: { initialFilter?: HistoryFilter | null }) {
+  const [filter, setFilter] = useState(initialFilter ?? null)
+  const [month, setMonth] = useState(() => initialFilter?.month ?? monthKey(new Date()))
   const [totals, setTotals] = useState<MonthTotals>({ income: 0, expense: 0 })
   const [groups, setGroups] = useState<DayGroup[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -211,7 +223,7 @@ export default function History() {
       const db = await getDb()
       const [monthly, days, accountRows] = await Promise.all([
         monthTotals(db, month),
-        dayGroups(db, month),
+        dayGroups(db, month, filter === null ? undefined : filter.categoryId),
         listAccounts(db),
       ])
       if (!live) return
@@ -222,7 +234,7 @@ export default function History() {
     return () => {
       live = false
     }
-  }, [month, version])
+  }, [month, version, filter])
 
   async function remove(txn: Transaction) {
     const db = await getDb()
@@ -240,6 +252,8 @@ export default function History() {
   }
 
   const net = totals.income - totals.expense
+  const entries = groups.reduce((sum, group) => sum + group.rows.length, 0)
+  const filteredTotal = groups.reduce((sum, group) => sum + group.subtotal, 0)
   const cells = [
     { label: 'In', value: signedText(totals.income), strong: true },
     { label: 'Out', value: signedText(-totals.expense), strong: false },
@@ -270,27 +284,46 @@ export default function History() {
         </button>
       </div>
 
-      <div className="flex pt-3.5 pb-4">
-        {cells.map((cell) => (
-          <div
-            key={cell.label}
-            className="flex-1 border-l border-dotted border-rule pl-3.5 first:border-l-0 first:pl-0"
+      {filter ? (
+        <div className="pt-3.5 pb-4">
+          <button
+            type="button"
+            onClick={() => setFilter(null)}
+            aria-label={`Clear ${filter.name} filter`}
+            className="inline-flex h-[30px] items-center gap-2 border border-hanko bg-hanko/10 pl-2.5 text-[10px] font-semibold tracking-[.14em] uppercase text-hanko"
           >
-            <div className="text-[9.5px] tracking-[.2em] uppercase text-ink-3">{cell.label}</div>
+            <span className="inline-block border border-hanko px-1 py-px text-[9px] tracking-[.1em]">
+              {filter.code ?? '··'}
+            </span>
+            {`${filter.name} · ${entries} ${entries === 1 ? 'entry' : 'entries'}`}
+            <span className="flex h-5 w-5 items-center justify-center border-l border-dashed border-hanko/50 text-[12px] font-normal">
+              ×
+            </span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex pt-3.5 pb-4">
+          {cells.map((cell) => (
             <div
-              className={`mt-[5px] font-mono text-[14px] tabular-nums ${cell.strong ? 'font-semibold' : ''}`}
+              key={cell.label}
+              className="flex-1 border-l border-dotted border-rule pl-3.5 first:border-l-0 first:pl-0"
             >
-              {cell.value}
+              <div className="text-[9.5px] tracking-[.2em] uppercase text-ink-3">{cell.label}</div>
+              <div
+                className={`mt-[5px] font-mono text-[14px] tabular-nums ${cell.strong ? 'font-semibold' : ''}`}
+              >
+                {cell.value}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className={PERF} />
 
       {groups.length === 0 ? (
         <div className="flex h-[52px] items-center text-[10px] tracking-[.18em] uppercase text-ink-3">
-          No entries this month
+          {filter ? `No ${filter.name} entries this month` : 'No entries this month'}
         </div>
       ) : (
         groups.map((group) => (
@@ -353,6 +386,21 @@ export default function History() {
             })}
           </div>
         ))
+      )}
+
+      {filter && groups.length > 0 && (
+        <>
+          <div className="mt-3.5 h-[3px] border-y border-ink opacity-80" />
+          <div className="mt-1.5 flex items-baseline pt-3.5">
+            <span className="text-[10px] tracking-[.2em] uppercase text-hanko">
+              {`${filter.name} · ${monthName(month)}`}
+            </span>
+            <span className={RULE_LEAD} />
+            <span className={`${AMOUNT} text-[19px] font-semibold text-hanko`}>
+              {signedText(filteredTotal)}
+            </span>
+          </div>
+        </>
       )}
 
       {selected && (

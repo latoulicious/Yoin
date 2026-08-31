@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getDb } from './data/db'
 import { deleteTransaction, deleteTransferGroup } from './data/repo'
 import Accounts from './screens/Accounts'
-import History from './screens/History'
+import History, { type HistoryFilter } from './screens/History'
 import Home from './screens/Home'
 import Insights from './screens/Insights'
 import Record, { type SavedEntry } from './screens/Record'
@@ -63,12 +63,23 @@ const UNDO_WINDOW_MS = 5000
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter | null>(null)
   const [lastEntry, setLastEntry] = useState<SavedEntry | null>(null)
   const [dataVersion, setDataVersion] = useState(0)
   const undoTimer = useRef<number | undefined>(undefined)
   const { pref, setPref, resolved } = useTheme()
 
   useEffect(() => () => clearTimeout(undoTimer.current), [])
+
+  function navigate(next: Screen) {
+    if (next === 'history') setHistoryFilter(null)
+    setScreen(next)
+  }
+
+  function openFilteredHistory(filter: HistoryFilter) {
+    setHistoryFilter(filter)
+    setScreen('history')
+  }
 
   function handleSaved(entry: SavedEntry) {
     clearTimeout(undoTimer.current)
@@ -105,7 +116,7 @@ export default function App() {
 
       <main className="flex-1 px-5">
         {screen === 'settings' ? (
-          <Settings onNavigate={setScreen} themePref={pref} />
+          <Settings onNavigate={navigate} themePref={pref} />
         ) : screen === 'appearance' ? (
           <Appearance pref={pref} setPref={setPref} resolved={resolved} />
         ) : screen === 'categories' ? (
@@ -117,11 +128,11 @@ export default function App() {
             onTransfer={() => setScreen('transfer')}
           />
         ) : screen === 'home' ? (
-          <Home key={dataVersion} onNavigate={setScreen} />
+          <Home key={dataVersion} onNavigate={navigate} />
         ) : screen === 'history' ? (
-          <History key={dataVersion} />
+          <History key={dataVersion} initialFilter={historyFilter} />
         ) : screen === 'insights' ? (
-          <Insights key={dataVersion} />
+          <Insights key={dataVersion} onCategoryTap={openFilteredHistory} />
         ) : screen === 'accounts' ? (
           <Accounts key={dataVersion} onTransfer={() => setScreen('transfer')} />
         ) : (
@@ -151,7 +162,7 @@ export default function App() {
           <NavTab
             label="History"
             active={screen === 'history'}
-            onClick={() => setScreen('history')}
+            onClick={() => navigate('history')}
           />
           <button
             type="button"
