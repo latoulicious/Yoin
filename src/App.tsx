@@ -89,7 +89,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-paper text-ink">
-      <header className="border-b border-dashed border-rule pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-10 border-b border-dashed border-rule bg-paper pt-[env(safe-area-inset-top)]">
         <div className="flex h-[52px] items-center gap-3 px-5">
           <span className="font-sans text-[12px] font-semibold tracking-[.22em] uppercase">
             Yoin
@@ -129,6 +129,7 @@ export default function App() {
         )}
       </main>
 
+      <footer className="sticky bottom-0 z-10 bg-paper">
       {lastEntry && (
         <div className="mx-5 flex h-[38px] items-center border-t border-dashed border-rule pt-2.5 text-[10px] tracking-[.12em] uppercase text-ink-3">
           <span>
@@ -173,6 +174,7 @@ export default function App() {
           />
         </div>
       </nav>
+      </footer>
     </div>
   )
 }
