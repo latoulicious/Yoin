@@ -109,7 +109,7 @@ function Detail({
   const valid = amountDraft !== '' && draftAmount > 0
   const value = signedOf(txn)
   return (
-    <div className="fixed inset-0 z-10 flex items-end bg-ink/25 px-5" onClick={onClose}>
+    <div className="fixed inset-0 z-20 flex items-end bg-ink/25 px-5" onClick={onClose}>
       <div
         onClick={(event) => event.stopPropagation()}
         className="mb-5 w-full border border-ink bg-paper px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+18px)]"

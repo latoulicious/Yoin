@@ -269,7 +269,7 @@ export default function Transfer({
 
       {picking && (
         <div
-          className="fixed inset-0 z-10 flex items-end bg-ink/25 px-5"
+          className="fixed inset-0 z-20 flex items-end bg-ink/25 px-5"
           onClick={() => setPicking(null)}
         >
           <div
