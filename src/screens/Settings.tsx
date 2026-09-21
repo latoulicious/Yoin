@@ -182,11 +182,8 @@ function moveItem<T>(items: T[], from: number, to: number): T[] {
 
 export function Categories() {
   const [categories, setCategories] = useState<Category[]>([])
-  const [draft, setDraft] = useState('')
   const [version, setVersion] = useState(0)
   const [status, setStatus] = useState('')
-  const [drag, setDrag] = useState<{ from: number; to: number } | null>(null)
-  const dragStartY = useRef(0)
 
   useEffect(() => {
     let live = true
@@ -211,6 +208,46 @@ export function Categories() {
       }
     })()
   }
+
+  return (
+    <div className="pt-6">
+      <div className={`flex items-baseline ${LABEL}`}>
+        <span>Categories</span>
+        <span className={RULE_LEAD} />
+        <span>{status === '' ? categories.length : status}</span>
+      </div>
+      <div className="mt-1.5 border-t border-ink opacity-75" />
+
+      <CategoryGroup
+        label="Expense"
+        kind="expense"
+        categories={categories.filter((c) => c.kind === 'expense')}
+        mutate={mutate}
+      />
+      <CategoryGroup
+        label="Income"
+        kind="income"
+        categories={categories.filter((c) => c.kind === 'income')}
+        mutate={mutate}
+      />
+    </div>
+  )
+}
+
+function CategoryGroup({
+  label,
+  kind,
+  categories,
+  mutate,
+}: {
+  label: string
+  kind: Category['kind']
+  categories: Category[]
+  mutate: (label: string, run: (db: SQLiteDBConnection) => Promise<unknown>) => void
+}) {
+  const [draft, setDraft] = useState('')
+  const [drag, setDrag] = useState<{ from: number; to: number } | null>(null)
+  const dragStartY = useRef(0)
 
   const trimmed = draft.trim()
   const unlocked = categories.filter((c) => !c.locked)
@@ -239,13 +276,13 @@ export function Categories() {
   }
 
   return (
-    <div className={`pt-6 ${drag === null ? '' : 'select-none'}`}>
-      <div className={`flex items-baseline ${LABEL}`}>
-        <span>Categories</span>
+    <div className={drag === null ? '' : 'select-none'}>
+      <div className={`flex items-baseline pt-5 ${LABEL}`}>
+        <span>{label}</span>
         <span className={RULE_LEAD} />
-        <span>{status === '' ? categories.length : status}</span>
+        <span>{categories.length}</span>
       </div>
-      <div className="mt-1.5 border-t border-ink opacity-75" />
+      <div className="mt-1.5 border-t border-rule" />
 
       {shown.map((category, index) => (
         <CategoryRow
@@ -274,14 +311,14 @@ export function Categories() {
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="New category"
+          placeholder={`New ${kind} category`}
           className={`flex-1 ${FIELD} placeholder:text-ink-3`}
         />
         <button
           type="button"
           disabled={trimmed === ''}
           onClick={() => {
-            mutate('Add', (db) => createCategory(db, trimmed))
+            mutate('Add', (db) => createCategory(db, trimmed, kind))
             setDraft('')
           }}
           className="h-9 shrink-0 px-1 text-[10px] tracking-[.18em] uppercase text-hanko disabled:text-ink-3"
