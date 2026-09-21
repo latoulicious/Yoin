@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Screen } from '../App'
 import { toCsv } from '../data/csv'
 import { backupToDisk, getDb, restoreFromDisk, shareFile } from '../data/db'
@@ -11,6 +11,7 @@ import {
   listAccounts,
   listCategories,
   renameCategory,
+  reorderCategories,
   setCategoryArchived,
   type Category,
 } from '../data/repo'
@@ -23,7 +24,13 @@ const RULE_LEAD = 'mx-2.5 min-w-3.5 flex-1 -translate-y-1 border-b border-dotted
 
 const LABEL = 'text-[9.5px] tracking-[.2em] uppercase text-ink-3'
 
+// Tailwind only emits classes it finds as literal text, so the height stays spelled out in ROW.
+const ROW_HEIGHT = 46
+
 const ROW = 'flex h-[46px] items-center border-b border-dotted border-rule-2'
+
+const GRIP =
+  'mr-3 flex h-[18px] w-[18px] shrink-0 touch-none flex-col justify-center gap-[3px] [&>i]:block [&>i]:h-[1.5px] [&>i]:rounded-[1px] [&>i]:bg-ink-3'
 
 const FIELD = 'h-9 w-full border-b border-rule bg-transparent font-sans text-[14px] outline-none'
 
@@ -89,16 +96,20 @@ export function Appearance({
 
 function CategoryRow({
   category,
+  lifted,
   onRename,
   onArchive,
+  onGrip,
 }: {
   category: Category
+  lifted: boolean
   onRename: (name: string) => void
   onArchive: (archived: boolean) => void
+  onGrip: (event: React.PointerEvent<HTMLSpanElement>) => void
 }) {
   const [draft, setDraft] = useState<string | null>(null)
 
-  if (category.system) {
+  if (category.locked) {
     return (
       <div className={ROW}>
         <span className="flex-1 truncate font-sans text-[13.5px] font-medium text-ink-3">
@@ -116,7 +127,18 @@ function CategoryRow({
   }
 
   return (
-    <div className={ROW}>
+    <div className={`${ROW} ${lifted ? 'bg-hanko-soft [&_i]:bg-hanko' : ''}`}>
+      <span
+        className={GRIP}
+        onPointerDown={onGrip}
+        onPointerMove={onGrip}
+        onPointerUp={onGrip}
+        onPointerCancel={onGrip}
+      >
+        <i />
+        <i />
+        <i />
+      </span>
       {draft === null ? (
         <button
           type="button"
@@ -151,11 +173,20 @@ function CategoryRow({
   )
 }
 
+function moveItem<T>(items: T[], from: number, to: number): T[] {
+  const next = items.slice()
+  const [item] = next.splice(from, 1)
+  next.splice(to, 0, item)
+  return next
+}
+
 export function Categories() {
   const [categories, setCategories] = useState<Category[]>([])
   const [draft, setDraft] = useState('')
   const [version, setVersion] = useState(0)
   const [status, setStatus] = useState('')
+  const [drag, setDrag] = useState<{ from: number; to: number } | null>(null)
+  const dragStartY = useRef(0)
 
   useEffect(() => {
     let live = true
@@ -182,9 +213,33 @@ export function Categories() {
   }
 
   const trimmed = draft.trim()
+  const unlocked = categories.filter((c) => !c.locked)
+  const locked = categories.filter((c) => c.locked)
+  const shown = drag === null ? unlocked : moveItem(unlocked, drag.from, drag.to)
+
+  function grip(index: number, event: React.PointerEvent<HTMLSpanElement>) {
+    if (event.type === 'pointerdown') {
+      event.currentTarget.setPointerCapture(event.pointerId)
+      dragStartY.current = event.clientY
+      setDrag({ from: index, to: index })
+      return
+    }
+    if (drag === null) return
+    if (event.type === 'pointermove') {
+      const delta = Math.round((event.clientY - dragStartY.current) / ROW_HEIGHT)
+      const to = Math.max(0, Math.min(unlocked.length - 1, drag.from + delta))
+      if (to !== drag.to) setDrag({ from: drag.from, to })
+      return
+    }
+    setDrag(null)
+    if (event.type === 'pointerup' && drag.to !== drag.from) {
+      const ids = moveItem(unlocked, drag.from, drag.to).map((c) => c.id)
+      mutate('Reorder', (db) => reorderCategories(db, ids))
+    }
+  }
 
   return (
-    <div className="pt-6">
+    <div className={`pt-6 ${drag === null ? '' : 'select-none'}`}>
       <div className={`flex items-baseline ${LABEL}`}>
         <span>Categories</span>
         <span className={RULE_LEAD} />
@@ -192,14 +247,26 @@ export function Categories() {
       </div>
       <div className="mt-1.5 border-t border-ink opacity-75" />
 
-      {categories.map((category) => (
+      {shown.map((category, index) => (
         <CategoryRow
           key={category.id}
           category={category}
+          lifted={drag !== null && index === drag.to}
           onRename={(name) => mutate('Rename', (db) => renameCategory(db, category.id, name))}
           onArchive={(archived) =>
             mutate('Archive', (db) => setCategoryArchived(db, category.id, archived))
           }
+          onGrip={(event) => grip(drag === null ? index : drag.from, event)}
+        />
+      ))}
+      {locked.map((category) => (
+        <CategoryRow
+          key={category.id}
+          category={category}
+          lifted={false}
+          onRename={() => undefined}
+          onArchive={() => undefined}
+          onGrip={() => undefined}
         />
       ))}
 

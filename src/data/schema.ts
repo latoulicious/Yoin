@@ -70,4 +70,11 @@ export const upgrades: capSQLiteVersionUpgrade[] = [
        VALUES ('Others','OT',0,(SELECT COALESCE(MAX(sort),0)+1 FROM categories),'income');`,
     ],
   },
+  {
+    toVersion: 5,
+    statements: [
+      `ALTER TABLE categories ADD COLUMN locked INTEGER NOT NULL DEFAULT 0;`,
+      `UPDATE categories SET locked = 1 WHERE system = 1 OR code = 'OT';`,
+    ],
+  },
 ]
