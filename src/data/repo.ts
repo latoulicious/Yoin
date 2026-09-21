@@ -23,6 +23,7 @@ export interface Category {
   name: string
   code: string
   system: boolean
+  locked: boolean
   archived: boolean
   sort: number
   kind: 'expense' | 'income'
@@ -113,6 +114,7 @@ interface CategoryRow {
   name: string
   code: string
   system: number
+  locked: number
   archived: number
   sort: number
   kind: 'expense' | 'income'
@@ -173,13 +175,14 @@ export async function updateAccount(db: SQLiteDBConnection, id: number, input: A
 export async function listCategories(db: SQLiteDBConnection): Promise<Category[]> {
   const rows = await query<CategoryRow>(
     db,
-    'SELECT id, name, code, system, archived, sort, kind FROM categories ORDER BY system, sort',
+    'SELECT id, name, code, system, locked, archived, sort, kind FROM categories ORDER BY locked, system, sort',
   )
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
     code: r.code,
     system: r.system !== 0,
+    locked: r.locked !== 0,
     archived: r.archived !== 0,
     sort: r.sort,
     kind: r.kind,
@@ -201,7 +204,7 @@ export async function createCategory(db: SQLiteDBConnection, name: string): Prom
 }
 
 export async function renameCategory(db: SQLiteDBConnection, id: number, name: string): Promise<void> {
-  await write(db, 'UPDATE categories SET name = ?, code = ? WHERE id = ? AND system = 0', [
+  await write(db, 'UPDATE categories SET name = ?, code = ? WHERE id = ? AND locked = 0', [
     name,
     codeFrom(name),
     id,
@@ -213,10 +216,19 @@ export async function setCategoryArchived(
   id: number,
   archived: boolean,
 ): Promise<void> {
-  await write(db, 'UPDATE categories SET archived = ? WHERE id = ? AND system = 0', [
+  await write(db, 'UPDATE categories SET archived = ? WHERE id = ? AND locked = 0', [
     archived ? 1 : 0,
     id,
   ])
+}
+
+export async function reorderCategories(db: SQLiteDBConnection, ids: number[]): Promise<void> {
+  const set: capSQLiteSet[] = ids.map((id, index) => ({
+    statement: 'UPDATE categories SET sort = ? WHERE id = ? AND locked = 0',
+    values: [index + 1, id],
+  }))
+  await db.executeSet(set)
+  await persist()
 }
 
 export async function addTransaction(db: SQLiteDBConnection, input: TransactionInput): Promise<number> {

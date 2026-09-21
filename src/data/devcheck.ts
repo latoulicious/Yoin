@@ -11,6 +11,7 @@ import {
   listAccounts,
   listCategories,
   monthTotals,
+  reorderCategories,
   updateTransaction,
   type DayGroup,
   type Transaction,
@@ -34,17 +35,35 @@ async function devcheck(): Promise<void> {
   const categories = await listCategories(db)
   assert(categories.length === 13, `expected 13 seeded categories, got ${categories.length}`)
   assert(
-    categories.map((c) => c.code).join(',') === 'FD,TR,HM,LS,HL,BI,SH,GR,OT,SA,BN,OT,FE',
+    categories.map((c) => c.code).join(',') === 'FD,TR,HM,LS,HL,BI,SH,GR,SA,BN,OT,OT,FE',
     `unexpected category order: ${categories.map((c) => c.code).join(',')}`,
   )
   const fee = categories[12]
   assert(fee.system, 'Fee category is not marked system')
   assert(
+    categories.map((c) => (c.locked ? 1 : 0)).join('') === '0000000000111',
+    `unexpected locked flags: ${categories.map((c) => (c.locked ? 1 : 0)).join('')}`,
+  )
+  assert(
     categories.map((c) => c.kind).join(',') ===
-      'expense,expense,expense,expense,expense,expense,expense,expense,expense,income,income,income,expense',
+      'expense,expense,expense,expense,expense,expense,expense,expense,income,income,expense,income,expense',
     `unexpected category kinds: ${categories.map((c) => c.kind).join(',')}`,
   )
   const food = categories[0]
+
+  const unlocked = categories.filter((c) => !c.locked).map((c) => c.id)
+  await reorderCategories(db, [unlocked[1], unlocked[0], ...unlocked.slice(2)])
+  const swapped = await listCategories(db)
+  assert(
+    swapped[0].id === unlocked[1] && swapped[1].id === unlocked[0] && swapped[12].code === 'FE',
+    `reorder did not swap first two: ${swapped.map((c) => c.code).join(',')}`,
+  )
+  await reorderCategories(db, unlocked)
+  const restored = await listCategories(db)
+  assert(
+    restored.map((c) => c.id).join(',') === categories.map((c) => c.id).join(','),
+    'reorder did not restore original order',
+  )
 
   const accountId = await createAccount(db, {
     name: ACCOUNT_NAME,
