@@ -193,12 +193,16 @@ function codeFrom(name: string): string {
   return name.slice(0, 2).toUpperCase()
 }
 
-export async function createCategory(db: SQLiteDBConnection, name: string): Promise<number> {
+export async function createCategory(
+  db: SQLiteDBConnection,
+  name: string,
+  kind: Category['kind'],
+): Promise<number> {
   const changes = await write(
     db,
-    `INSERT INTO categories (name, code, system, archived, sort)
-     VALUES (?, ?, 0, 0, (SELECT COALESCE(MAX(sort), 0) + 1 FROM categories))`,
-    [name, codeFrom(name)],
+    `INSERT INTO categories (name, code, system, archived, sort, kind)
+     VALUES (?, ?, 0, 0, (SELECT COALESCE(MAX(sort), 0) + 1 FROM categories), ?)`,
+    [name, codeFrom(name), kind],
   )
   return lastId(changes, 'createCategory')
 }
