@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yoin — Category Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   YOIN — CATEGORY ORDER: USER-DRIVEN vs ALPHABETICAL
+   Two columns. Each column = Settings › Categories frame on top,
+   Record grid frame below, so the downstream effect is visible.
+   Same indigo board as mockups 01–06. Static, no scroll needed.
+   ========================================================== */
+
+:root{
+  --ind-900:#0F2437;
+  --ind-800:#173350;
+  --ind-700:#1B3A5C;
+  --ind-600:#27506F;
+  --ind-ink:#E7DECB;
+  --ind-mut:#9DAEBF;
+
+  --washi:#F6F1E6;
+  --washi-2:#EFE7D6;
+  --sumi:#1F1D1A;
+  --sumi-2:#5D584C;
+  --sumi-3:#8C8577;
+  --hair:#D9D0BA;
+
+  --verm:#C3432B;
+  --verm-soft:rgba(195,67,43,.08);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+
+body{
+  background:var(--ind-900);
+  color:var(--ind-ink);
+  font-family:"Zen Kaku Gothic New","Inter","Hiragino Sans",system-ui,sans-serif;
+  padding:56px 40px 96px;
+  min-height:100vh;
+}
+.n{font-family:"Inter",system-ui,sans-serif;font-variant-numeric:tabular-nums lining-nums}
+
+.board{max-width:1180px;margin:0 auto}
+.board-head{margin-bottom:44px}
+.board-head .kicker{
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:10px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ind-mut);margin-bottom:12px;
+}
+.board-head h1{font-size:30px;font-weight:700;letter-spacing:.01em;text-wrap:balance;max-width:24em}
+.board-head p{margin-top:10px;max-width:52em;font-size:14px;line-height:1.7;color:var(--ind-mut)}
+.board-head p b{color:var(--ind-ink);font-weight:600}
+
+.pair{display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;align-items:start}
+@media (max-width:1180px){.pair{grid-template-columns:1fr 1fr}}
+@media (max-width:800px){.pair{grid-template-columns:1fr}}
+
+.col-head{
+  display:flex;align-items:baseline;gap:10px;margin-bottom:14px;
+  border-bottom:1px solid var(--ind-600);padding-bottom:10px;
+}
+.col-head .name{font-size:16px;font-weight:700}
+.col-head .tag{font-family:"Inter",system-ui,sans-serif;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ind-mut)}
+.col-head .pick{
+  margin-left:auto;
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--verm);border:1px solid var(--verm);
+  padding:3px 8px;border-radius:2px;transform:rotate(-2deg);
+}
+.col-sub{font-size:12.5px;line-height:1.65;color:var(--ind-mut);margin-bottom:22px;min-height:8.5em}
+.col-sub code{font-family:"Inter",monospace;font-size:11px;color:var(--ind-ink);background:var(--ind-800);padding:1px 5px;border-radius:2px}
+
+/* ---- frames ---- */
+.stage{display:flex;flex-direction:column;gap:26px;align-items:center}
+.phone{
+  width:340px;flex:none;
+  background:var(--washi);color:var(--sumi);
+  border-radius:14px;
+  border:1px solid var(--ind-800);
+  box-shadow:0 24px 60px rgba(0,0,0,.45), 0 0 0 6px var(--ind-800);
+  overflow:hidden;
+}
+
+.hd{
+  background:var(--washi);border-bottom:1px dashed var(--hair);
+  padding:14px 18px;display:flex;align-items:center;gap:10px;
+}
+.hd .logo{font-family:"Inter",system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:.24em}
+.hd .sub{font-family:"Inter",system-ui,sans-serif;font-size:9px;letter-spacing:.16em;color:var(--sumi-3);text-transform:uppercase}
+.hd .seal{
+  margin-left:auto;width:26px;height:26px;
+  border:1.3px solid var(--verm);border-radius:3px;color:var(--verm);
+  font-size:9px;line-height:1.05;display:flex;align-items:center;justify-content:center;
+  writing-mode:vertical-rl;transform:rotate(-3.5deg);
+}
+.mn{padding:0 18px 20px}
+
+/* section label + lead rule, mirrors Settings.tsx LABEL / RULE_LEAD */
+.lbl{
+  display:flex;align-items:baseline;
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-3);
+  padding-top:22px;
+}
+.lbl .lead{margin:0 10px;min-width:14px;flex:1;transform:translateY(-4px);border-bottom:1px dotted var(--hair)}
+.rule{margin-top:6px;border-top:1px solid var(--sumi);opacity:.75}
+
+/* segmented toggle, mirrors Appearance seg in Settings.tsx */
+.seg{margin-top:10px;display:flex;height:34px;border:1px solid var(--hair)}
+.seg span{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  border-left:1px dashed var(--hair);
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-3);
+}
+.seg span:first-child{border-left:0}
+.seg span.on{color:var(--sumi);font-weight:600;background:var(--verm-soft)}
+
+/* category rows, mirrors ROW */
+.crow{display:flex;align-items:center;height:46px;border-bottom:1px dotted var(--hair)}
+.crow .nm{flex:1;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow .nm.lock{color:var(--sumi-3)}
+.crow .nm.arc{color:var(--sumi-3);text-decoration:line-through}
+.crow .act{
+  margin-left:12px;flex:none;
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-3);
+}
+.crow .act.verm{color:var(--verm)}
+.crow .mv{
+  flex:none;display:flex;flex-direction:column;gap:2px;margin-right:12px;
+  font-family:"Inter",system-ui,sans-serif;font-size:9px;line-height:1;color:var(--sumi-3);
+}
+.crow .mv span{width:18px;height:14px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--hair)}
+.crow .mv span.dim{opacity:.3}
+.crow.hi{background:var(--verm-soft);margin:0 -18px;padding:0 18px}
+.crow.hi .mv span{border-color:var(--verm);color:var(--verm)}
+
+.add{margin-top:14px;display:flex;align-items:flex-end;gap:12px}
+.add .fld{flex:1;height:36px;border-bottom:1px solid var(--hair);font-size:14px;color:var(--sumi-3);display:flex;align-items:flex-end;padding-bottom:6px}
+.add .btn{font-family:"Inter",system-ui,sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--sumi-3);padding-bottom:8px}
+
+/* record grid, mirrors Record.tsx category grid */
+.grid{margin-top:6px;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px dashed var(--hair);border-left:1px dashed var(--hair)}
+.cell{
+  height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  border-right:1px dashed var(--hair);border-bottom:1px dashed var(--hair);
+}
+.cell .cd{
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--hair);
+  font-family:"Inter",system-ui,sans-serif;font-size:9.5px;letter-spacing:.06em;color:var(--sumi-3);
+}
+.cell .nm{font-size:12.5px;font-weight:500;color:var(--sumi-2)}
+.cell.hi{background:var(--verm-soft)}
+.cell.hi .cd{border-color:var(--verm);color:var(--verm)}
+.cell.hi .nm{color:var(--verm)}
+
+/* caption under a frame */
+.cap{
+  width:340px;margin-top:-14px;
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--verm);
+  border-left:1.5px solid var(--verm);padding-left:8px;
+}
+
+/* drag handle + lifted row (column C) */
+.crow .grip{
+  flex:none;margin-right:12px;width:18px;height:18px;
+  display:flex;flex-direction:column;justify-content:center;gap:3px;
+  touch-action:none;
+}
+.crow .grip i{display:block;height:1.5px;background:var(--sumi-3);border-radius:1px}
+.crow.lift{
+  position:relative;z-index:2;margin:0 -18px;padding:0 18px;
+  background:var(--washi);
+  transform:rotate(-1.2deg) translateY(-9px);
+  box-shadow:0 10px 24px rgba(31,29,26,.18), 0 0 0 1px var(--hair);
+}
+.crow.lift .grip i{background:var(--verm)}
+.crow.lift .nm{color:var(--verm)}
+.crow.slot{
+  height:46px;border:1px dashed var(--verm);border-radius:2px;
+  margin:4px -6px;background:var(--verm-soft);
+}
+
+/* ---- code strips ---- */
+.code{
+  margin-top:22px;background:var(--ind-800);border:1px solid var(--ind-700);border-radius:6px;
+  padding:16px 18px;font-family:"Inter",ui-monospace,monospace;font-size:11.5px;line-height:1.85;
+  color:var(--ind-mut);overflow-x:auto;width:100%;
+}
+.code .t{color:var(--ind-ink)}
+.code .k{color:var(--verm);font-weight:600}
+.code .c{color:var(--ind-mut);opacity:.75}
+
+/* ---- difference table ---- */
+.diff{margin-top:64px}
+.diff h2{font-size:13px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ind-mut);margin-bottom:18px}
+.diff table{width:100%;border-collapse:collapse;font-size:13px;line-height:1.55}
+.diff th,.diff td{text-align:left;padding:12px 18px 12px 0;vertical-align:top;border-bottom:1px solid var(--ind-700)}
+.diff th{font-family:"Inter",system-ui,sans-serif;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ind-mut);font-weight:600;padding-top:0}
+.diff td:first-child{color:var(--ind-mut);width:18%}
+.diff td b{color:var(--ind-ink);font-weight:600}
+.diff .verm{color:var(--verm);font-weight:600}
+.diff code{font-family:"Inter",monospace;font-size:11px;color:var(--ind-ink);background:var(--ind-800);padding:1px 5px;border-radius:2px}
+
+.foot{margin-top:56px;font-size:12.5px;line-height:1.7;color:var(--ind-mut);max-width:56em}
+.foot b{color:var(--ind-ink);font-weight:600}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="board-head">
+    <div class="kicker">Yoin · Mockup 07 · Interaction Study</div>
+    <h1>Category order: user-driven vs alphabetical</h1>
+    <p>Storage already has <b>categories.sort</b> and every list reads <b>ORDER BY system, sort</b>.
+       What's missing is a way to <b>change</b> it. Two candidates below. Each column shows
+       Settings › Categories (where order is set) and the Record grid (where order is felt).
+       Locked rows (Other, Fee) always sit at the bottom in both. Other stays pickable in Record; Fee stays hidden.</p>
+  </div>
+
+  <div class="pair">
+
+    <!-- ============ A: USER-DRIVEN ============ -->
+    <section>
+      <div class="col-head">
+        <span class="name">A · User-driven</span>
+        <span class="tag">move up / down</span>
+      </div>
+      <p class="col-sub">
+        Each row gets a ▲▼ pair. Tap swaps <code>sort</code> with the neighbour. Order persists
+        in SQLite; Record grid, Insights, History filter all follow for free. No new setting.
+      </p>
+
+      <div class="stage">
+        <div class="phone">
+          <header class="hd">
+            <span class="logo">YOIN</span><span class="sub">Settings</span>
+            <span class="seal">余韻</span>
+          </header>
+          <main class="mn">
+            <div class="lbl"><span>Categories</span><span class="lead"></span><span>10</span></div>
+            <div class="rule"></div>
+
+            <div class="crow"><span class="mv"><span class="dim">▲</span><span>▼</span></span><span class="nm">Food</span><span class="act">Archive</span></div>
+            <div class="crow hi"><span class="mv"><span>▲</span><span>▼</span></span><span class="nm">Groceries</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="mv"><span>▲</span><span>▼</span></span><span class="nm">Transport</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="mv"><span>▲</span><span>▼</span></span><span class="nm">Home</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="mv"><span>▲</span><span>▼</span></span><span class="nm">Bills</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="mv"><span>▲</span><span>▼</span></span><span class="nm">Shopping</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="mv"><span>▲</span><span>▼</span></span><span class="nm">Leisure</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="mv"><span>▲</span><span class="dim">▼</span></span><span class="nm arc">Health</span><span class="act verm">Restore</span></div>
+            <div class="crow"><span class="nm lock">Other</span><span class="act">Locked</span></div>
+            <div class="crow"><span class="nm lock">Fee</span><span class="act">Locked</span></div>
+
+            <div class="add"><span class="fld">New category</span><span class="btn">Add +</span></div>
+          </main>
+        </div>
+        <div class="cap">Groceries · tap ▲ → swaps with Food</div>
+
+        <div class="phone">
+          <header class="hd">
+            <span class="logo">YOIN</span><span class="sub">Record</span>
+            <span class="seal">余韻</span>
+          </header>
+          <main class="mn">
+            <div class="lbl"><span>Category</span><span class="lead"></span><span>1 tap</span></div>
+            <div class="grid">
+              <div class="cell"><span class="cd">FD</span><span class="nm">Food</span></div>
+              <div class="cell hi"><span class="cd">GR</span><span class="nm">Groceries</span></div>
+              <div class="cell"><span class="cd">TR</span><span class="nm">Transport</span></div>
+              <div class="cell"><span class="cd">HM</span><span class="nm">Home</span></div>
+              <div class="cell"><span class="cd">BI</span><span class="nm">Bills</span></div>
+              <div class="cell"><span class="cd">SH</span><span class="nm">Shopping</span></div>
+              <div class="cell"><span class="cd">LS</span><span class="nm">Leisure</span></div>
+              <div class="cell"><span class="cd">OT</span><span class="nm">Other</span></div>
+            </div>
+          </main>
+        </div>
+
+        <pre class="code"><span class="c">-- repo.ts, one new fn. Swap with neighbour in same kind, same system flag.</span>
+<span class="t"><span class="k">UPDATE</span> categories <span class="k">SET</span> sort = <span class="k">CASE</span> id <span class="k">WHEN</span> ?1 <span class="k">THEN</span> ?4 <span class="k">WHEN</span> ?2 <span class="k">THEN</span> ?3 <span class="k">END</span></span>
+<span class="t"><span class="k">WHERE</span> id <span class="k">IN</span> (?1, ?2);</span>   <span class="c">← ?3 = sort of ?1, ?4 = sort of ?2</span>
+
+<span class="c">-- Settings.tsx: ▲▼ buttons in CategoryRow, hidden on locked rows.</span>
+<span class="c">-- Locked ≠ hidden: Fee is system (off Record grid), Other must stay pickable. Needs own flag.</span>
+<span class="c">-- Record.tsx / Insights / History: zero change, already ORDER BY sort.</span></pre>
+      </div>
+    </section>
+
+    <!-- ============ B: ALPHABETICAL ============ -->
+    <section>
+      <div class="col-head">
+        <span class="name">B · Alphabetical</span>
+        <span class="tag">toggle · manual / a–z</span>
+      </div>
+      <p class="col-sub">
+        A segmented switch above the list. <code>A–Z</code> sorts by name at read time in every
+        screen; <code>Manual</code> falls back to insertion order (today's behaviour). No per-row
+        control, so <em>no</em> way to say "Food first" without renaming it.
+      </p>
+
+      <div class="stage">
+        <div class="phone">
+          <header class="hd">
+            <span class="logo">YOIN</span><span class="sub">Settings</span>
+            <span class="seal">余韻</span>
+          </header>
+          <main class="mn">
+            <div class="lbl"><span>Categories</span><span class="lead"></span><span>10</span></div>
+            <div class="rule"></div>
+            <div class="seg"><span>Manual</span><span class="on">A – Z</span></div>
+
+            <div class="crow"><span class="nm">Bills</span><span class="act">Archive</span></div>
+            <div class="crow hi"><span class="nm">Food</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="nm">Groceries</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="nm arc">Health</span><span class="act verm">Restore</span></div>
+            <div class="crow"><span class="nm">Home</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="nm">Leisure</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="nm">Shopping</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="nm">Transport</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="nm lock">Other</span><span class="act">Locked</span></div>
+            <div class="crow"><span class="nm lock">Fee</span><span class="act">Locked</span></div>
+
+            <div class="add"><span class="fld">New category</span><span class="btn">Add +</span></div>
+          </main>
+        </div>
+        <div class="cap">Food now 2nd · no way to pin it</div>
+
+        <div class="phone">
+          <header class="hd">
+            <span class="logo">YOIN</span><span class="sub">Record</span>
+            <span class="seal">余韻</span>
+          </header>
+          <main class="mn">
+            <div class="lbl"><span>Category</span><span class="lead"></span><span>1 tap</span></div>
+            <div class="grid">
+              <div class="cell"><span class="cd">BI</span><span class="nm">Bills</span></div>
+              <div class="cell hi"><span class="cd">FD</span><span class="nm">Food</span></div>
+              <div class="cell"><span class="cd">GR</span><span class="nm">Groceries</span></div>
+              <div class="cell"><span class="cd">HM</span><span class="nm">Home</span></div>
+              <div class="cell"><span class="cd">LS</span><span class="nm">Leisure</span></div>
+              <div class="cell"><span class="cd">SH</span><span class="nm">Shopping</span></div>
+              <div class="cell"><span class="cd">TR</span><span class="nm">Transport</span></div>
+              <div class="cell"><span class="cd">OT</span><span class="nm">Other</span></div>
+            </div>
+          </main>
+        </div>
+
+        <pre class="code"><span class="c">-- new pref, localStorage like theme. Read in every consumer.</span>
+<span class="t"><span class="k">ORDER BY</span> locked, <span class="k">CASE WHEN</span> ?1 <span class="k">THEN</span> name <span class="k">COLLATE NOCASE END</span>, sort</span>
+
+<span class="c">-- Settings.tsx: seg toggle + pref plumbing (App → Settings).</span>
+<span class="c">-- Record / Insights / History: each must pass the pref, or sort client-side.</span>
+<span class="c">-- Other pinned last regardless. Most-used category still not first.</span></pre>
+      </div>
+    </section>
+
+    <!-- ============ C: DRAG HANDLE ============ -->
+    <section>
+      <div class="col-head">
+        <span class="name">C · Drag handle</span>
+        <span class="tag">≡ · pointer events</span>
+        <span class="pick">Recommended</span>
+      </div>
+      <p class="col-sub">
+        A ≡ grip on the left. Drag starts <em>only</em> from the grip, so the row's tap-to-rename
+        and the page scroll keep working. Lifted row floats, a dashed slot shows where it lands.
+        Whole new order written once on release. Same storage as A.
+      </p>
+
+      <div class="stage">
+        <div class="phone">
+          <header class="hd">
+            <span class="logo">YOIN</span><span class="sub">Settings</span>
+            <span class="seal">余韻</span>
+          </header>
+          <main class="mn">
+            <div class="lbl"><span>Categories</span><span class="lead"></span><span>10</span></div>
+            <div class="rule"></div>
+
+            <div class="crow slot"></div>
+            <div class="crow lift"><span class="grip"><i></i><i></i><i></i></span><span class="nm">Groceries</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="grip"><i></i><i></i><i></i></span><span class="nm">Food</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="grip"><i></i><i></i><i></i></span><span class="nm">Transport</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="grip"><i></i><i></i><i></i></span><span class="nm">Home</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="grip"><i></i><i></i><i></i></span><span class="nm">Bills</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="grip"><i></i><i></i><i></i></span><span class="nm">Shopping</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="grip"><i></i><i></i><i></i></span><span class="nm">Leisure</span><span class="act">Archive</span></div>
+            <div class="crow"><span class="grip"><i></i><i></i><i></i></span><span class="nm arc">Health</span><span class="act verm">Restore</span></div>
+            <div class="crow"><span class="nm lock">Other</span><span class="act">Locked</span></div>
+            <div class="crow"><span class="nm lock">Fee</span><span class="act">Locked</span></div>
+
+            <div class="add"><span class="fld">New category</span><span class="btn">Add +</span></div>
+          </main>
+        </div>
+        <div class="cap">Groceries mid-drag · slot above Food</div>
+
+        <div class="phone">
+          <header class="hd">
+            <span class="logo">YOIN</span><span class="sub">Record</span>
+            <span class="seal">余韻</span>
+          </header>
+          <main class="mn">
+            <div class="lbl"><span>Category</span><span class="lead"></span><span>1 tap</span></div>
+            <div class="grid">
+              <div class="cell hi"><span class="cd">GR</span><span class="nm">Groceries</span></div>
+              <div class="cell"><span class="cd">FD</span><span class="nm">Food</span></div>
+              <div class="cell"><span class="cd">TR</span><span class="nm">Transport</span></div>
+              <div class="cell"><span class="cd">HM</span><span class="nm">Home</span></div>
+              <div class="cell"><span class="cd">BI</span><span class="nm">Bills</span></div>
+              <div class="cell"><span class="cd">SH</span><span class="nm">Shopping</span></div>
+              <div class="cell"><span class="cd">LS</span><span class="nm">Leisure</span></div>
+              <div class="cell"><span class="cd">OT</span><span class="nm">Other</span></div>
+            </div>
+          </main>
+        </div>
+
+        <pre class="code"><span class="c">-- No lib. HTML5 DnD is dead on touch; use pointer events on the grip.</span>
+<span class="t">grip: <span class="k">touch-action:none</span>; onPointerDown → setPointerCapture</span>
+<span class="t">onPointerMove → slot = index under pointer.y (row height is fixed 46px)</span>
+<span class="t">onPointerUp → <span class="k">reorderCategories</span>(ids in new order)</span>
+
+<span class="c">-- repo.ts: one statement, whole list, one transaction.</span>
+<span class="t"><span class="k">UPDATE</span> categories <span class="k">SET</span> sort = <span class="k">CASE</span> id <span class="k">WHEN</span> ?1 <span class="k">THEN</span> 1 <span class="k">WHEN</span> ?2 <span class="k">THEN</span> 2 … <span class="k">END</span></span>
+<span class="t"><span class="k">WHERE</span> locked = 0 <span class="k">AND</span> kind = ?</span>
+
+<span class="c">-- ~60 lines in Settings.tsx. Row height fixed = index math, no measuring.</span></pre>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ============ DIFFERENCES ============ -->
+  <div class="diff">
+    <h2>What actually differs</h2>
+    <table>
+      <thead>
+        <tr><th></th><th>A · Up / down</th><th>B · Alphabetical</th><th>C · Drag handle</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Where order lives</td>
+          <td><b>SQLite</b> — <code>categories.sort</code>, already exists</td>
+          <td><b>localStorage pref</b> — new, plus name-sort at read time</td>
+          <td>Same as A</td>
+        </tr>
+        <tr>
+          <td>Can put "Food" first</td>
+          <td class="verm">Yes — two taps</td>
+          <td>No — only by renaming</td>
+          <td class="verm">Yes — one drag</td>
+        </tr>
+        <tr>
+          <td>Record grid tap distance</td>
+          <td>Most-used categories at <b>top-left</b>, thumb-near</td>
+          <td>Fixed by spelling. "Bills" before "Food" forever</td>
+          <td>Same as A</td>
+        </tr>
+        <tr>
+          <td>New category lands</td>
+          <td>Above Other, move it up if wanted</td>
+          <td>Wherever its name sorts</td>
+          <td>Same as A</td>
+        </tr>
+        <tr>
+          <td>Files touched</td>
+          <td><b>3</b> — <code>schema.ts</code> + <code>repo.ts</code> + <code>Settings.tsx</code></td>
+          <td><b>6+</b> — schema, pref, Settings, Record, Insights, History</td>
+          <td><b>3</b> — same files as A, Settings ~60 lines vs ~15</td>
+        </tr>
+        <tr>
+          <td>Migration</td>
+          <td>One — flag Other locked, bump its <code>sort</code> under everything</td>
+          <td>Same</td>
+          <td>Same</td>
+        </tr>
+        <tr>
+          <td>CSV export / import</td>
+          <td>Unaffected — order is not exported today</td>
+          <td>Unaffected</td>
+          <td>Unaffected</td>
+        </tr>
+        <tr>
+          <td>Row visual cost</td>
+          <td>▲▼ cluster adds ~30px per row on the left</td>
+          <td>One 34px toggle above list, rows unchanged</td>
+          <td>≡ grip ~30px per row, quieter than ▲▼</td>
+        </tr>
+        <tr>
+          <td>Move 5 rows up</td>
+          <td>10 taps, 10 writes</td>
+          <td>—</td>
+          <td>1 drag, 1 write</td>
+        </tr>
+        <tr>
+          <td>Touch footguns</td>
+          <td>None</td>
+          <td>None</td>
+          <td>Grip needs <code>touch-action:none</code> or page scrolls instead. Long-press elsewhere unaffected. Drag past viewport edge = no autoscroll unless written</td>
+        </tr>
+        <tr>
+          <td>Both?</td>
+          <td colspan="3">Possible: A or C for storage, B as a one-shot "Sort A–Z now" button that rewrites <code>sort</code>. No pref, no read-time branch. Add only if asked.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="foot">
+    <b>A</b> and <b>C</b> share storage and differ only in gesture. <b>C</b> costs ~45 more lines
+    of pointer math but reads as one intent, not ten taps, and the ≡ grip is visually quieter
+    than a ▲▼ cluster on every row. No library: HTML5 drag-and-drop does not fire on touch in
+    a WebView, pointer events do. Fixed 46px rows make the slot index pure arithmetic.
+    <b>B</b> is a display preference wearing an ordering costume — it removes control rather
+    than adding it, and every consumer screen has to learn the pref.
+  </p>
+
+</div>
+</body>
+</html>
