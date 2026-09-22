@@ -6,6 +6,12 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   backgroundColor: '#F5F0E3',
   plugins: {
+    CapacitorUpdater: {
+      autoUpdate: false,
+      statsUrl: '',
+      updateUrl: '',
+      channelUrl: '',
+    },
     CapacitorSQLite: {
       androidIsEncryption: false,
     },
