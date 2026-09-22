@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yoin — Updates in Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   YOIN — UPDATES: SETTINGS ROW, ABOUT SCREEN, UPDATE SHEET
+   Companion to board 08 (flow). This is the UI.
+   Column A: Settings root, About block grows one row.
+   Column B: About sub-screen, four states.
+   Column C: bottom sheet, OTA vs APK vs nothing.
+   Same indigo board as mockups 01–08.
+   ========================================================== */
+
+:root{
+  --ind-900:#0F2437;
+  --ind-800:#173350;
+  --ind-700:#1B3A5C;
+  --ind-600:#27506F;
+  --ind-ink:#E7DECB;
+  --ind-mut:#9DAEBF;
+
+  --washi:#F6F1E6;
+  --washi-2:#EFE7D6;
+  --sumi:#1F1D1A;
+  --sumi-2:#5D584C;
+  --sumi-3:#8C8577;
+  --hair:#D9D0BA;
+
+  --verm:#C3432B;
+  --verm-soft:rgba(195,67,43,.08);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--ind-900);color:var(--ind-ink);
+  font-family:"Zen Kaku Gothic New","Inter","Hiragino Sans",system-ui,sans-serif;
+  padding:56px 40px 96px;min-height:100vh;
+}
+.n{font-family:"Inter",system-ui,sans-serif;font-variant-numeric:tabular-nums lining-nums}
+.mono{font-family:"Inter",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+.board{max-width:1180px;margin:0 auto}
+.board-head{margin-bottom:44px}
+.board-head .kicker{font-family:"Inter",system-ui;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--ind-mut);margin-bottom:12px}
+.board-head h1{font-size:30px;font-weight:700;letter-spacing:.01em;text-wrap:balance;max-width:24em}
+.board-head p{margin-top:10px;max-width:54em;font-size:14px;line-height:1.7;color:var(--ind-mut)}
+.board-head p b{color:var(--ind-ink);font-weight:600}
+code{font-family:"Inter",monospace;font-size:11px;color:var(--ind-ink);background:var(--ind-800);padding:1px 5px;border-radius:2px}
+
+.pair{display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;align-items:start}
+@media (max-width:1180px){.pair{grid-template-columns:1fr 1fr}}
+@media (max-width:800px){.pair{grid-template-columns:1fr}}
+
+.col-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;border-bottom:1px solid var(--ind-600);padding-bottom:10px}
+.col-head .name{font-size:16px;font-weight:700}
+.col-head .tag{font-family:"Inter",system-ui;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ind-mut)}
+.col-sub{font-size:12.5px;line-height:1.65;color:var(--ind-mut);margin-bottom:22px;min-height:7em}
+
+/* ---- frames ---- */
+.stage{display:flex;flex-direction:column;gap:26px;align-items:center}
+.phone{
+  width:340px;flex:none;position:relative;
+  background:var(--washi);color:var(--sumi);
+  border-radius:14px;border:1px solid var(--ind-800);
+  box-shadow:0 24px 60px rgba(0,0,0,.45), 0 0 0 6px var(--ind-800);
+  overflow:hidden;
+}
+.hd{background:var(--washi);border-bottom:1px dashed var(--hair);padding:14px 18px;display:flex;align-items:center;gap:10px}
+.hd .logo{font-family:"Inter",system-ui;font-size:11px;font-weight:700;letter-spacing:.24em}
+.hd .sub{font-family:"Inter",system-ui;font-size:9px;letter-spacing:.16em;color:var(--sumi-3);text-transform:uppercase}
+.hd .back{font-size:14px;color:var(--sumi-3);margin-right:2px}
+.hd .seal{
+  margin-left:auto;width:26px;height:26px;border:1.3px solid var(--verm);border-radius:3px;color:var(--verm);
+  font-size:9px;line-height:1.05;display:flex;align-items:center;justify-content:center;
+  writing-mode:vertical-rl;transform:rotate(-3.5deg);
+}
+.mn{padding:0 18px 20px}
+
+.lbl{display:flex;align-items:baseline;font-family:"Inter",system-ui;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-3);padding-top:22px}
+.lbl .lead{margin:0 10px;min-width:14px;flex:1;transform:translateY(-4px);border-bottom:1px dotted var(--hair)}
+.lbl .verm{color:var(--verm)}
+.rule{margin-top:6px;border-top:1px solid var(--sumi);opacity:.75}
+
+.row{display:flex;align-items:center;height:46px;border-bottom:1px dotted var(--hair)}
+.row .nm{flex:1;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .val{flex:none;font-family:"Inter",system-ui;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-3)}
+.row .val.verm{color:var(--verm)}
+.row .chev{margin-left:10px;flex:none;font-size:14px;color:var(--sumi-3)}
+.row.hi{background:var(--verm-soft);margin:0 -18px;padding:0 18px}
+.row.dim .nm{color:var(--sumi-3)}
+
+/* about card, mirrors Settings.tsx About block */
+.card{margin-top:14px;display:flex;align-items:flex-start;gap:14px;border:1px dashed var(--hair);background:var(--washi-2);padding:18px}
+.card .seal{
+  flex:none;width:26px;height:26px;border:1.3px solid var(--verm);border-radius:3px;color:var(--verm);
+  font-size:9px;line-height:1.05;display:flex;align-items:center;justify-content:center;
+  writing-mode:vertical-rl;transform:rotate(-3.5deg);
+}
+.card .ttl{display:block;font-family:"Inter",system-ui;font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+.card .txt{display:block;margin-top:8px;font-size:13.5px;line-height:1.75;color:var(--sumi-2)}
+
+/* version ledger: two numbers, mirrors LABEL/ROW density */
+.ver{margin-top:14px;border:1px solid var(--hair)}
+.ver .vr{display:flex;align-items:baseline;padding:10px 12px;border-top:1px dashed var(--hair)}
+.ver .vr:first-child{border-top:0}
+.ver .k{font-family:"Inter",system-ui;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-3);width:78px;flex:none}
+.ver .v{font-family:"Inter",ui-monospace,monospace;font-size:13px;font-variant-numeric:tabular-nums;flex:1}
+.ver .v small{font-size:10px;color:var(--sumi-3);margin-left:6px}
+.ver .v.verm{color:var(--verm)}
+
+/* changelog block */
+.log{margin-top:14px;padding-left:12px;border-left:1.5px solid var(--hair)}
+.log .h{font-family:"Inter",system-ui;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-3);margin-bottom:6px}
+.log li{list-style:none;font-size:13px;line-height:1.7;color:var(--sumi-2)}
+.log li::before{content:"·";margin-right:8px;color:var(--sumi-3)}
+
+/* primary action button (no precedent in app; mirrors seg 'on' state) */
+.btn{margin-top:18px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--sumi);font-family:"Inter",system-ui;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:600}
+.btn.verm{border-color:var(--verm);color:var(--verm);background:var(--verm-soft)}
+.btn.ghost{border-color:var(--hair);color:var(--sumi-3);font-weight:500}
+.btn.busy{color:var(--sumi-3);border-style:dashed}
+.btns{display:flex;gap:10px}
+.btns .btn{flex:1}
+
+/* bottom sheet */
+.scrim{position:absolute;inset:0;background:rgba(31,29,26,.42)}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;
+  background:var(--washi);border-top:1px solid var(--sumi);
+  padding:16px 18px 22px;
+  box-shadow:0 -12px 32px rgba(0,0,0,.25);
+}
+.sheet .grab{width:32px;height:3px;background:var(--hair);margin:0 auto 14px;border-radius:2px}
+.sheet .ttl{display:flex;align-items:baseline;gap:10px}
+.sheet .ttl .big{font-family:"Inter",ui-monospace,monospace;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.sheet .ttl .kind{font-family:"Inter",system-ui;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-3)}
+.sheet .ttl .kind.verm{color:var(--verm)}
+.sheet .sub{margin-top:6px;font-size:13px;line-height:1.65;color:var(--sumi-2)}
+.sheet .sub b{color:var(--sumi);font-weight:600}
+.blur{filter:blur(1.2px);opacity:.85}
+
+.cap{width:340px;margin-top:-14px;font-family:"Inter",system-ui;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--verm);border-left:1.5px solid var(--verm);padding-left:8px}
+
+/* ---- code strips ---- */
+.code{margin-top:22px;background:var(--ind-800);border:1px solid var(--ind-700);border-radius:6px;padding:16px 18px;font-family:"Inter",ui-monospace,monospace;font-size:11.5px;line-height:1.85;color:var(--ind-mut);overflow-x:auto;width:100%}
+.code .t{color:var(--ind-ink)}
+.code .k{color:var(--verm);font-weight:600}
+.code .c{opacity:.75}
+
+/* ---- state table ---- */
+.diff{margin-top:64px}
+.diff h2{font-size:13px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ind-mut);margin-bottom:18px}
+.diff table{width:100%;border-collapse:collapse;font-size:13px;line-height:1.55}
+.diff th,.diff td{text-align:left;padding:12px 18px 12px 0;vertical-align:top;border-bottom:1px solid var(--ind-700)}
+.diff th{font-family:"Inter",system-ui;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ind-mut);font-weight:600;padding-top:0}
+.diff td:first-child{color:var(--ind-mut);width:16%}
+.diff td b{color:var(--ind-ink);font-weight:600}
+.diff .verm{color:var(--verm);font-weight:600}
+
+.foot{margin-top:56px;font-size:12.5px;line-height:1.7;color:var(--ind-mut);max-width:56em}
+.foot b{color:var(--ind-ink);font-weight:600}
+</style>
+</head>
+<body>
+<div class="board">
+
+<div class="board-head">
+  <div class="kicker">Yoin · Mockup 09 · Interaction Study · pairs with board 08</div>
+  <h1>Updates: one row in Settings, one About screen, one sheet</h1>
+  <p>Board 08 fixed the pipeline: web bundle OTA, APK only for native. This is what the user sees.
+     <b>Settings › About</b> stops being a static card and becomes a row into an About screen that carries both version numbers, a manual check, and the changelog.
+     A bottom sheet is the only new surface. It appears on boot <b>only when an APK is needed</b> (OTA is silent) and after a manual check for either kind.</p>
+</div>
+
+<div class="pair">
+
+<!-- ============ A: SETTINGS ROOT ============ -->
+<section>
+  <div class="col-head"><span class="name">A · Settings root</span><span class="tag">about block → row</span></div>
+  <p class="col-sub">
+    Existing About card keeps the seal and the sentence. Above it, one <code>Row</code> like Ledger/Data rows: label "Version", value = state. Value turns vermilion when something is waiting. Section label keeps <code>1.7 · b3f2a1c</code> in the lead, unchanged.
+  </p>
+  <div class="stage">
+
+    <div class="phone">
+      <header class="hd"><span class="logo">YOIN</span><span class="sub">Settings</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Appearance</span></div>
+        <div class="rule"></div>
+        <div class="row"><span class="nm">Theme</span><span class="val">System</span><span class="chev">›</span></div>
+
+        <div class="lbl"><span>About</span><span class="lead"></span><span class="mono">1.7 · b3f2a1c</span></div>
+        <div class="rule"></div>
+        <div class="row"><span class="nm">Version</span><span class="val">Up to date</span><span class="chev">›</span></div>
+        <div class="card">
+          <span class="seal">余韻</span>
+          <span><span class="ttl">Yoin</span><span class="txt">Everything stays on this device.</span></span>
+        </div>
+      </main>
+    </div>
+    <div class="cap">idle · nothing waiting</div>
+
+    <div class="phone">
+      <header class="hd"><span class="logo">YOIN</span><span class="sub">Settings</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Appearance</span></div>
+        <div class="rule"></div>
+        <div class="row"><span class="nm">Theme</span><span class="val">System</span><span class="chev">›</span></div>
+
+        <div class="lbl"><span>About</span><span class="lead"></span><span class="mono">1.7 · b3f2a1c</span></div>
+        <div class="rule"></div>
+        <div class="row hi"><span class="nm">Version</span><span class="val verm">1.8 ready</span><span class="chev">›</span></div>
+        <div class="card">
+          <span class="seal">余韻</span>
+          <span><span class="ttl">Yoin</span><span class="txt">Everything stays on this device.</span></span>
+        </div>
+      </main>
+    </div>
+    <div class="cap">ota downloaded · applies next launch · row is the only nudge</div>
+
+  </div>
+</section>
+
+<!-- ============ B: ABOUT SCREEN ============ -->
+<section>
+  <div class="col-head"><span class="name">B · About screen</span><span class="tag">version ledger + check</span></div>
+  <p class="col-sub">
+    Sub-screen like Categories/Accounts. Two numbers, always both: <b>app</b> (web bundle, what OTA moves) and <b>shell</b> (APK, what needs reinstall). One button. Changelog from the manifest, only when there is something newer.
+  </p>
+  <div class="stage">
+
+    <div class="phone">
+      <header class="hd"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span>Checked 09:14</span></div>
+        <div class="rule"></div>
+        <div class="ver">
+          <div class="vr"><span class="k">App</span><span class="v">1.7<small>b3f2a1c</small></span></div>
+          <div class="vr"><span class="k">Shell</span><span class="v">1.7<small>build 11</small></span></div>
+        </div>
+        <div class="btn ghost">Check for updates</div>
+
+        <div class="lbl"><span>Yoin</span></div>
+        <div class="rule"></div>
+        <div class="card">
+          <span class="seal">余韻</span>
+          <span><span class="ttl">Yoin</span><span class="txt">Everything stays on this device. Updates come from the GitHub release, nothing else phones home.</span></span>
+        </div>
+      </main>
+    </div>
+    <div class="cap">up to date · check is manual, boot check already ran</div>
+
+    <div class="phone">
+      <header class="hd"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span class="verm">1.8 ready</span></div>
+        <div class="rule"></div>
+        <div class="ver">
+          <div class="vr"><span class="k">App</span><span class="v">1.7<small>b3f2a1c</small></span></div>
+          <div class="vr"><span class="k">Shell</span><span class="v">1.7<small>build 11</small></span></div>
+        </div>
+        <div class="log">
+          <div class="h">1.8 · 22 Sep</div>
+          <ul>
+            <li>Update check in Settings</li>
+            <li>Categories grouped by kind</li>
+            <li>Fix: History filter lost on theme change</li>
+          </ul>
+        </div>
+        <div class="btn">Restart to apply</div>
+      </main>
+    </div>
+    <div class="cap">ota downloaded · restart now or it lands next launch anyway</div>
+
+    <div class="phone">
+      <header class="hd"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span class="verm">Reinstall needed</span></div>
+        <div class="rule"></div>
+        <div class="ver">
+          <div class="vr"><span class="k">App</span><span class="v">1.7<small>b3f2a1c</small></span></div>
+          <div class="vr"><span class="k">Shell</span><span class="v verm">1.7<small>build 11 · needs 12</small></span></div>
+        </div>
+        <div class="log">
+          <div class="h">1.8 · 22 Sep · APK</div>
+          <ul>
+            <li>Haptic tick on amount keypad</li>
+            <li>Update check in Settings</li>
+          </ul>
+        </div>
+        <div class="btn verm">Download APK · 21 MB</div>
+        <p style="margin-top:10px;font-size:11.5px;line-height:1.6;color:var(--sumi-3)">Opens in browser. Install from the download notification. Data stays.</p>
+      </main>
+    </div>
+    <div class="cap">apk needed · minNative &gt; shell build · ota bundle not offered</div>
+
+    <div class="phone">
+      <header class="hd"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span>Offline</span></div>
+        <div class="rule"></div>
+        <div class="ver">
+          <div class="vr"><span class="k">App</span><span class="v">1.7<small>b3f2a1c</small></span></div>
+          <div class="vr"><span class="k">Shell</span><span class="v">1.7<small>build 11</small></span></div>
+        </div>
+        <div class="btn busy">Checking…</div>
+      </main>
+    </div>
+    <div class="cap">checking / offline · no spinner, no retry loop, label says it</div>
+
+  </div>
+</section>
+
+<!-- ============ C: SHEET ============ -->
+<section>
+  <div class="col-head"><span class="name">C · Update sheet</span><span class="tag">boot: apk only · manual: both</span></div>
+  <p class="col-sub">
+    First modal surface in Yoin (today only <code>window.confirm</code>). Washi sheet from the bottom, sumi hairline on top, same type scale as About. "Later" always present. OTA on boot never shows this, it just applies next launch.
+  </p>
+  <div class="stage">
+
+    <div class="phone">
+      <header class="hd blur"><span class="logo">YOIN</span><span class="sub">Home</span><span class="seal">余韻</span></header>
+      <main class="mn blur" style="height:420px">
+        <div class="lbl"><span>September</span><span class="lead"></span><span>22 days</span></div>
+        <div class="rule"></div>
+        <div class="row dim"><span class="nm">Groceries</span><span class="val">−48.000</span></div>
+        <div class="row dim"><span class="nm">Transport</span><span class="val">−12.000</span></div>
+      </main>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="ttl"><span class="big">1.8</span><span class="kind verm">Reinstall needed</span></div>
+        <p class="sub">This one changes the shell. <b>Download the APK</b>, then install from the notification. Your data stays.</p>
+        <div class="log">
+          <div class="h">What changed</div>
+          <ul><li>Haptic tick on amount keypad</li><li>Update check in Settings</li></ul>
+        </div>
+        <div class="btns"><div class="btn ghost">Later</div><div class="btn verm">Download · 21 MB</div></div>
+      </div>
+    </div>
+    <div class="cap">on boot · apk needed · once per version, "later" snoozes until next boot</div>
+
+    <div class="phone">
+      <header class="hd blur"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn blur" style="height:420px">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span>Checking…</span></div>
+        <div class="rule"></div>
+      </main>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="ttl"><span class="big">1.8</span><span class="kind">Ready</span></div>
+        <p class="sub">Downloaded. Restart now, or it applies on its own next time you open Yoin.</p>
+        <div class="log">
+          <div class="h">What changed</div>
+          <ul><li>Update check in Settings</li><li>Categories grouped by kind</li><li>Fix: History filter lost on theme change</li></ul>
+        </div>
+        <div class="btns"><div class="btn ghost">Later</div><div class="btn">Restart</div></div>
+      </div>
+    </div>
+    <div class="cap">after manual check · ota · restart = updater.set(), reloads webview</div>
+
+    <div class="phone">
+      <header class="hd blur"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn blur" style="height:420px">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span>Checking…</span></div>
+        <div class="rule"></div>
+      </main>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="ttl"><span class="big">1.7</span><span class="kind">Up to date</span></div>
+        <p class="sub">Nothing newer on the release. Checked just now.</p>
+        <div class="btns"><div class="btn ghost">Close</div></div>
+      </div>
+    </div>
+    <div class="cap">after manual check · nothing · could also be just the label; sheet kept for symmetry</div>
+
+  </div>
+</section>
+
+</div>
+
+<!-- ============ D: FAILURE PATHS ============ -->
+<div class="pair" style="margin-top:64px">
+<section>
+  <div class="col-head"><span class="name">D · Download dies mid-way</span><span class="tag">ota · connection lost</span></div>
+  <p class="col-sub">
+    Updater writes to a temp dir and only registers the bundle after sha256 passes. A cut connection rejects <code>download()</code>; temp is dropped, current bundle untouched. UI: label flips, button becomes retry, ledger never moves. No dialog.
+  </p>
+  <div class="stage">
+
+    <div class="phone">
+      <header class="hd"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span class="verm">Downloading 1.8</span></div>
+        <div class="rule"></div>
+        <div class="ver">
+          <div class="vr"><span class="k">App</span><span class="v">1.7<small>b3f2a1c</small></span></div>
+          <div class="vr"><span class="k">Shell</span><span class="v">1.7<small>build 11</small></span></div>
+        </div>
+        <div class="log">
+          <div class="h">1.8 · 22 Sep</div>
+          <ul><li>Update check in Settings</li><li>Categories grouped by kind</li></ul>
+        </div>
+        <div class="btn busy">Downloading · 62%</div>
+        <div style="margin-top:-1px;height:2px;background:var(--hair)"><div style="width:62%;height:100%;background:var(--sumi)"></div></div>
+      </main>
+    </div>
+    <div class="cap">in progress · percent from updater "download" event · leaving screen is fine</div>
+
+    <div class="phone">
+      <header class="hd"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span class="verm">Download failed</span></div>
+        <div class="rule"></div>
+        <div class="ver">
+          <div class="vr"><span class="k">App</span><span class="v">1.7<small>b3f2a1c</small></span></div>
+          <div class="vr"><span class="k">Shell</span><span class="v">1.7<small>build 11</small></span></div>
+        </div>
+        <div class="log">
+          <div class="h">1.8 · 22 Sep</div>
+          <ul><li>Update check in Settings</li><li>Categories grouped by kind</li></ul>
+        </div>
+        <div class="btn">Retry download</div>
+        <p style="margin-top:10px;font-size:11.5px;line-height:1.6;color:var(--sumi-3)">Connection dropped at 62%. Nothing changed, still on 1.7. Next launch tries again on its own.</p>
+      </main>
+    </div>
+    <div class="cap">failed · partial zip discarded by plugin · retry restarts from 0, no resume</div>
+
+  </div>
+</section>
+
+<section>
+  <div class="col-head"><span class="name">E · Offline, manual check</span><span class="tag">no data · airplane</span></div>
+  <p class="col-sub">
+    Manifest fetch fails fast (5 s timeout). Label says Offline, button returns to idle, last-checked stamp stays so the user knows how stale. No sheet, no toast, no error dialog. Boot check offline = same fetch, silent, nothing shown anywhere.
+  </p>
+  <div class="stage">
+
+    <div class="phone">
+      <header class="hd"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span>Checking…</span></div>
+        <div class="rule"></div>
+        <div class="ver">
+          <div class="vr"><span class="k">App</span><span class="v">1.7<small>b3f2a1c</small></span></div>
+          <div class="vr"><span class="k">Shell</span><span class="v">1.7<small>build 11</small></span></div>
+        </div>
+        <div class="btn busy">Checking…</div>
+      </main>
+    </div>
+    <div class="cap">tap · up to 5 s · button disabled, label animates nothing</div>
+
+    <div class="phone">
+      <header class="hd"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span>Offline</span></div>
+        <div class="rule"></div>
+        <div class="ver">
+          <div class="vr"><span class="k">App</span><span class="v">1.7<small>b3f2a1c</small></span></div>
+          <div class="vr"><span class="k">Shell</span><span class="v">1.7<small>build 11</small></span></div>
+        </div>
+        <div class="btn ghost">Check for updates</div>
+        <p style="margin-top:10px;font-size:11.5px;line-height:1.6;color:var(--sumi-3)">Couldn't reach the release. Last checked Sep 21 · 09:14.</p>
+      </main>
+    </div>
+    <div class="cap">offline · sumi, not vermilion: nothing is wrong with the app</div>
+
+    <div class="phone">
+      <header class="hd"><span class="back">‹</span><span class="logo">YOIN</span><span class="sub">About</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>Version</span><span class="lead"></span><span class="verm">1.8 ready</span></div>
+        <div class="rule"></div>
+        <div class="ver">
+          <div class="vr"><span class="k">App</span><span class="v">1.7<small>b3f2a1c</small></span></div>
+          <div class="vr"><span class="k">Shell</span><span class="v">1.7<small>build 11</small></span></div>
+        </div>
+        <div class="log">
+          <div class="h">1.8 · 22 Sep</div>
+          <ul><li>Update check in Settings</li><li>Categories grouped by kind</li></ul>
+        </div>
+        <div class="btn">Restart to apply</div>
+        <p style="margin-top:10px;font-size:11.5px;line-height:1.6;color:var(--sumi-3)">Offline. 1.8 was already downloaded, restart works without a connection.</p>
+      </main>
+    </div>
+    <div class="cap">offline but bundle already on disk · ready state wins over offline</div>
+
+  </div>
+</section>
+
+<section>
+  <div class="col-head"><span class="name">F · APK download dies</span><span class="tag">browser owns it</span></div>
+  <p class="col-sub">
+    App handed the URL to the system browser. Android's download manager pauses on loss and resumes on its own; the notification shows it. Yoin sees nothing and shows nothing. Row stays "Reinstall needed" until the new shell actually launches.
+  </p>
+  <div class="stage">
+    <div class="phone">
+      <header class="hd"><span class="logo">YOIN</span><span class="sub">Settings</span><span class="seal">余韻</span></header>
+      <main class="mn">
+        <div class="lbl"><span>About</span><span class="lead"></span><span class="mono">1.7 · b3f2a1c</span></div>
+        <div class="rule"></div>
+        <div class="row hi"><span class="nm">Version</span><span class="val verm">Reinstall needed</span><span class="chev">›</span></div>
+        <div class="card">
+          <span class="seal">余韻</span>
+          <span><span class="ttl">Yoin</span><span class="txt">Everything stays on this device.</span></span>
+        </div>
+      </main>
+    </div>
+    <div class="cap">unchanged · state derives from versionCode, not from "did I tap download"</div>
+  </div>
+</section>
+</div>
+
+<!-- ============ G: BEHIND, TWO TIERS ============ -->
+<div class="pair" style="margin-top:64px">
+<section>
+  <div class="col-head"><span class="name">G · Behind, under 3 releases</span><span class="tag">mockup only · notify</span></div>
+  <p class="col-sub">
+    Shell is 1 or 2 APK releases behind. Same sheet as C but with the missed releases listed. "Later" works, sheet returns next boot. App fully usable.
+  </p>
+  <div class="stage">
+    <div class="phone">
+      <header class="hd blur"><span class="logo">YOIN</span><span class="sub">Home</span><span class="seal">余韻</span></header>
+      <main class="mn blur" style="height:420px">
+        <div class="lbl"><span>September</span><span class="lead"></span><span>22 days</span></div>
+        <div class="rule"></div>
+        <div class="row dim"><span class="nm">Groceries</span><span class="val">−48.000</span></div>
+      </main>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="ttl"><span class="big">2.0</span><span class="kind verm">2 releases behind</span></div>
+        <p class="sub">Your shell is <b>build 11</b>, newest is <b>build 13</b>. Updates since 1.8 could not install on their own. <b>Reinstall once</b> and OTA takes over again.</p>
+        <div class="log">
+          <div class="h">Since your version</div>
+          <ul><li>2.0 · Biometric lock</li><li>1.9 · Recurring entries</li></ul>
+        </div>
+        <div class="btns"><div class="btn ghost">Later</div><div class="btn verm">Download · 22 MB</div></div>
+      </div>
+    </div>
+    <div class="cap">behind &lt; 3 · every boot · "later" snoozes until next boot · scrim tap closes</div>
+  </div>
+</section>
+
+<section>
+  <div class="col-head"><span class="name">G · Behind, 3 or more → blocked</span><span class="tag">mockup only · block</span></div>
+  <p class="col-sub">
+    Shell is 3+ APK releases behind. Sheet has one button, no "Later", scrim does not dismiss. Android back or swipe-back <b>closes Yoin</b> (App.exitApp). Ledger stays visible but untouchable behind the scrim. Offline at boot → manifest unknown → not blocked.
+  </p>
+  <div class="stage">
+    <div class="phone">
+      <header class="hd blur"><span class="logo">YOIN</span><span class="sub">Home</span><span class="seal">余韻</span></header>
+      <main class="mn blur" style="height:420px">
+        <div class="lbl"><span>September</span><span class="lead"></span><span>22 days</span></div>
+        <div class="rule"></div>
+        <div class="row dim"><span class="nm">Groceries</span><span class="val">−48.000</span></div>
+      </main>
+      <div class="scrim" style="background:rgba(31,29,26,.62)"></div>
+      <div class="sheet">
+        <div class="grab" style="visibility:hidden"></div>
+        <div class="ttl"><span class="big">2.1</span><span class="kind verm">3 releases behind</span></div>
+        <p class="sub">Your shell is <b>build 11</b>, newest is <b>build 14</b>. Yoin stays locked until the new shell is installed. <b>Your entries are safe.</b></p>
+        <div class="log">
+          <div class="h">Since your version</div>
+          <ul><li>2.1 · Insights by account</li><li>2.0 · Biometric lock</li><li>1.9 · Recurring entries</li></ul>
+        </div>
+        <div class="btns"><div class="btn verm">Download · 22 MB</div></div>
+        <p style="margin-top:10px;font-size:11px;line-height:1.6;color:var(--sumi-3)">Back closes Yoin.</p>
+      </div>
+    </div>
+    <div class="cap">behind ≥ 3 · blocking · no grab handle, darker scrim · back = exit app</div>
+  </div>
+</section>
+
+<section>
+  <div class="col-head"><span class="name">G′ · Manifest changes</span><span class="tag">what "behind" counts</span></div>
+  <p class="col-sub">
+    "Behind" = number of APK releases newer than the installed shell. CI keeps a <code>releases[]</code> tail of the last 5 APK builds so the sheet can count and list without a second fetch. Tail shorter than the real gap still counts as ≥ 3, which is the only threshold that matters.
+  </p>
+  <div class="code" style="margin-top:0">
+<span class="t">{</span>
+  <span class="t">"bundle":</span> { <span class="t">"version":</span> "2.1", <span class="t">"commit":</span> "e4a7b10", <span class="t">"minNative":</span> 14, … },
+  <span class="t">"apk":</span>    { <span class="t">"versionCode":</span> 14, <span class="t">"versionName":</span> "2.1", … },
+  <span class="k">"releases":</span> [
+    { <span class="t">"version":</span> "2.1", <span class="t">"versionCode":</span> 14, <span class="t">"summary":</span> "Insights by account" },
+    { <span class="t">"version":</span> "2.0", <span class="t">"versionCode":</span> 13, <span class="t">"summary":</span> "Biometric lock" },
+    { <span class="t">"version":</span> "1.9", <span class="t">"versionCode":</span> 12, <span class="t">"summary":</span> "Recurring entries" }
+  ]
+<span class="t">}</span>
+
+<span class="c">// decision, extended</span>
+behind = releases.filter(r =&gt; r.versionCode &gt; shell.build).length
+behind ≥ 3                    → <span class="k">blocked</span>      one button, no dismiss, back/swipe = App.exitApp(); re-evaluated on every boot and resume
+1 ≤ behind &lt; 3                → <span class="k">apk needed</span>   sheet every boot, "Later" snoozes until next boot
+bundle.commit ≠ current       → <span class="k">ota</span>
+else                          → <span class="k">up to date</span>
+offline                       → cannot count → not blocked (fail open, ledger must stay usable without network)
+
+<span class="c">// releases[] is appended by CI only on APK builds, so OTA-only pushes never inflate the count.</span>
+  </div>
+</section>
+</div>
+
+<!-- ============ STATE TABLE ============ -->
+<div class="diff">
+  <h2>States · one source, three surfaces</h2>
+  <table>
+    <thead><tr><th>state</th><th>settings row value</th><th>about label</th><th>button</th><th>sheet</th></tr></thead>
+    <tbody>
+      <tr><td>idle</td><td>Up to date</td><td>Checked HH:MM</td><td>Check for updates</td><td>—</td></tr>
+      <tr><td>checking</td><td>Up to date</td><td>Checking…</td><td>Checking… (disabled)</td><td>—</td></tr>
+      <tr><td>offline / fetch failed</td><td>Up to date</td><td>Offline</td><td>Check for updates</td><td>— <span class="verm">never an error dialog</span></td></tr>
+      <tr><td>ota ready</td><td><span class="verm">1.8 ready</span></td><td><span class="verm">1.8 ready</span></td><td>Restart to apply</td><td>manual check only</td></tr>
+      <tr><td>apk needed</td><td><span class="verm">Reinstall needed</span></td><td><span class="verm">Reinstall needed</span></td><td>Download APK · size</td><td>boot (once per version) + manual</td></tr>
+      <tr><td>ota downloading</td><td><span class="verm">Downloading</span></td><td><span class="verm">Downloading 1.8</span></td><td>Downloading · NN% (disabled)</td><td>—</td></tr>
+      <tr><td>ota download failed</td><td><span class="verm">1.8 available</span></td><td><span class="verm">Download failed</span></td><td>Retry download</td><td>— · note under button · boot retries silently</td></tr>
+      <tr><td>offline, bundle ready</td><td><span class="verm">1.8 ready</span></td><td><span class="verm">1.8 ready</span></td><td>Restart to apply</td><td>— · ready wins over offline</td></tr>
+      <tr><td>behind &lt; 3</td><td><span class="verm">2 releases behind</span></td><td><span class="verm">2 releases behind</span></td><td>Download APK · size</td><td>every boot · "Later" snoozes to next boot · <span class="verm">mockup, not first cut</span></td></tr>
+      <tr><td>behind ≥ 3 (blocked)</td><td><span class="verm">3 releases behind</span></td><td><span class="verm">3 releases behind</span></td><td>Download APK · size</td><td>boot + resume · one button, no dismiss, back = exit · <span class="verm">mockup, not first cut</span></td></tr>
+      <tr><td>up to date after manual</td><td>Up to date</td><td>Checked HH:MM</td><td>Check for updates</td><td>"Up to date" sheet</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="code">
+<span class="c">// manifest.json on the rolling release — one file feeds every state above</span>
+<span class="t">{</span>
+  <span class="t">"bundle":</span> { <span class="t">"version":</span> "1.8", <span class="t">"url":</span> ".../latest/bundle.zip", <span class="t">"sha256":</span> "…", <span class="k">"minNative":</span> 11 },
+  <span class="t">"apk":</span>    { <span class="k">"versionCode":</span> 12, <span class="t">"versionName":</span> "1.8", <span class="t">"url":</span> ".../latest/yoin.apk", <span class="t">"bytes":</span> 21900000 },
+  <span class="t">"changelog":</span> ["Update check in Settings", "Categories grouped by kind", "Fix: History filter lost on theme change"],
+  <span class="t">"date":</span> "2026-09-22"
+<span class="t">}</span>
+
+<span class="c">// decision, in order</span>
+<span class="t">apk.versionCode</span> &gt; shell.build            → <span class="k">apk needed</span>   (bundle ignored; it may require the new shell)
+<span class="t">bundle.version</span>  ≠ current bundle version → <span class="k">ota</span>          (download, then next())
+else                                     → <span class="k">up to date</span>
+
+<span class="c">// where the two numbers come from at runtime (not build-time consts: an OTA bundle is newer than the APK it runs in)</span>
+<span class="t">CapacitorUpdater.current()</span>  → { bundle.version, native }   <span class="c">// native = versionName; build number via App.getInfo().build or bake versionCode into manifest lookup by versionName</span>
+</div>
+
+<p class="foot">
+  <b>Failure rules:</b> every failure is a label + a sentence under the button, never a dialog. Vermilion only when the user has something to do (retry, restart, download); offline is sumi. Current bundle is never touched until a full, verified zip is on disk.
+  <b>Kept out:</b> auto-download over metered network toggle (one phone, wifi at home). Update history list. Progress bar for APK (browser owns the download). Beta channel.
+  <b>Open:</b> "Later" on the APK sheet — snooze until next boot, or until next version? Board says next boot. Say if too naggy.
+</p>
+
+</div>
+</body>
+</html>

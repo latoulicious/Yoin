@@ -16,6 +16,7 @@ import {
   type Category,
 } from '../data/repo'
 import type { ThemePref } from '../theme'
+import { applyNow, check, openApk, retry, useUpdate, type UpdateState } from '../update'
 import { version } from '../../package.json'
 
 const THEME_OPTIONS: ThemePref[] = ['system', 'paper', 'carbon']
@@ -468,24 +469,223 @@ export default function Settings({
       <Section label="Appearance" />
       <Row label="Theme" value={themePref} onClick={() => onNavigate('appearance')} />
 
-      <div className="pt-6">
-        <div className={`flex items-baseline ${LABEL}`}>
-          <span>About</span>
-          <span className={RULE_LEAD} />
-          <span className="font-mono tabular-nums">{`${VERSION} · ${__COMMIT__}`}</span>
+      <div className={`flex items-baseline pt-6 ${LABEL}`}>
+        <span>About</span>
+        <span className={RULE_LEAD} />
+        <span className="font-mono tabular-nums">{`${VERSION} · ${__COMMIT__}`}</span>
+      </div>
+      <div className="mt-1.5 border-t border-ink opacity-75" />
+      <VersionRow onClick={() => onNavigate('about')} />
+      <AboutCard />
+    </div>
+  )
+}
+
+function AboutCard({ text = 'Everything stays on this device.' }: { text?: string }) {
+  return (
+    <div className="mt-3.5 flex items-start gap-3.5 border border-dashed border-rule bg-paper-2 p-[18px]">
+      <span className={SEAL}>余韻</span>
+      <span>
+        <span className="block font-sans text-[12px] font-semibold tracking-[.22em] uppercase">
+          Yoin
+        </span>
+        <span className="mt-2 block font-serif text-[13.5px] leading-[1.75] text-ink-2">{text}</span>
+      </span>
+    </div>
+  )
+}
+
+function attention(update: UpdateState): boolean {
+  return update.kind === 'ready' || update.kind === 'apk' || update.kind === 'failed' || update.kind === 'downloading'
+}
+
+function rowValue(update: UpdateState): string {
+  switch (update.kind) {
+    case 'ready':
+      return `${update.manifest.bundle.version} ready`
+    case 'apk':
+      return 'Reinstall needed'
+    case 'downloading':
+      return 'Downloading'
+    case 'failed':
+      return `${update.manifest.bundle.version} available`
+    default:
+      return 'Up to date'
+  }
+}
+
+function VersionRow({ onClick }: { onClick: () => void }) {
+  const { update } = useUpdate()
+  const hot = attention(update)
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${ROW} w-full text-left ${hot ? '-mx-5 bg-hanko-soft px-5' : ''}`}
+    >
+      <span className="flex-1 truncate font-sans text-[13.5px] font-medium">Version</span>
+      <span className={`shrink-0 ${LABEL} ${hot ? 'text-hanko' : ''}`}>{rowValue(update)}</span>
+      <span className="ml-2.5 shrink-0 text-[14px] text-ink-3">›</span>
+    </button>
+  )
+}
+
+function checkedStamp(at: number | null): string {
+  if (at === null) return 'Not checked'
+  return `Checked ${backupStamp(new Date(at).toISOString())}`
+}
+
+function aboutLabel(update: UpdateState): { text: string; hot: boolean } {
+  switch (update.kind) {
+    case 'checking':
+      return { text: 'Checking…', hot: false }
+    case 'offline':
+      return { text: 'Offline', hot: false }
+    case 'downloading':
+      return { text: `Downloading ${update.manifest.bundle.version}`, hot: true }
+    case 'failed':
+      return { text: 'Download failed', hot: true }
+    case 'ready':
+      return { text: `${update.manifest.bundle.version} ready`, hot: true }
+    case 'apk':
+      return { text: 'Reinstall needed', hot: true }
+    default:
+      return { text: checkedStamp(update.checkedAt), hot: false }
+  }
+}
+
+const BUTTON =
+  'mt-[18px] flex h-10 w-full items-center justify-center border font-sans text-[10.5px] font-semibold tracking-[.22em] uppercase'
+
+function AboutButton({ update }: { update: UpdateState }) {
+  switch (update.kind) {
+    case 'checking':
+      return <div className={`${BUTTON} border-dashed border-rule text-ink-3`}>Checking…</div>
+    case 'downloading':
+      return (
+        <>
+          <div className={`${BUTTON} border-dashed border-rule text-ink-3`}>
+            {`Downloading · ${Math.round(update.percent)}%`}
+          </div>
+          <div className="h-[2px] bg-rule">
+            <div className="h-full bg-ink" style={{ width: `${update.percent}%` }} />
+          </div>
+        </>
+      )
+    case 'failed':
+      return (
+        <button type="button" onClick={retry} className={`${BUTTON} border-ink`}>
+          Retry download
+        </button>
+      )
+    case 'ready':
+      return (
+        <button type="button" onClick={applyNow} className={`${BUTTON} border-ink`}>
+          Restart to apply
+        </button>
+      )
+    case 'apk':
+      return (
+        <button
+          type="button"
+          onClick={openApk}
+          className={`${BUTTON} border-hanko bg-hanko-soft text-hanko`}
+        >
+          {`Download APK · ${Math.round(update.manifest.apk.bytes / 1e6)} MB`}
+        </button>
+      )
+    default:
+      return (
+        <button
+          type="button"
+          onClick={() => void check('manual')}
+          className={`${BUTTON} border-rule font-medium text-ink-3`}
+        >
+          Check for updates
+        </button>
+      )
+  }
+}
+
+function aboutNote(update: UpdateState, lastChecked: number | null): string | null {
+  switch (update.kind) {
+    case 'offline':
+      return `Couldn't reach the release. ${checkedStamp(lastChecked)}.`
+    case 'failed':
+      return `Connection dropped. Nothing changed, still on ${VERSION}. Next launch tries again on its own.`
+    case 'ready':
+      return 'Restart now, or it applies on its own next time you open Yoin.'
+    case 'apk':
+      return 'Opens in browser. Install from the download notification. Data stays.'
+    default:
+      return null
+  }
+}
+
+export function Changelog({ heading, items }: { heading: string; items: string[] }) {
+  return (
+    <div className="mt-3.5 border-l-[1.5px] border-rule pl-3">
+      <div className={`${LABEL} mb-1.5`}>{heading}</div>
+      <ul>
+        {items.map((item) => (
+          <li key={item} className="text-[13px] leading-[1.7] text-ink-2 before:mr-2 before:text-ink-3 before:content-['·']">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+export function About() {
+  const { shell, update } = useUpdate()
+  const label = aboutLabel(update)
+  const manifest = 'manifest' in update ? update.manifest : null
+  const lastChecked = 'checkedAt' in update ? update.checkedAt : null
+  const note = aboutNote(update, lastChecked)
+  const shellHot = update.kind === 'apk'
+
+  return (
+    <div className="pb-6">
+      <div className={`flex items-baseline pt-6 ${LABEL}`}>
+        <span>Version</span>
+        <span className={RULE_LEAD} />
+        <span className={label.hot ? 'text-hanko' : ''}>{label.text}</span>
+      </div>
+      <div className="mt-1.5 border-t border-ink opacity-75" />
+
+      <div className="mt-3.5 border border-rule">
+        <div className="flex items-baseline px-3 py-2.5">
+          <span className={`w-[78px] shrink-0 ${LABEL}`}>App</span>
+          <span className="font-mono text-[13px] tabular-nums">
+            {VERSION}
+            <small className="ml-1.5 text-[10px] text-ink-3">{__COMMIT__}</small>
+          </span>
         </div>
-        <div className="mt-3.5 flex items-start gap-3.5 border border-dashed border-rule bg-paper-2 p-[18px]">
-          <span className={SEAL}>余韻</span>
-          <span>
-            <span className="block font-sans text-[12px] font-semibold tracking-[.22em] uppercase">
-              Yoin
-            </span>
-            <span className="mt-2 block font-serif text-[13.5px] leading-[1.75] text-ink-2">
-              Everything stays on this device.
-            </span>
+        <div className="flex items-baseline border-t border-dashed border-rule px-3 py-2.5">
+          <span className={`w-[78px] shrink-0 ${LABEL}`}>Shell</span>
+          <span className={`font-mono text-[13px] tabular-nums ${shellHot ? 'text-hanko' : ''}`}>
+            {shell?.version ?? '—'}
+            <small className="ml-1.5 text-[10px] text-ink-3">
+              {shell ? `build ${shell.build}` : ''}
+              {shellHot && manifest ? ` · needs ${manifest.apk.versionCode}` : ''}
+            </small>
           </span>
         </div>
       </div>
+
+      {manifest && manifest.changelog.length > 0 && (
+        <Changelog
+          heading={`${manifest.bundle.version} · ${manifest.date}${update.kind === 'apk' ? ' · APK' : ''}`}
+          items={manifest.changelog}
+        />
+      )}
+
+      <AboutButton update={update} />
+      {note && <p className="mt-2.5 text-[11.5px] leading-[1.6] text-ink-3">{note}</p>}
+
+      <Section label="Yoin" />
+      <AboutCard text="Everything stays on this device. Updates come from the GitHub release, nothing else phones home." />
     </div>
   )
 }

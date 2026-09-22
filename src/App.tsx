@@ -6,9 +6,11 @@ import History, { type HistoryFilter } from './screens/History'
 import Home from './screens/Home'
 import Insights from './screens/Insights'
 import Record, { type SavedEntry } from './screens/Record'
-import Settings, { Appearance, Categories } from './screens/Settings'
+import Settings, { About, Appearance, Categories, Changelog } from './screens/Settings'
 import Transfer from './screens/Transfer'
 import { useTheme } from './theme'
+import { applyNow, boot, dismissSheet, openApk, useUpdate } from './update'
+import { version as APP_VERSION } from '../package.json'
 
 export type Screen =
   | 'home'
@@ -20,6 +22,7 @@ export type Screen =
   | 'settings'
   | 'appearance'
   | 'categories'
+  | 'about'
 
 const SCREEN_LABEL: Record<Screen, string> = {
   home: 'Ledger',
@@ -31,6 +34,63 @@ const SCREEN_LABEL: Record<Screen, string> = {
   settings: 'Settings',
   appearance: 'Appearance',
   categories: 'Categories',
+  about: 'About',
+}
+
+const SHEET_BUTTON =
+  'flex h-10 flex-1 items-center justify-center border font-sans text-[10.5px] tracking-[.22em] uppercase'
+
+function UpdateSheet() {
+  const { update, sheet } = useUpdate()
+  if (sheet === null) return null
+  const manifest = 'manifest' in update ? update.manifest : null
+  const version = manifest?.bundle.version ?? APP_VERSION
+  const title =
+    sheet === 'apk' ? 'Reinstall needed' : sheet === 'ready' ? 'Ready' : 'Up to date'
+  const body =
+    sheet === 'apk'
+      ? 'This one changes the shell. Download the APK, then install from the notification. Your data stays.'
+      : sheet === 'ready'
+        ? 'Downloaded. Restart now, or it applies on its own next time you open Yoin.'
+        : 'Nothing newer on the release. Checked just now.'
+
+  return (
+    <div className="fixed inset-0 z-20 flex flex-col justify-end">
+      <button type="button" aria-label="Close" onClick={dismissSheet} className="flex-1 bg-ink/40" />
+      <div className="border-t border-ink bg-paper px-5 pt-4 pb-[calc(22px+env(safe-area-inset-bottom))] text-ink">
+        <div className="mx-auto mb-3.5 h-[3px] w-8 rounded-[2px] bg-rule" />
+        <div className="flex items-baseline gap-2.5">
+          <span className="font-mono text-[22px] font-semibold tabular-nums">{version}</span>
+          <span className={`text-[9.5px] tracking-[.2em] uppercase ${sheet === 'apk' ? 'text-hanko' : 'text-ink-3'}`}>
+            {title}
+          </span>
+        </div>
+        <p className="mt-1.5 text-[13px] leading-[1.65] text-ink-2">{body}</p>
+        {manifest && sheet !== 'uptodate' && manifest.changelog.length > 0 && (
+          <Changelog heading="What changed" items={manifest.changelog} />
+        )}
+        <div className="mt-[18px] flex gap-2.5">
+          <button type="button" onClick={dismissSheet} className={`${SHEET_BUTTON} border-rule text-ink-3`}>
+            {sheet === 'uptodate' ? 'Close' : 'Later'}
+          </button>
+          {sheet === 'apk' && manifest && (
+            <button
+              type="button"
+              onClick={openApk}
+              className={`${SHEET_BUTTON} border-hanko bg-hanko-soft font-semibold text-hanko`}
+            >
+              {`Download · ${Math.round(manifest.apk.bytes / 1e6)} MB`}
+            </button>
+          )}
+          {sheet === 'ready' && (
+            <button type="button" onClick={applyNow} className={`${SHEET_BUTTON} border-ink font-semibold`}>
+              Restart
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function NavTab({
@@ -70,6 +130,7 @@ export default function App() {
   const { pref, setPref, resolved } = useTheme()
 
   useEffect(() => () => clearTimeout(undoTimer.current), [])
+  useEffect(boot, [])
 
   function navigate(next: Screen) {
     if (next === 'history') setHistoryFilter(null)
@@ -121,6 +182,8 @@ export default function App() {
           <Appearance pref={pref} setPref={setPref} resolved={resolved} />
         ) : screen === 'categories' ? (
           <Categories />
+        ) : screen === 'about' ? (
+          <About />
         ) : screen === 'record' ? (
           <Record
             onClose={() => setScreen('home')}
@@ -139,6 +202,8 @@ export default function App() {
           <Transfer onClose={() => setScreen('accounts')} onSaved={handleSaved} />
         )}
       </main>
+
+      <UpdateSheet />
 
       <footer className="sticky bottom-0 z-10 bg-paper">
       {lastEntry && (

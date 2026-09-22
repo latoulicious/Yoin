@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yoin — OTA Update Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   YOIN — OTA UPDATE FLOW: APK-ONLY vs CAPGO SELF-HOST
+   Not a UI mockup. Architecture board: today's release path,
+   proposed path, boot sequence, and the APK-vs-OTA decision.
+   Same indigo board as mockups 01–07.
+   ========================================================== */
+
+:root{
+  --ind-900:#0F2437;
+  --ind-800:#173350;
+  --ind-700:#1B3A5C;
+  --ind-600:#27506F;
+  --ind-ink:#E7DECB;
+  --ind-mut:#9DAEBF;
+
+  --washi:#F6F1E6;
+  --washi-2:#EFE7D6;
+  --sumi:#1F1D1A;
+  --sumi-2:#5D584C;
+  --sumi-3:#8C8577;
+  --hair:#D9D0BA;
+
+  --verm:#C3432B;
+  --verm-soft:rgba(195,67,43,.08);
+  --moss:#4F7A5B;
+  --moss-soft:rgba(79,122,91,.12);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+
+body{
+  background:var(--ind-900);
+  color:var(--ind-ink);
+  font-family:"Zen Kaku Gothic New","Inter","Hiragino Sans",system-ui,sans-serif;
+  padding:56px 40px 96px;
+  min-height:100vh;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+
+.board{max-width:1180px;margin:0 auto}
+.board-head{margin-bottom:44px}
+.board-head .kicker{
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:10px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ind-mut);margin-bottom:12px;
+}
+.board-head h1{font-size:30px;font-weight:700;letter-spacing:.01em;text-wrap:balance;max-width:24em}
+.board-head p{margin-top:10px;max-width:56em;font-size:14px;line-height:1.7;color:var(--ind-mut)}
+.board-head p b{color:var(--ind-ink);font-weight:600}
+code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;color:var(--ind-ink);background:var(--ind-800);padding:1px 5px;border-radius:2px}
+
+section{margin-bottom:64px}
+.sec-head{
+  display:flex;align-items:baseline;gap:10px;margin-bottom:18px;
+  border-bottom:1px solid var(--ind-600);padding-bottom:10px;
+}
+.sec-head .name{font-size:16px;font-weight:700}
+.sec-head .tag{font-family:"Inter",system-ui,sans-serif;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ind-mut)}
+.sec-head .pick{
+  margin-left:auto;
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--verm);border:1px solid var(--verm);
+  padding:3px 8px;border-radius:2px;transform:rotate(-2deg);
+}
+.sec-sub{font-size:12.5px;line-height:1.65;color:var(--ind-mut);margin-bottom:22px;max-width:60em}
+
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+@media (max-width:860px){.pair{grid-template-columns:1fr}}
+
+/* ---- paper card ---- */
+.paper{
+  background:var(--washi);color:var(--sumi);
+  border-radius:3px;padding:22px 24px;
+  box-shadow:0 18px 40px rgba(0,0,0,.35);
+}
+.paper h3{font-size:13px;font-weight:700;letter-spacing:.04em;margin-bottom:14px;color:var(--sumi)}
+.paper h3 small{font-family:"Inter",system-ui;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-3);margin-left:8px;font-weight:500}
+
+/* ---- pipeline (vertical flow of boxes) ---- */
+.flow{display:flex;flex-direction:column;align-items:stretch;gap:0}
+.node{
+  border:1px solid var(--hair);background:var(--washi-2);
+  padding:10px 12px;border-radius:2px;
+  font-size:12.5px;line-height:1.5;
+}
+.node .lbl{font-family:"Inter",system-ui;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--sumi-3);margin-bottom:3px}
+.node.actor{background:var(--sumi);color:var(--washi);border-color:var(--sumi)}
+.node.actor .lbl{color:var(--hair)}
+.node.hot{border-color:var(--verm);background:var(--verm-soft)}
+.node.ok{border-color:var(--moss);background:var(--moss-soft)}
+.node.ghost{border-style:dashed;color:var(--sumi-3);background:transparent}
+.arrow{
+  height:26px;display:flex;align-items:center;justify-content:center;
+  color:var(--sumi-3);font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;
+  position:relative;
+}
+.arrow::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--hair)}
+.arrow span{background:var(--washi);padding:0 8px;position:relative;z-index:1}
+.arrow.x::before{background:var(--verm)}
+.arrow.x span{color:var(--verm)}
+
+.fork{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fork .flow{position:relative}
+.fork .flow::before{
+  content:"";position:absolute;top:-14px;left:50%;height:14px;width:1px;background:var(--hair)
+}
+
+/* ---- sequence diagram ---- */
+.seq{overflow-x:auto}
+.seq svg{display:block;min-width:820px;width:100%;height:auto}
+.seq text{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;fill:var(--sumi)}
+.seq text.actor{font-family:"Inter",system-ui;font-weight:600;font-size:11px;letter-spacing:.08em}
+.seq text.note{fill:var(--sumi-3);font-size:10px}
+.seq text.warn{fill:var(--verm)}
+.seq text.ok{fill:var(--moss)}
+.seq .life{stroke:var(--hair);stroke-width:1;stroke-dasharray:3 4}
+.seq .msg{stroke:var(--sumi);stroke-width:1;marker-end:url(#ah)}
+.seq .msg.ret{stroke-dasharray:4 3;stroke:var(--sumi-2)}
+.seq .msg.warn{stroke:var(--verm);marker-end:url(#ahw)}
+.seq .msg.ok{stroke:var(--moss);marker-end:url(#ahg)}
+.seq .box{fill:var(--sumi);}
+.seq .box.plugin{fill:var(--ind-700)}
+.seq .box.gh{fill:var(--washi-2);stroke:var(--hair)}
+.seq text.onbox{fill:var(--washi)}
+.seq text.onbox.gh{fill:var(--sumi)}
+.seq .act{fill:var(--washi-2);stroke:var(--hair)}
+.seq .region{fill:var(--verm-soft);stroke:var(--verm);stroke-dasharray:3 3}
+
+/* ---- decision table ---- */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--hair);vertical-align:top;line-height:1.5}
+th{font-family:"Inter",system-ui;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--sumi-3);font-weight:600}
+td.pill{white-space:nowrap}
+.pill span{
+  font-family:"Inter",system-ui;font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  padding:2px 7px;border-radius:2px;border:1px solid currentColor
+}
+.pill .ota{color:var(--moss)}
+.pill .apk{color:var(--verm)}
+.pill .both{color:var(--sumi-2)}
+
+/* ---- notes list on indigo ---- */
+.notes{font-size:12.5px;line-height:1.7;color:var(--ind-mut);max-width:64em}
+.notes li{margin-left:1.2em;margin-bottom:6px}
+.notes b{color:var(--ind-ink);font-weight:600}
+.notes li.warn{list-style:none;margin-left:0;padding-left:1.2em;border-left:2px solid var(--verm);color:var(--ind-ink)}
+</style>
+</head>
+<body>
+<div class="board">
+
+<div class="board-head">
+  <div class="kicker">Yoin · mockup board 08 · 2026-09-22 · architecture, not UI</div>
+  <h1>OTA update flow — web bundle over GitHub Releases, APK only for native changes</h1>
+  <p>Yoin = Capacitor shell + Vite <code>dist/</code> in a WebView. Today every change ships as a full APK on the rolling <code>latest</code> release, sideloaded by hand. Proposal: <b>@capgo/capacitor-updater in self-host mode</b>. CI zips <code>dist/</code> next to the APK; the app pulls the zip at boot and swaps it on next launch. APK rebuild only when <code>android/**</code>, plugins, or Capacitor itself change. No Capgo cloud, no server — GitHub Releases is the update server.</p>
+</div>
+
+<!-- ====================================================== -->
+<section>
+  <div class="sec-head">
+    <div class="name">A · Release path</div>
+    <div class="tag">today vs proposed</div>
+    <div class="pick">proposed</div>
+  </div>
+  <div class="sec-sub">Same trigger (push to <code>main</code>), same workflow file. The fork is on <em>which paths changed</em>. Both branches upload to the same rolling <code>latest</code> release, so the phone has one URL to know.</div>
+
+  <div class="pair">
+
+    <div class="paper">
+      <h3>Today <small>apk-only</small></h3>
+      <div class="flow">
+        <div class="node actor"><div class="lbl">trigger</div>push <code>main</code> · any src/android/config path</div>
+        <div class="arrow"><span>android.yml</span></div>
+        <div class="node"><div class="lbl">ci</div><span class="mono">pnpm build → cap sync → gradlew assembleRelease</span></div>
+        <div class="arrow"><span>~6–8 min · JDK + Gradle</span></div>
+        <div class="node"><div class="lbl">artifact</div><span class="mono">yoin.apk</span> → release <code>latest</code> (clobber)</div>
+        <div class="arrow x"><span>manual</span></div>
+        <div class="node hot"><div class="lbl">phone</div>open GH → download 20 MB apk → install prompt → reinstall</div>
+        <div class="arrow"><span></span></div>
+        <div class="node ghost">every change, even a CSS tweak, walks this whole path</div>
+      </div>
+    </div>
+
+    <div class="paper">
+      <h3>Proposed <small>ota + apk</small></h3>
+      <div class="flow">
+        <div class="node actor"><div class="lbl">trigger</div>push <code>main</code></div>
+        <div class="arrow"><span>paths filter</span></div>
+        <div class="node"><div class="lbl">ci · always</div><span class="mono">pnpm build → zip dist/ → bundle.zip + manifest.json</span></div>
+        <div class="arrow"><span>~1 min · node only</span></div>
+      </div>
+      <div class="fork">
+        <div class="flow">
+          <div class="node ok"><div class="lbl">web change only</div>upload <span class="mono">bundle.zip</span> + <span class="mono">manifest.json</span> → <code>latest</code></div>
+          <div class="arrow"><span>next app boot</span></div>
+          <div class="node ok"><div class="lbl">phone</div>updater pulls zip in background · applied on next launch · zero taps</div>
+        </div>
+        <div class="flow">
+          <div class="node hot"><div class="lbl">native change</div><span class="mono">android/** · package.json deps · capacitor.config.ts</span></div>
+          <div class="arrow"><span>gradle job</span></div>
+          <div class="node hot"><div class="lbl">phone</div>same as today: download apk, reinstall · manifest bumps <span class="mono">minNative</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<section>
+  <div class="sec-head">
+    <div class="name">B · App boot sequence</div>
+    <div class="tag">capgo self-host · pull model</div>
+  </div>
+  <div class="sec-sub">Plugin runs with <code>autoUpdate: false</code>. Yoin owns the check: one fetch of <code>manifest.json</code>, compare, download, mark <code>next</code>. The current session never swaps mid-use; the new bundle lands on the following launch. Rollback is the plugin's own: a bundle that never calls <code>notifyAppReady()</code> is reverted automatically.</div>
+
+  <div class="paper seq">
+    <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1F1D1A"/></marker>
+        <marker id="ahw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#C3432B"/></marker>
+        <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#4F7A5B"/></marker>
+      </defs>
+
+      <!-- actors -->
+      <rect class="box" x="30" y="16" width="150" height="34" rx="2"/>
+      <text class="actor onbox" x="105" y="38" text-anchor="middle">NATIVE SHELL</text>
+      <rect class="box plugin" x="250" y="16" width="150" height="34" rx="2"/>
+      <text class="actor onbox" x="325" y="38" text-anchor="middle">UPDATER PLUGIN</text>
+      <rect class="box" x="470" y="16" width="150" height="34" rx="2"/>
+      <text class="actor onbox" x="545" y="38" text-anchor="middle">YOIN (WEBVIEW)</text>
+      <rect class="box gh" x="700" y="16" width="170" height="34" rx="2"/>
+      <text class="actor onbox gh" x="785" y="38" text-anchor="middle">GITHUB RELEASE</text>
+
+      <!-- lifelines -->
+      <line class="life" x1="105" y1="50" x2="105" y2="540"/>
+      <line class="life" x1="325" y1="50" x2="325" y2="540"/>
+      <line class="life" x1="545" y1="50" x2="545" y2="540"/>
+      <line class="life" x1="785" y1="50" x2="785" y2="540"/>
+
+      <!-- 1 boot -->
+      <line class="msg" x1="105" y1="80" x2="320" y2="80"/>
+      <text x="115" y="74">1 launch · which bundle is "current"?</text>
+      <line class="msg ret" x1="325" y1="104" x2="110" y2="104"/>
+      <text x="115" y="98" class="note">current = last bundle marked next, else builtin (apk dist)</text>
+
+      <!-- 2 load -->
+      <line class="msg" x1="105" y1="134" x2="540" y2="134"/>
+      <text x="115" y="128">2 load WebView from current bundle dir</text>
+
+      <!-- 3 ready -->
+      <rect class="act" x="540" y="150" width="10" height="70"/>
+      <line class="msg ok" x1="545" y1="166" x2="330" y2="166"/>
+      <text x="335" y="160" class="ok">3 notifyAppReady()  — first thing in main.tsx</text>
+      <text x="335" y="182" class="note">timer cancelled → this bundle is now trusted</text>
+
+      <!-- rollback region -->
+      <rect class="region" x="240" y="196" width="330" height="40" rx="2"/>
+      <text x="250" y="212" class="warn">not called within 10 s → plugin resets to previous bundle</text>
+      <text x="250" y="226" class="note warn">covers: white screen, JS crash before mount, broken sql-wasm path</text>
+
+      <!-- 4 fetch manifest -->
+      <line class="msg" x1="545" y1="266" x2="780" y2="266"/>
+      <text x="555" y="260">4 GET releases/download/latest/manifest.json</text>
+      <line class="msg ret" x1="785" y1="290" x2="550" y2="290"/>
+      <text x="555" y="284" class="note mono">{ version, minNative, url, sha256 }</text>
+
+      <!-- 5 compare -->
+      <rect class="act" x="540" y="300" width="10" height="60"/>
+      <text x="555" y="320">5 version == current.version   → stop, nothing to do</text>
+      <text x="555" y="336" class="warn">   minNative &gt; app versionCode  → banner: "download APK"</text>
+      <text x="555" y="352">   else                          → continue</text>
+
+      <!-- 6 download -->
+      <line class="msg" x1="545" y1="382" x2="330" y2="382"/>
+      <text x="335" y="376">6 download({ url, version, checksum })</text>
+      <line class="msg" x1="325" y1="406" x2="780" y2="406"/>
+      <text x="335" y="400" class="note">plugin streams bundle.zip, verifies sha256, unzips to versioned dir</text>
+      <line class="msg ret" x1="785" y1="428" x2="330" y2="428"/>
+
+      <!-- 7 next -->
+      <line class="msg" x1="545" y1="460" x2="330" y2="460"/>
+      <text x="335" y="454">7 next({ id })   — swap on next launch, not now</text>
+      <text x="335" y="476" class="note">user mid-entry never sees the UI reload under them</text>
+
+      <!-- 8 next launch -->
+      <line class="msg ok" x1="105" y1="510" x2="320" y2="510"/>
+      <text x="115" y="504" class="ok">8 next launch → step 1 returns the new bundle · loop</text>
+      <text x="115" y="528" class="note">old bundle kept until new one passes step 3, then pruned</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<section>
+  <div class="sec-head">
+    <div class="name">C · APK or OTA?</div>
+    <div class="tag">decision table</div>
+  </div>
+  <div class="sec-sub">Rule of thumb: if <code>npx cap sync</code> would change anything under <code>android/</code>, it is an APK. Everything that lives only in <code>dist/</code> is OTA.</div>
+
+  <div class="paper">
+    <table>
+      <thead><tr><th>change</th><th>ships as</th><th>why</th></tr></thead>
+      <tbody>
+        <tr><td>React screens, CSS, Tailwind, fonts</td><td class="pill"><span class="ota">ota</span></td><td>pure <code>dist/</code></td></tr>
+        <tr><td>SQL migrations inside the app (jeep-sqlite / sql.js)</td><td class="pill"><span class="ota">ota</span></td><td>schema lives in JS; sql-wasm ships inside <code>dist/assets</code></td></tr>
+        <tr><td>category kinds, sort order, settings logic</td><td class="pill"><span class="ota">ota</span></td><td>app code only</td></tr>
+        <tr><td>new Capacitor plugin (e.g. haptics, biometrics)</td><td class="pill"><span class="apk">apk</span></td><td>native code registered at build; JS calling a missing plugin throws</td></tr>
+        <tr><td>bump <code>@capacitor/*</code> or <code>@capacitor-community/sqlite</code> major</td><td class="pill"><span class="apk">apk</span></td><td>bridge contract changes on both sides</td></tr>
+        <tr><td><code>android/**</code>, manifest permissions, min SDK, icons, splash</td><td class="pill"><span class="apk">apk</span></td><td>compiled into the package</td></tr>
+        <tr><td><code>capacitor.config.ts</code></td><td class="pill"><span class="apk">apk</span></td><td>read by native at startup, copied on <code>cap sync</code></td></tr>
+        <tr><td>OTA needs a newer native (plugin API used by JS)</td><td class="pill"><span class="both">both</span></td><td>APK first, manifest <code>minNative</code> bumped so old shells refuse the bundle</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<section>
+  <div class="sec-head">
+    <div class="name">D · Constraints that bite</div>
+    <div class="tag">before wiring it</div>
+  </div>
+  <ul class="notes">
+    <li><b>Version becomes two numbers.</b> <code>package.json version</code> = bundle version (OTA compares this). Android <code>versionCode</code> = native version (manifest <code>minNative</code> compares this). Bump bundle every release; bump versionCode only on APK release.</li>
+    <li><b>Builtin bundle goes stale.</b> The APK still ships the <code>dist/</code> it was built with. Fresh install or rollback lands on that, then OTA catches up on next boot. Acceptable for one user.</li>
+    <li><b>Manifest URL must be stable.</b> <code>github.com/&lt;owner&gt;/yoin/releases/download/latest/manifest.json</code> works because the release tag is force-moved, same trick as today's APK. GitHub redirects to a CDN URL; plugin follows redirects.</li>
+    <li><b>Offline boot must not block.</b> Manifest fetch is fire-and-forget after <code>notifyAppReady()</code>. No network → app runs current bundle. No spinner, no retry loop.</li>
+    <li><b>sha256 in manifest, not optional.</b> Self-host mode has no signing by default; checksum is the only integrity check. CI computes it from the exact zip it uploads.</li>
+    <li class="warn"><b>Two workflows or one with two jobs.</b> Keep <code>android.yml</code> as is, gate the gradle job on native paths, add a lightweight <code>bundle</code> job that always runs. Both write to the same <code>latest</code> release; APK job must not clobber <code>manifest.json</code>.</li>
+    <li><b>Rejected:</b> Ionic Appflow Live Updates (paid, no self-host). Custom updater (re-implements checksum, atomic swap, rollback for no gain). Capgo cloud (fine, but a third party in the loop for one phone).</li>
+  </ul>
+</section>
+
+</div>
+</body>
+</html>
