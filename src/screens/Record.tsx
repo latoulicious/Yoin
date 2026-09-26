@@ -73,8 +73,9 @@ export default function Record({
       const [cats, accountRows] = await Promise.all([listCategories(db), listAccounts(db)])
       if (!live) return
       setCategories(cats.filter((c) => !c.system && !c.archived))
-      setAccounts(accountRows)
-      setAccountId(accountRows[0]?.id ?? null)
+      const active = accountRows.filter((a) => !a.archived)
+      setAccounts(active)
+      setAccountId(active[0]?.id ?? null)
     })()
     return () => {
       live = false

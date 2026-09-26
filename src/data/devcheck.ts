@@ -9,6 +9,7 @@ import {
   deleteTransaction,
   deleteTransferGroup,
   listAccounts,
+  setAccountArchived,
   listCategories,
   monthTotals,
   reorderCategories,
@@ -75,6 +76,10 @@ async function devcheck(): Promise<void> {
   const account = accounts.find((a) => a.id === accountId)
   assert(account !== undefined, `created account ${accountId} not returned by listAccounts`)
   assert(account.name === ACCOUNT_NAME && !account.reserved, 'created account round-tripped wrong')
+  await setAccountArchived(db, accountId, true)
+  const archivedRow = (await listAccounts(db)).find((a) => a.id === accountId)
+  assert(archivedRow?.archived === true, 'archive flag did not persist')
+  await setAccountArchived(db, accountId, false)
 
   const incomeId = await addTransaction(db, {
     amount: 5000,

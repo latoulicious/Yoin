@@ -107,10 +107,11 @@ export default function Transfer({
       const db = await getDb()
       const [accountRows, balanceRows] = await Promise.all([listAccounts(db), accountBalances(db)])
       if (!live) return
-      setAccounts(accountRows)
+      const active = accountRows.filter((a) => !a.archived)
+      setAccounts(active)
       setBalances(balanceRows)
-      setFromId(accountRows[0]?.id ?? null)
-      setToId(accountRows[1]?.id ?? null)
+      setFromId(active[0]?.id ?? null)
+      setToId(active[1]?.id ?? null)
     })()
     return () => {
       live = false

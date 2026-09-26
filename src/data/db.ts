@@ -81,7 +81,7 @@ async function connect(): Promise<SQLiteDBConnection> {
   const existing = await sqlite.isConnection(DB_NAME, false)
   const db = existing.result
     ? await sqlite.retrieveConnection(DB_NAME, false)
-    : await sqlite.createConnection(DB_NAME, false, 'no-encryption', 5, false)
+    : await sqlite.createConnection(DB_NAME, false, 'no-encryption', 6, false)
 
   const open = await db.isDBOpen()
   if (!open.result) await db.open()

@@ -397,7 +397,7 @@ export default function Settings({
       setCounts({
         manual: categories.filter((c) => !c.system).length,
         system: categories.filter((c) => c.system).length,
-        accounts: accounts.length,
+        accounts: accounts.filter((a) => !a.archived).length,
         entries,
       })
     })()
