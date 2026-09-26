@@ -5,6 +5,7 @@ import {
   balanceSummary,
   createAccount,
   listAccounts,
+  setAccountArchived,
   updateAccount,
   type Account,
   type AccountBalance,
@@ -34,12 +35,16 @@ function plainText(value: number): string {
 
 function Editor({
   account,
+  canArchive,
   onClose,
   onSave,
+  onArchive,
 }: {
   account: Account | null
+  canArchive: boolean
   onClose: () => void
   onSave: (input: AccountInput) => void
+  onArchive: (archived: boolean) => void
 }) {
   const [name, setName] = useState(account?.name ?? '')
   const [roleNote, setRoleNote] = useState(account?.roleNote ?? '')
@@ -129,6 +134,16 @@ function Editor({
         >
           Save
         </button>
+        {account && (
+          <button
+            type="button"
+            disabled={!account.archived && !canArchive}
+            onClick={() => onArchive(!account.archived)}
+            className="mt-2.5 flex h-9 w-full items-center justify-center text-[10px] tracking-[.2em] uppercase text-ink-3 disabled:opacity-40"
+          >
+            {account.archived ? 'Restore account' : 'Archive account'}
+          </button>
+        )}
       </div>
     </div>
   )
@@ -177,13 +192,27 @@ export default function Accounts({ onTransfer }: { onTransfer: () => void }) {
     }
   }
 
+  async function archive(archived: boolean) {
+    if (saving.current || !editing) return
+    saving.current = true
+    try {
+      await setAccountArchived(await getDb(), editing.id, archived)
+      setEditing(null)
+      setVersion((current) => current + 1)
+    } finally {
+      saving.current = false
+    }
+  }
+
   function balanceOf(id: number): number {
     return balances.find((row) => row.accountId === id)?.balance ?? 0
   }
 
-  const spendable = accounts.filter((a) => !a.reserved)
-  const reserved = accounts.filter((a) => a.reserved)
-  const ordered = [...spendable, ...reserved]
+  const active = accounts.filter((a) => !a.archived)
+  const archived = accounts.filter((a) => a.archived)
+  const spendable = active.filter((a) => !a.reserved)
+  const reserved = active.filter((a) => a.reserved)
+  const ordered = [...spendable, ...reserved, ...archived]
 
   function row(account: Account, bordered: boolean) {
     const num = String(ordered.findIndex((a) => a.id === account.id) + 1).padStart(2, '0')
@@ -217,7 +246,7 @@ export default function Accounts({ onTransfer }: { onTransfer: () => void }) {
       <div className="flex items-baseline text-[10px] tracking-[.2em] uppercase text-ink-3">
         <span>Accounts</span>
         <span className={RULE_LEAD} />
-        {accounts.length > 1 && (
+        {active.length > 1 && (
           <button type="button" onClick={onTransfer} className="tracking-[.2em] text-hanko">
             Transfer →
           </button>
@@ -256,6 +285,16 @@ export default function Accounts({ onTransfer }: { onTransfer: () => void }) {
         </>
       )}
 
+      {archived.length > 0 && (
+        <>
+          <div className={`mt-[18px] ${SEC}`}>Archived</div>
+          <div className="mt-1.5 border-t border-dashed border-rule" />
+          <div className="text-ink-3 [&_span]:text-ink-3">
+            {archived.map((account) => row(account, true))}
+          </div>
+        </>
+      )}
+
       <button
         type="button"
         onClick={() => setCreating(true)}
@@ -282,6 +321,8 @@ export default function Accounts({ onTransfer }: { onTransfer: () => void }) {
         <Editor
           key={editing?.id ?? 'new'}
           account={editing}
+          canArchive={active.length > 1}
+          onArchive={(archived) => void archive(archived)}
           onClose={() => {
             setEditing(null)
             setCreating(false)

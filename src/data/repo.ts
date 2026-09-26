@@ -9,6 +9,7 @@ export interface Account {
   roleNote: string
   reserved: boolean
   openingBalance: number
+  archived: boolean
 }
 
 export interface AccountInput {
@@ -107,6 +108,7 @@ interface AccountRow {
   role_note: string
   reserved: number
   opening_balance: number
+  archived: number
 }
 
 interface CategoryRow {
@@ -144,7 +146,7 @@ const INSERT_TXN = `INSERT INTO transactions (amount, kind, category_id, account
 export async function listAccounts(db: SQLiteDBConnection): Promise<Account[]> {
   const rows = await query<AccountRow>(
     db,
-    'SELECT id, name, role_note, reserved, opening_balance FROM accounts ORDER BY id',
+    'SELECT id, name, role_note, reserved, opening_balance, archived FROM accounts ORDER BY archived, id',
   )
   return rows.map((r) => ({
     id: r.id,
@@ -152,7 +154,16 @@ export async function listAccounts(db: SQLiteDBConnection): Promise<Account[]> {
     roleNote: r.role_note,
     reserved: r.reserved !== 0,
     openingBalance: r.opening_balance,
+    archived: r.archived !== 0,
   }))
+}
+
+export async function setAccountArchived(
+  db: SQLiteDBConnection,
+  id: number,
+  archived: boolean,
+): Promise<void> {
+  await write(db, 'UPDATE accounts SET archived = ? WHERE id = ?', [archived ? 1 : 0, id])
 }
 
 export async function createAccount(db: SQLiteDBConnection, input: AccountInput): Promise<number> {

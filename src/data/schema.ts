@@ -77,4 +77,8 @@ export const upgrades: capSQLiteVersionUpgrade[] = [
       `UPDATE categories SET locked = 1 WHERE system = 1 OR code = 'OT';`,
     ],
   },
+  {
+    toVersion: 6,
+    statements: [`ALTER TABLE accounts ADD COLUMN archived INTEGER NOT NULL DEFAULT 0;`],
+  },
 ]
