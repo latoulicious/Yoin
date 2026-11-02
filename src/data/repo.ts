@@ -90,6 +90,23 @@ export interface CategoryTotal {
   total: number
 }
 
+export interface RecurringInput {
+  note: string
+  amount: number
+  categoryId: number
+  accountId: number
+  day: number
+}
+
+export interface RecurringRule extends RecurringInput {
+  id: number
+  lastMonth: string
+  categoryName: string
+  categorySystem: boolean
+  accountName: string
+  accountArchived: boolean
+}
+
 // field names double as CSV column headers — see toCsv in ./csv.
 export interface ExportRow {
   id: number
@@ -133,6 +150,20 @@ interface TransactionRow {
   transfer_group_id: string | null
   category_name: string | null
   category_code: string | null
+}
+
+interface RecurringRuleRow {
+  id: number
+  note: string
+  amount: number
+  category_id: number
+  account_id: number
+  day: number
+  last_month: string
+  category_name: string
+  category_system: number
+  account_name: string
+  account_archived: number
 }
 
 const SIGNED_AMOUNT = `CASE WHEN kind IN ('income','transfer_in') THEN amount ELSE -amount END`
@@ -315,6 +346,140 @@ export async function addTransferGroup(db: SQLiteDBConnection, input: TransferIn
 
 export async function deleteTransferGroup(db: SQLiteDBConnection, groupId: string): Promise<void> {
   await write(db, 'DELETE FROM transactions WHERE transfer_group_id = ?', [groupId])
+}
+
+function pad(value: number): string {
+  return String(value).padStart(2, '0')
+}
+
+function monthKey(year: number, monthIndex: number): string {
+  const date = new Date(year, monthIndex, 1)
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`
+}
+
+function followingMonth(month: string): string {
+  return monthKey(Number(month.slice(0, 4)), Number(month.slice(5, 7)))
+}
+
+function occurrence(month: string, day: number): string {
+  const lastDay = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate()
+  return `${month}-${pad(Math.min(day, lastDay))}`
+}
+
+function localDate(date: Date): string {
+  return `${monthKey(date.getFullYear(), date.getMonth())}-${pad(date.getDate())}`
+}
+
+export function nextOccurrence(lastMonth: string, day: number): string {
+  return occurrence(followingMonth(lastMonth), day)
+}
+
+export function dueDates(lastMonth: string, day: number, now: Date): string[] {
+  const today = localDate(now)
+  const dates: string[] = []
+  let date = nextOccurrence(lastMonth, day)
+  while (date <= today) {
+    dates.push(date)
+    date = nextOccurrence(date.slice(0, 7), day)
+  }
+  return dates
+}
+
+// Starts a rule on its next future date: a fee already charged this month was likely recorded by hand.
+export function startingCursor(day: number, now: Date): string {
+  const month = monthKey(now.getFullYear(), now.getMonth())
+  return occurrence(month, day) <= localDate(now)
+    ? month
+    : monthKey(now.getFullYear(), now.getMonth() - 1)
+}
+
+export async function listRecurring(db: SQLiteDBConnection): Promise<RecurringRule[]> {
+  const rows = await query<RecurringRuleRow>(
+    db,
+    `SELECT r.id, r.note, r.amount, r.category_id, r.account_id, r.day, r.last_month,
+            c.name AS category_name, c.system AS category_system,
+            a.name AS account_name, a.archived AS account_archived
+     FROM recurring_rules r
+     JOIN categories c ON c.id = r.category_id
+     JOIN accounts a ON a.id = r.account_id
+     ORDER BY r.day, r.id`,
+  )
+  return rows.map((r) => ({
+    id: r.id,
+    note: r.note,
+    amount: r.amount,
+    categoryId: r.category_id,
+    accountId: r.account_id,
+    day: r.day,
+    lastMonth: r.last_month,
+    categoryName: r.category_name,
+    categorySystem: r.category_system !== 0,
+    accountName: r.account_name,
+    accountArchived: r.account_archived !== 0,
+  }))
+}
+
+export async function createRecurring(
+  db: SQLiteDBConnection,
+  input: RecurringInput,
+  now = new Date(),
+): Promise<number> {
+  const changes = await write(
+    db,
+    `INSERT INTO recurring_rules (note, amount, category_id, account_id, day, last_month)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [input.note, input.amount, input.categoryId, input.accountId, input.day, startingCursor(input.day, now)],
+  )
+  return lastId(changes, 'createRecurring')
+}
+
+// MAX keeps an edit from backfilling months the rule never covered, and from re-posting ones it did.
+export async function updateRecurring(
+  db: SQLiteDBConnection,
+  id: number,
+  input: RecurringInput,
+  now = new Date(),
+): Promise<void> {
+  await write(
+    db,
+    `UPDATE recurring_rules
+     SET note = ?, amount = ?, category_id = ?, account_id = ?, day = ?, last_month = MAX(last_month, ?)
+     WHERE id = ?`,
+    [input.note, input.amount, input.categoryId, input.accountId, input.day, startingCursor(input.day, now), id],
+  )
+}
+
+export async function deleteRecurring(db: SQLiteDBConnection, id: number): Promise<void> {
+  await write(db, 'DELETE FROM recurring_rules WHERE id = ?', [id])
+}
+
+// The cursor lives on the rule, not in a lookup of posted rows, so deleting a posted entry never
+// brings it back. Each statement re-checks it, so overlapping runs cannot post a month twice.
+export async function postDueRecurring(db: SQLiteDBConnection, now = new Date()): Promise<number> {
+  let posted = 0
+  for (const rule of await listRecurring(db)) {
+    const dates = dueDates(rule.lastMonth, rule.day, now)
+    if (dates.length === 0) continue
+    const kind: TxnKind = rule.categorySystem ? 'fee' : 'expense'
+    const inserts: capSQLiteSet[] = rule.accountArchived
+      ? []
+      : dates.map((date) => ({
+          statement: `INSERT INTO transactions (amount, kind, category_id, account_id, note, occurred_at)
+             SELECT amount, ?, category_id, account_id, note, ? FROM recurring_rules
+             WHERE id = ? AND last_month = ?`,
+          values: [kind, `${date}T00:00:00`, rule.id, rule.lastMonth],
+        }))
+    await db.executeSet([
+      ...inserts,
+      {
+        statement: 'UPDATE recurring_rules SET last_month = ? WHERE id = ? AND last_month = ?',
+        values: [dates[dates.length - 1].slice(0, 7), rule.id, rule.lastMonth],
+      },
+    ])
+    await persist()
+    posted += inserts.length
+  }
+  return posted
 }
 
 export async function accountBalances(db: SQLiteDBConnection): Promise<AccountBalance[]> {

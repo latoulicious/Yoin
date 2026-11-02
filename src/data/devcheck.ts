@@ -5,14 +5,20 @@ import {
   addTransaction,
   addTransferGroup,
   createAccount,
+  createRecurring,
   dayGroups,
+  deleteRecurring,
   deleteTransaction,
   deleteTransferGroup,
+  dueDates,
   listAccounts,
+  listRecurring,
   setAccountArchived,
   listCategories,
   monthTotals,
+  postDueRecurring,
   reorderCategories,
+  updateRecurring,
   updateTransaction,
   type DayGroup,
   type Transaction,
@@ -160,6 +166,42 @@ async function devcheck(): Promise<void> {
   )
   await assertTotals(db, { income: 0, expense: 0 })
 
+  assert(
+    dueDates('2026-01', 31, new Date(2026, 2, 31)).join() === '2026-02-28,2026-03-31',
+    'dueDates must catch up missed months and clamp to short months',
+  )
+  assert(dueDates('2026-10', 15, new Date(2026, 10, 14)).length === 0, 'dueDates posted before the day')
+  assert(dueDates('2026-12', 1, new Date(2027, 0, 1)).join() === '2027-01-01', 'dueDates missed year rollover')
+
+  const ruleInput = { note: 'devcheck rule', amount: 700, categoryId: fee.id, accountId, day: 20 }
+  const ruleId = await createRecurring(db, ruleInput, new Date(1970, 0, 10))
+  assert(
+    (await listRecurring(db)).find((r) => r.id === ruleId)?.lastMonth === '1969-12',
+    'rule created before its day must start this month',
+  )
+  await postDueRecurring(db, new Date(1970, 0, 19))
+  await assertBalance(db, accountId, 0)
+  await postDueRecurring(db, new Date(1970, 0, 25))
+  await postDueRecurring(db, new Date(1970, 0, 25))
+  await assertBalance(db, accountId, -700)
+  await assertTotals(db, { income: 0, expense: 700 })
+  const postedRow = (await dayGroups(db, MONTH))[0].rows[0]
+  assert(
+    postedRow.kind === 'fee' && postedRow.occurredAt === `${MONTH}-20T00:00:00` && postedRow.note === 'devcheck rule',
+    `posted row wrong: ${postedRow.kind} / ${postedRow.occurredAt} / ${postedRow.note}`,
+  )
+  await deleteTransaction(db, postedRow.id)
+  await postDueRecurring(db, new Date(1970, 0, 25))
+  await assertBalance(db, accountId, 0)
+
+  const lateId = await createRecurring(db, ruleInput, new Date(1970, 0, 10))
+  await updateRecurring(db, lateId, { ...ruleInput, day: 5 }, new Date(1970, 0, 10))
+  const moved = (await listRecurring(db)).find((r) => r.id === lateId)
+  assert(moved?.lastMonth === '1970-01' && moved.day === 5, 'editing the day must not backfill')
+  await deleteRecurring(db, lateId)
+  await deleteRecurring(db, ruleId)
+  assert(!(await listRecurring(db)).some((r) => r.id === ruleId), 'rule survived delete')
+
   await purge(db)
   const remaining = await listAccounts(db)
   assert(
@@ -191,6 +233,7 @@ function groupRows(groups: DayGroup[], groupId: string): Transaction[] {
 
 async function purge(db: SQLiteDBConnection): Promise<void> {
   await db.run('DELETE FROM transactions WHERE substr(occurred_at, 1, 7) = ?', [MONTH])
+  await db.run("DELETE FROM recurring_rules WHERE note = 'devcheck rule'", [])
   await db.run('DELETE FROM accounts WHERE name IN (?, ?)', [ACCOUNT_NAME, DEST_NAME])
   await persist()
 }
