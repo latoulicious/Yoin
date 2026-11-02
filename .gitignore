@@ -35,3 +35,4 @@ android/yoin-release.keystore
 *.njsproj
 *.sln
 *.sw?
+CATEGORIES.md
