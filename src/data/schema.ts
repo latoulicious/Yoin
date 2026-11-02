@@ -81,4 +81,18 @@ export const upgrades: capSQLiteVersionUpgrade[] = [
     toVersion: 6,
     statements: [`ALTER TABLE accounts ADD COLUMN archived INTEGER NOT NULL DEFAULT 0;`],
   },
+  {
+    toVersion: 7,
+    statements: [
+      `CREATE TABLE recurring_rules (
+        id INTEGER PRIMARY KEY,
+        note TEXT NOT NULL,
+        amount INTEGER NOT NULL CHECK (amount > 0),
+        category_id INTEGER NOT NULL REFERENCES categories(id),
+        account_id INTEGER NOT NULL REFERENCES accounts(id),
+        day INTEGER NOT NULL CHECK (day BETWEEN 1 AND 31),
+        last_month TEXT NOT NULL
+      );`,
+    ],
+  },
 ]

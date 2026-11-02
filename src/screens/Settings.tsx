@@ -10,6 +10,7 @@ import {
   exportRows,
   listAccounts,
   listCategories,
+  listRecurring,
   renameCategory,
   reorderCategories,
   setCategoryArchived,
@@ -378,7 +379,7 @@ export default function Settings({
   onNavigate: (screen: Screen) => void
   themePref: ThemePref
 }) {
-  const [counts, setCounts] = useState({ manual: 0, system: 0, accounts: 0, entries: 0 })
+  const [counts, setCounts] = useState({ manual: 0, system: 0, accounts: 0, recurring: 0, entries: 0 })
   const [lastBackup, setLastBackup] = useState<string | null>(() =>
     localStorage.getItem(LAST_BACKUP_KEY),
   )
@@ -388,9 +389,10 @@ export default function Settings({
     let live = true
     void (async () => {
       const db = await getDb()
-      const [categories, accounts, entries] = await Promise.all([
+      const [categories, accounts, recurring, entries] = await Promise.all([
         listCategories(db),
         listAccounts(db),
+        listRecurring(db),
         countTransactions(db),
       ])
       if (!live) return
@@ -398,6 +400,7 @@ export default function Settings({
         manual: categories.filter((c) => !c.system).length,
         system: categories.filter((c) => c.system).length,
         accounts: accounts.filter((a) => !a.archived).length,
+        recurring: recurring.length,
         entries,
       })
     })()
@@ -431,6 +434,11 @@ export default function Settings({
         label="Accounts"
         value={`${counts.accounts} ${counts.accounts === 1 ? 'account' : 'accounts'}`}
         onClick={() => onNavigate('accounts')}
+      />
+      <Row
+        label="Recurring"
+        value={`${counts.recurring} monthly`}
+        onClick={() => onNavigate('recurring')}
       />
 
       <Section label="Data" status={status} />

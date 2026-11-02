@@ -1,11 +1,13 @@
+import { App as CapacitorApp } from '@capacitor/app'
 import { useEffect, useRef, useState } from 'react'
 import { getDb } from './data/db'
-import { deleteTransaction, deleteTransferGroup } from './data/repo'
+import { deleteTransaction, deleteTransferGroup, postDueRecurring } from './data/repo'
 import Accounts from './screens/Accounts'
 import History, { type HistoryFilter } from './screens/History'
 import Home from './screens/Home'
 import Insights from './screens/Insights'
 import Record, { type SavedEntry } from './screens/Record'
+import Recurring from './screens/Recurring'
 import Settings, { About, Appearance, Categories, Changelog } from './screens/Settings'
 import Transfer from './screens/Transfer'
 import { useTheme } from './theme'
@@ -22,6 +24,7 @@ export type Screen =
   | 'settings'
   | 'appearance'
   | 'categories'
+  | 'recurring'
   | 'about'
 
 const SCREEN_LABEL: Record<Screen, string> = {
@@ -34,6 +37,7 @@ const SCREEN_LABEL: Record<Screen, string> = {
   settings: 'Settings',
   appearance: 'Appearance',
   categories: 'Categories',
+  recurring: 'Recurring',
   about: 'About',
 }
 
@@ -121,6 +125,10 @@ function NavTab({
 
 const UNDO_WINDOW_MS = 5000
 
+// Module scope: StrictMode's double effect and launch+resume would otherwise overlap, and the
+// SQLite connection rejects a second executeSet while one transaction is open.
+let postingRecurring = false
+
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter | null>(null)
@@ -131,6 +139,27 @@ export default function App() {
 
   useEffect(() => () => clearTimeout(undoTimer.current), [])
   useEffect(boot, [])
+
+  useEffect(() => {
+    function post() {
+      if (postingRecurring) return
+      postingRecurring = true
+      getDb()
+        .then((db) => postDueRecurring(db))
+        .then((posted) => {
+          if (posted > 0) setDataVersion((current) => current + 1)
+        })
+        .catch(console.error)
+        .finally(() => {
+          postingRecurring = false
+        })
+    }
+    post()
+    const listener = CapacitorApp.addListener('resume', post)
+    return () => {
+      void listener.then((handle) => handle.remove())
+    }
+  }, [])
 
   function navigate(next: Screen) {
     if (next === 'history') setHistoryFilter(null)
@@ -182,6 +211,8 @@ export default function App() {
           <Appearance pref={pref} setPref={setPref} resolved={resolved} />
         ) : screen === 'categories' ? (
           <Categories />
+        ) : screen === 'recurring' ? (
+          <Recurring key={dataVersion} />
         ) : screen === 'about' ? (
           <About />
         ) : screen === 'record' ? (
