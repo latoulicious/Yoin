@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getDb } from '../data/db'
 import {
+  balanceBefore,
   categoryTotals,
   monthTotals,
   type CategoryTotal,
@@ -67,18 +68,21 @@ export default function Insights({
   const [month, setMonth] = useState(() => monthKey(new Date()))
   const [totals, setTotals] = useState<MonthTotals>({ income: 0, expense: 0 })
   const [rows, setRows] = useState<CategoryTotal[]>([])
+  const [carried, setCarried] = useState(0)
 
   useEffect(() => {
     let live = true
     void (async () => {
       const db = await getDb()
-      const [monthly, categories] = await Promise.all([
+      const [monthly, categories, opening] = await Promise.all([
         monthTotals(db, month),
         categoryTotals(db, month),
+        balanceBefore(db, month),
       ])
       if (!live) return
       setTotals(monthly)
       setRows(categories)
+      setCarried(opening)
     })()
     return () => {
       live = false
@@ -86,6 +90,7 @@ export default function Insights({
   }, [month])
 
   const net = totals.income - totals.expense
+  const remaining = carried + net
   const entries = rows.reduce((sum, row) => sum + row.count, 0)
   const max = rows[0]?.total ?? 0
 
@@ -118,10 +123,13 @@ export default function Insights({
           {`Remaining after ${monthName(month)}`}
         </div>
         <div
-          className={`mt-0.5 font-mono text-[32px] tracking-[-.02em] tabular-nums ${net >= 0 ? 'font-semibold' : ''}`}
+          className={`mt-0.5 font-mono text-[32px] tracking-[-.02em] tabular-nums ${remaining >= 0 ? 'font-semibold' : ''}`}
         >
           <span className="mr-[.4em] align-[.12em] text-[.58em] text-ink-3">Rp</span>
-          {signedText(net)}
+          {signedText(remaining)}
+        </div>
+        <div className="mt-1 font-mono text-[10.5px] tabular-nums text-ink-3">
+          {`${signedText(carried)} carried from ${monthName(shiftMonth(month, -1))} · ${signedText(net)} this month`}
         </div>
       </div>
 
