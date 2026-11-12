@@ -549,6 +549,16 @@ export async function monthTotals(db: SQLiteDBConnection, month: string): Promis
   return rows[0] ?? { income: 0, expense: 0 }
 }
 
+export async function balanceBefore(db: SQLiteDBConnection, month: string): Promise<number> {
+  const rows = await query<{ balance: number }>(
+    db,
+    `SELECT (SELECT COALESCE(SUM(opening_balance), 0) FROM accounts)
+          + (SELECT COALESCE(SUM(${SIGNED_AMOUNT}), 0) FROM transactions WHERE occurred_at < ?) AS balance`,
+    [`${month}-01`],
+  )
+  return rows[0]?.balance ?? 0
+}
+
 export async function categoryTotals(db: SQLiteDBConnection, month: string): Promise<CategoryTotal[]> {
   return query<CategoryTotal>(
     db,
